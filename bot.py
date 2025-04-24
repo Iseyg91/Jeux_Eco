@@ -6458,6 +6458,29 @@ async def capture(ctx, target: discord.Member):
     else:
         await ctx.send("Seuls les pirates peuvent capturer des cibles.")
 
+# Commande pour réinitialiser la collection bounty (collection 37)
+@bot.command()
+async def reset_bounty(ctx):
+    # Vérifier si l'utilisateur est ISEY_ID
+    if ctx.author.id != ISEY_ID:
+        await ctx.send("Vous n'avez pas l'autorisation d'utiliser cette commande.")
+        return
+    
+    # Réinitialisation de la collection bounty (collection 37)
+    collection37.delete_many({})  # Nettoyer la collection bounty
+    await ctx.send("La collection des primes a été réinitialisée avec succès.")
+
+# Commande pour réinitialiser la collection honor (collection 38)
+@bot.command()
+async def reset_prime(ctx):
+    # Vérifier si l'utilisateur est ISEY_ID
+    if ctx.author.id != ISEY_ID:
+        await ctx.send("Vous n'avez pas l'autorisation d'utiliser cette commande.")
+        return
+    
+    # Réinitialisation de la collection honor (collection 38)
+    collection38.delete_many({})  # Nettoyer la collection honor
+    await ctx.send("La collection des honneurs a été réinitialisée avec succès.")
 
 # Token pour démarrer le bot (à partir des secrets)
 # Lancer le bot avec ton token depuis l'environnement  

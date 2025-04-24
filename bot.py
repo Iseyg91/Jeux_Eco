@@ -2764,6 +2764,63 @@ ITEMS = [
         "used": True
     },
     {
+        "id": 763,
+        "emoji": "<:bakubakunomi:1365025003728273428>",
+        "title": "Baku Baku no Mi",
+        "description": "Permet d'exploser 10% de la banque d’un joueur ciblé chaque semaine.",
+        "price": 80000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 2,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "Explose 10% de la banque d’un joueur ciblé. Faite !!bombe <@user> ",
+        "requirements": {},
+        "role_id": 1365027878928126096,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
+    },
+    {
+        "id": 203,
+        "emoji": "<:tetsunomi:1365025648435003525>",
+        "title": "Tetsu Tetsu no Mi",
+        "description": "Réduit de 50% toutes les robs subies.",
+        "price": 90000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 2,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "Réduit de 50% toutes les robs subies.",
+        "requirements": {},
+        "role_id": 1365029481206775878,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
+    },
+    {
+        "id": 542,
+        "emoji": "<:jokijokinomi:1365019733799338064>",
+        "title": "Joki Joki no Mi",
+        "description": "Crée une barrière bancaire : la première attaque de la journée est entièrement annulée. Se recharge automatiquement chaque jour a 00:00. ",
+        "price": 100000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 2,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "Crée une barrière bancaire : la première attaque de la journée est entièrement annulée. Se recharge automatiquement chaque jour a 00:00. ",
+        "requirements": {},
+        "role_id": 1365031085934903357,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
+    },
+    {
         "id": 81,
         "emoji": "<:armure:1363599057863311412>",
         "title": "Armure du Berserker",
@@ -3010,6 +3067,123 @@ ITEMS = [
         "use_effect": "Donne accès a l'Ultra Instinct",
         "requirements": {},
         "role_id": 1363821033060307106,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
+    },
+    {
+        "id": 381,
+        "emoji": "<:guraguranomi:1365020132048506991>",
+        "title": "Gura Gura no Mi",
+        "description": "Permet de créer des séismes dévastateurs à une échelle massive. Peut détruire des banques entières en faisant des secousses.",
+        "price": 750000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 1,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "Créer des séismes dévastateurs à une échelle massive. Détruit des banques entières en faisant des secousses.",
+        "requirements": {},
+        "role_id": 1365031927127478302,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
+    },
+    {
+        "id": 911,
+        "emoji": "<:hiehienomi:1365020469547503698>",
+        "title": "Hie Hie no Mi",
+        "description": "Permet de créer des séismes dévastateurs à une échelle massive. Peut détruire des banques entières en faisant des secousses.",
+        "price": 1800000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 1,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "Créer des séismes dévastateurs à une échelle massive. Détruit des banques entières en faisant des secousses.",
+        "requirements": {},
+        "role_id": 1365033009312698509,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
+    },
+    {
+        "id": 797,
+        "emoji": "<:yamiyaminomi:1365020675450081280>",
+        "title": "Yami Yami no Mi",
+        "description": "Absorbe tous les vols subis et les renvoie avec une puissance doublée (200%).\n-Bénéficie de 6 heures de protection. Rétablissement en 24h.",
+        "price": 2500000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 1,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "Absorbe les vols et les renvoie avec 200% de puissance. 6h de protection, 24h de cooldown.",
+        "requirements": {},
+        "role_id": 1365035636351959153,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
+    },
+    {
+        "id": 229,
+        "emoji": "<:gomugomunomi:1365020813543215137>",
+        "title": "Gomu Gomu no Mi",
+        "description": "Permet de rendre ta banque extensible et malléable, quasiment indestructible. Tu peux l’étirer à volonté pour éviter toute perte.",
+        "price": 3000000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 1,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "Renvoie 150% des attaques bancaires, booste tes revenus de 5% (1 semaine) et bloque/renvoie 300% des attaques tout en doublant les revenus (24h).",
+        "requirements": {},
+        "role_id": 1365037444608819221,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
+    },
+    {
+        "id": 469,
+        "emoji": "<:nikanikanomi:1365021787015876760>",
+        "title": "Nika Nika no Mi",
+        "description": "Le Fruit de Nika te confère des pouvoirs légendaires, au-delà de tout ce qui est imaginable, te permettant de réécrire les règles économiques et manipuler la réalité des finances à ta guise.",
+        "price": 7000000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 1,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "Le Nika Nika no Mi permet de créer des ressources, effacer dettes, et avec Gear Fifth, booste tes fonds de 500% et influe sur l'économie des autres.",
+        "requirements": {
+            "role_id": 1365037444608819221
+        },
+        "role_id": 1365037905633869914,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
+    },
+    {
+        "id": 672,
+        "emoji": "<:nikanikanomi:1365021787015876760>",
+        "title": "Uo Uo no Mi, Modèle : Seiryu",
+        "description": "Un fruit mythique qui permet à son utilisateur de se transformer en un dragon céleste, une créature d’une force inégalée, capable de manipuler les éléments et la destruction à une échelle dévastatrice. Ce fruit confère à son possesseur un pouvoir colossal, comparable à un typhon divin.",
+        "price": 10000000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 1,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "Le **Uo Uo no Mi, Seiryu** transforme en dragon céleste, protège la banque (30% vol max) pendant 1 semaine, lance des flammes dévastatrices (vol de 75%) et invoque un orage réduisant les gains de 70% et renvoyant les attaques contre toi. *Colère Draconique* détruit l'économie d'un joueur une fois par mois.",
+        "requirements": {
+        "requirements": {},
+        "role_id": 1365041330585337926,
         "remove_after_purchase": {
             "roles": False,
             "items": False

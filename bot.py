@@ -371,10 +371,10 @@ from datetime import datetime
 @tasks.loop(hours=168)  # Toutes les 168 heures (1 semaine)
 async def reset_bounties_and_honor():
     # Reset des primes (utilisation de collection37 pour les primes)
-    collection37.update_many({}, {"$set": {"prime": 0}})
-    
+    collection37.update_many({}, {"$set": {"bounty": 50}})
+
     # Reset des honneurs (utilisation de collection38 pour les honneurs)
-    collection38.update_many({}, {"$set": {"honor": 0}})
+    collection38.update_many({}, {"$set": {"honor": 50}})
 
     # Redistribution des rôles
     await redistribute_roles()

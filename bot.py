@@ -3190,141 +3190,140 @@ ITEMS = [
         },
         "used": True
     },
-{
-    "id": 202,
-    "emoji": "<:bc1s1:1364217784439144488>",
-    "title": "Boule de Cristal n°1",
-    "description": "Une sphère mystérieuse et brillante, sans utilité apparente pour l'instant, mais qui semble receler un pouvoir caché en attente d'être découvert.",
-    "price": 0,
-    "emoji_price": "<:ecoEther:1341862366249357374>",
-    "quantity": 0,
-    "tradeable": True,
-    "usable": False,
-    "use_effect": "???",
-    "requirements": {},  # Aucun requirement
-    "role_id": None,  # Aucun rôle à donner
-    "remove_after_purchase": {
-        "roles": False,
-        "items": False
+    {
+        "id": 202,
+        "emoji": "<:bc1s1:1364217784439144488>",
+        "title": "Boule de Cristal n°1",
+        "description": "Une sphère mystérieuse et brillante, sans utilité apparente pour l'instant, mais qui semble receler un pouvoir caché en attente d'être découvert.",
+        "price": 0,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 0,
+        "tradeable": True,
+        "usable": False,
+        "use_effect": "???",
+        "requirements": {},  # Aucun requirement
+        "role_id": None,  # Aucun rôle à donner
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": False
     },
-    "used": False
-},
-{
-    "id": 197,
-    "emoji": "<:bc2s1:1364224502996930642>",
-    "title": "Boule de Cristal n°2",
-    "description": "Une sphère mystérieuse et brillante, sans utilité apparente pour l'instant, mais qui semble receler un pouvoir caché en attente d'être découvert.",
-    "price": 0,
-    "emoji_price": "<:ecoEther:1341862366249357374>",
-    "quantity": 0,
-    "tradeable": True,
-    "usable": False,
-    "use_effect": "???",
-    "requirements": {},  # Aucun requirement
-    "role_id": None,  # Aucun rôle à donner
-    "remove_after_purchase": {
-        "roles": False,
-        "items": False
+    {
+        "id": 197,
+        "emoji": "<:bc2s1:1364224502996930642>",
+        "title": "Boule de Cristal n°2",
+        "description": "Une sphère mystérieuse et brillante, sans utilité apparente pour l'instant, mais qui semble receler un pouvoir caché en attente d'être découvert.",
+        "price": 0,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 0,
+        "tradeable": True,
+        "usable": False,
+        "use_effect": "???",
+        "requirements": {},  # Aucun requirement
+        "role_id": None,  # Aucun rôle à donner
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": False
     },
-    "used": False
-},
-{
-    "id": 425,
-    "emoji": "<:bc3s1:1364224526476640306>",
-    "title": "Boule de Cristal n°3",
-    "description": "Une sphère mystérieuse et brillante, sans utilité apparente pour l'instant, mais qui semble receler un pouvoir caché en attente d'être découvert.",
-    "price": 0,
-    "emoji_price": "<:ecoEther:1341862366249357374>",
-    "quantity": 0,
-    "tradeable": True,
-    "usable": False,
-    "use_effect": "???",
-    "requirements": {},  # Aucun requirement
-    "role_id": None,  # Aucun rôle à donner
-    "remove_after_purchase": {
-        "roles": False,
-        "items": False
+    {
+        "id": 425,
+        "emoji": "<:bc3s1:1364224526476640306>",
+        "title": "Boule de Cristal n°3",
+        "description": "Une sphère mystérieuse et brillante, sans utilité apparente pour l'instant, mais qui semble receler un pouvoir caché en attente d'être découvert.",
+        "price": 0,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 0,
+        "tradeable": True,
+        "usable": False,
+        "use_effect": "???",
+        "requirements": {},  # Aucun requirement
+        "role_id": None,  # Aucun rôle à donner
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": False
     },
-    "used": False
-},
-{
-    "id": 736,
-    "emoji": "<:bc4s1:1364224543937396746>",
-    "title": "Boule de Cristal n°4",
-    "description": "Une sphère mystérieuse et brillante, sans utilité apparente pour l'instant, mais qui semble receler un pouvoir caché en attente d'être découvert.",
-    "price": 0,
-    "emoji_price": "<:ecoEther:1341862366249357374>",
-    "quantity": 0,
-    "tradeable": True,
-    "usable": False,
-    "use_effect": "???",
-    "requirements": {},  # Aucun requirement
-    "role_id": None,  # Aucun rôle à donner
-    "remove_after_purchase": {
-        "roles": False,
-        "items": False
+    {
+        "id": 736,
+        "emoji": "<:bc4s1:1364224543937396746>",
+        "title": "Boule de Cristal n°4",
+        "description": "Une sphère mystérieuse et brillante, sans utilité apparente pour l'instant, mais qui semble receler un pouvoir caché en attente d'être découvert.",
+        "price": 0,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 0,
+        "tradeable": True,
+        "usable": False,
+        "use_effect": "???",
+        "requirements": {},  # Aucun requirement
+        "role_id": None,  # Aucun rôle à donner
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": False
     },
-    "used": False
-},
-{
-    "id": 872,
-    "emoji": "<:bc5s1:1364224573306048522>",
-    "title": "Boule de Cristal n°5",
-    "description": "Une sphère mystérieuse et brillante, sans utilité apparente pour l'instant, mais qui semble receler un pouvoir caché en attente d'être découvert.",
-    "price": 0,
-    "emoji_price": "<:ecoEther:1341862366249357374>",
-    "quantity": 0,
-    "tradeable": True,
-    "usable": False,
-    "use_effect": "???",
-    "requirements": {},  # Aucun requirement
-    "role_id": None,  # Aucun rôle à donner
-    "remove_after_purchase": {
-        "roles": False,
-        "items": False
+    {
+        "id": 872,
+        "emoji": "<:bc5s1:1364224573306048522>",
+        "title": "Boule de Cristal n°5",
+        "description": "Une sphère mystérieuse et brillante, sans utilité apparente pour l'instant, mais qui semble receler un pouvoir caché en attente d'être découvert.",
+        "price": 0,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 0,
+        "tradeable": True,
+        "usable": False,
+        "use_effect": "???",
+        "requirements": {},  # Aucun requirement
+        "role_id": None,  # Aucun rôle à donner
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": False
     },
-    "used": False
-},
-{
-    "id": 964,
-    "emoji": "<:bc6s1:1364224591488221276>",
-    "title": "Boule de Cristal n°6",
-    "description": "Une sphère mystérieuse et brillante, sans utilité apparente pour l'instant, mais qui semble receler un pouvoir caché en attente d'être découvert.",
-    "price": 0,
-    "emoji_price": "<:ecoEther:1341862366249357374>",
-    "quantity": 0,
-    "tradeable": True,
-    "usable": False,
-    "use_effect": "???",
-    "requirements": {},  # Aucun requirement
-    "role_id": None,  # Aucun rôle à donner
-    "remove_after_purchase": {
-        "roles": False,
-        "items": False
+    {
+        "id": 964,
+        "emoji": "<:bc6s1:1364224591488221276>",
+        "title": "Boule de Cristal n°6",
+        "description": "Une sphère mystérieuse et brillante, sans utilité apparente pour l'instant, mais qui semble receler un pouvoir caché en attente d'être découvert.",
+        "price": 0,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 0,
+        "tradeable": True,
+        "usable": False,
+        "use_effect": "???",
+        "requirements": {},  # Aucun requirement
+        "role_id": None,  # Aucun rôle à donner
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": False
     },
-    "used": False
-},
-{
-    "id": 987,
-    "emoji": "<:bc7s1:1364224611536994315>",
-    "title": "Boule de Cristal n°7",
-    "description": "Une sphère mystérieuse et brillante, sans utilité apparente pour l'instant, mais qui semble receler un pouvoir caché en attente d'être découvert.",
-    "price": 0,
-    "emoji_price": "<:ecoEther:1341862366249357374>",
-    "quantity": 0,
-    "tradeable": True,
-    "usable": False,
-    "use_effect": "???",
-    "requirements": {},  # Aucun requirement
-    "role_id": None,  # Aucun rôle à donner
-    "remove_after_purchase": {
-        "roles": False,
-        "items": False
+    {
+        "id": 987,
+        "emoji": "<:bc7s1:1364224611536994315>",
+        "title": "Boule de Cristal n°7",
+        "description": "Une sphère mystérieuse et brillante, sans utilité apparente pour l'instant, mais qui semble receler un pouvoir caché en attente d'être découvert.",
+        "price": 0,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 0,
+        "tradeable": True,
+        "usable": False,
+        "use_effect": "???",
+        "requirements": {},  # Aucun requirement
+        "role_id": None,  # Aucun rôle à donner
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": False
     },
-    "used": False
-},
 ]
-
 
 # Fonction pour insérer les items dans MongoDB
 def insert_items_into_db():

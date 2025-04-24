@@ -6406,26 +6406,38 @@ async def bounty(ctx):
 
 @bot.command()
 async def honor(ctx):
-    # Vérifier si l'utilisateur a le rôle spécifique
-    if any(role.id == 1364973130807906436 for role in ctx.author.roles):
-        user_id = ctx.author.id
+    # ID du rôle Marine
+    marine_role_id = 1364973130807906436
+
+    # Vérifie si l'utilisateur a le rôle requis
+    if any(role.id == marine_role_id for role in ctx.author.roles):
+        user = ctx.author
+        user_id = user.id
         honor = await get_honor(user_id)
 
-        # Créer l'embed
+        # Récupère le rôle à ping
+        marine_role = ctx.guild.get_role(marine_role_id)
+
+        # Créer l'embed avec les infos demandées
         embed = Embed(
-            title="🔹 Votre Honneur 🔹",
-            description=f"Votre honneur actuel est: **{honor}**.",
+            title=f"{user.name}",  # Titre : nom de l'utilisateur
+            description=(
+                f"🎖️ **Honneur actuel** : **{honor}**\n"
+                f"🔹 Statut : Membre de la Marine\n"
+                f"📅 Dernière mise à jour : aujourd'hui\n\n"
+                f"{marine_role.mention} – continuez à servir avec fierté !"
+            ),
             color=0x003366  # Bleu marine
         )
-        
-        # Ajouter un champ supplémentaire pour plus d'infos (optionnel)
-        embed.add_field(name="Rôle:", value="Marine", inline=True)
-        
-        # Ajouter un pied de page personnalisé
-        embed.set_footer(text="Bot Discord | Commande honneur")
 
-        # Envoyer l'embed uniquement à l'utilisateur
-        await ctx.author.send(embed=embed)
+        # Image de profil de l'utilisateur
+        embed.set_thumbnail(url=user.avatar.url if user.avatar else user.default_avatar.url)
+
+        # Footer stylisé
+        embed.set_footer(text="Gloire à la Marine • Commande /honor", icon_url=user.avatar.url if user.avatar else user.default_avatar.url)
+
+        # Envoie l'embed en DM
+        await user.send(embed=embed)
     else:
         await ctx.send("❌ Vous n'avez pas le rôle requis pour utiliser cette commande.")
 

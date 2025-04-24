@@ -6376,12 +6376,12 @@ pirate_roles = {
 # Fonction pour récupérer la prime
 async def get_bounty(user_id):
     bounty = collection37.find_one({"user_id": user_id})
-    return bounty['prime'] if bounty else 0
+    return bounty['prime'] if bounty else 50
 
 # Fonction pour récupérer l'honneur
 async def get_honor(user_id):
     honor = collection38.find_one({"user_id": user_id})
-    return honor['honor'] if honor else 0
+    return honor['honor'] if honor else 50
 
 # Commande !!bounty (pour les pirates)
 @bot.command()

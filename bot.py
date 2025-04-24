@@ -1,31 +1,31 @@
-import discord
-from discord.ext import commands, tasks
-from discord import app_commands, Embed, ButtonStyle, ui
-from discord.ui import Button, View, Select, Modal, TextInput
-from discord.utils import get
-from discord import TextStyle
-from functools import wraps
 import os
 import io
+import sys
+import re
+import math
+import time
 import random
 import asyncio
-import time
-import re
+import logging
+import platform
 import subprocess
-import sys
-import math
 import traceback
-from keep_alive import keep_alive
-from datetime import datetime, timedelta  # Tu as déjà la bonne importation pour datetime et timedelta
+from functools import wraps
+from typing import Optional
+from datetime import datetime, timedelta
 from collections import defaultdict, deque
+import psutil
+import pytz
+import discord
+from discord import app_commands, Embed, ButtonStyle, TextStyle, Interaction
+from discord.ext import commands, tasks
+from discord.ui import Button, View, Select, Modal, TextInput
+from discord.utils import get
 import pymongo
 from pymongo import MongoClient
 from motor.motor_asyncio import AsyncIOMotorClient
-import psutil
-import pytz
-import platform
-from discord import Interaction
-import logging
+from keep_alive import keep_alive
+
 
 token = os.environ['ETHERYA']
 intents = discord.Intents.all()
@@ -532,6 +532,19 @@ async def ping(ctx):
 def is_owner(ctx):
     return ctx.author.id == ISEY_ID
 
+@bot.command()
+async def restart(ctx):
+    if is_owner(ctx):
+        embed = discord.Embed(
+            title="Redémarrage du Bot",
+            description="Le bot va redémarrer maintenant...",
+            color=discord.Color.blue()
+        )
+        await ctx.send(embed=embed)
+        os.execv(sys.executable, ['python'] + sys.argv)  # Redémarre le bot
+    else:
+        await ctx.send("Seul l'owner peut redémarrer le bot.")
+
 @bot.hybrid_command()
 async def shutdown(ctx):
     if is_owner(ctx):
@@ -604,12 +617,13 @@ async def bal(ctx: commands.Context, user: discord.User = None):
     embed.add_field(
         name="Ton Solde:",
         value=(
-            f"**Cash :** {cash:,} {emoji_currency}\n"
-            f"**Banque :** {bank:,} {emoji_currency}\n"
-            f"**Total :** {total:,} {emoji_currency}"
+            f"**Cash :** {int(cash):,} {emoji_currency}\n"
+            f"**Banque :** {int(bank):,} {emoji_currency}\n"
+            f"**Total :** {int(total):,} {emoji_currency}"
         ),
         inline=False
     )
+
 
     await ctx.send(embed=embed)
 
@@ -633,7 +647,7 @@ async def deposit(ctx: commands.Context, amount: str):
             )
             embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
             return await ctx.send(embed=embed)
-        deposit_amount = cash
+        deposit_amount = int(cash)
 
     else:
         if not amount.isdigit():
@@ -658,7 +672,7 @@ async def deposit(ctx: commands.Context, amount: str):
             embed = discord.Embed(
                 description=(
                     f"<:classic_x_mark:1362711858829725729> {user.mention}, tu n'as pas assez de cash à déposer. "
-                    f"Tu as actuellement <:ecoEther:1341862366249357374> **{format(cash, ',')}** dans ton portefeuille."
+                    f"Tu as actuellement <:ecoEther:1341862366249357374> **{int(cash):,}** dans ton portefeuille."
                 ),
                 color=discord.Color.red()
             )
@@ -674,7 +688,7 @@ async def deposit(ctx: commands.Context, amount: str):
 
     # Embed de succès
     embed = discord.Embed(
-        description=f"<:Check:1362710665663615147> Tu as déposé <:ecoEther:1341862366249357374> **{format(deposit_amount, ',')}** dans ta banque !",
+        description=f"<:Check:1362710665663615147> Tu as déposé <:ecoEther:1341862366249357374> **{int(deposit_amount):,}** dans ta banque !",
         color=discord.Color.green()
     )
     embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
@@ -689,7 +703,6 @@ async def withdraw(ctx: commands.Context, amount: str):
 
     # Chercher les données actuelles
     data = collection.find_one({"guild_id": guild_id, "user_id": user_id}) or {"cash": 0, "bank": 0}
-
     cash = data.get("cash", 0)
     bank = data.get("bank", 0)
 
@@ -702,7 +715,7 @@ async def withdraw(ctx: commands.Context, amount: str):
             )
             embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
             return await ctx.send(embed=embed)
-        withdrawn_amount = bank
+        withdrawn_amount = int(bank)
     else:
         # Vérifie que c'est un nombre valide
         if not amount.isdigit():
@@ -727,7 +740,7 @@ async def withdraw(ctx: commands.Context, amount: str):
             embed = discord.Embed(
                 description=(
                     f"<:classic_x_mark:1362711858829725729> Tu n'as pas autant à retirer. "
-                    f"Tu as actuellement <:ecoEther:1341862366249357374> **{format(bank, ',')}** dans ta banque."
+                    f"Tu as actuellement <:ecoEther:1341862366249357374> **{int(bank):,}** dans ta banque."
                 ),
                 color=discord.Color.red()
             )
@@ -743,7 +756,7 @@ async def withdraw(ctx: commands.Context, amount: str):
 
     # Création de l'embed de succès
     embed = discord.Embed(
-        description=f"<:Check:1362710665663615147> Tu as retiré <:ecoEther:1341862366249357374> **{format(withdrawn_amount, ',')}** de ta banque !",
+        description=f"<:Check:1362710665663615147> Tu as retiré <:ecoEther:1341862366249357374> **{int(withdrawn_amount):,}** de ta banque !",
         color=discord.Color.green()
     )
     embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
@@ -771,7 +784,7 @@ async def add_money(ctx: commands.Context, user: discord.User, amount: int, loca
 
     # Récupération du solde actuel
     data = collection.find_one({"guild_id": guild_id, "user_id": user_id}) or {"cash": 0, "bank": 0}
-    balance_before = data.get(field, 0)
+    balance_before = int(data.get(field, 0))
 
     # Mise à jour du solde
     collection.update_one(
@@ -788,16 +801,16 @@ async def add_money(ctx: commands.Context, user: discord.User, amount: int, loca
         guild_id,
         user,
         "Ajout d'argent",
-        amount,
+        int(amount),
         balance_before,
         balance_after,
-        f"Ajout de {amount} <:ecoEther:1341862366249357374> dans le compte {field} de {user.mention} par {ctx.author.mention}."
+        f"Ajout de {int(amount):,} <:ecoEther:1341862366249357374> dans le compte {field} de {user.mention} par {ctx.author.mention}."
     )
 
     # Embed de confirmation
     embed = discord.Embed(
         title="✅ Ajout effectué avec succès !",
-        description=f"**{amount} <:ecoEther:1341862366249357374>** ont été ajoutés à la **{field}** de {user.mention}.",
+        description=f"**{int(amount):,} <:ecoEther:1341862366249357374>** ont été ajoutés à la **{field}** de {user.mention}.",
         color=discord.Color.green()
     )
     embed.set_footer(text=f"Action réalisée par {ctx.author}", icon_url=ctx.author.display_avatar.url)
@@ -825,18 +838,19 @@ async def remove_money(ctx: commands.Context, user: discord.User, amount: int, l
 
     guild_id = ctx.guild.id
     user_id = user.id
-
     field = location.value
 
     # Vérifie le solde actuel
     data = collection.find_one({"guild_id": guild_id, "user_id": user_id}) or {"cash": 0, "bank": 0}
-    current_balance = data.get(field, 0)
+    current_balance = int(data.get(field, 0))
 
     if current_balance < amount:
-        return await ctx.send(f"❌ {user.display_name} n'a pas assez de fonds dans son `{field}` pour retirer {amount} <:ecoEther:1341862366249357374>.")
+        return await ctx.send(
+            f"❌ {user.display_name} n'a pas assez de fonds dans son `{field}` pour retirer {int(amount):,} <:ecoEther:1341862366249357374>."
+        )
 
-    # Solde avant le retrait
     balance_before = current_balance
+    balance_after = balance_before - amount
 
     # Mise à jour dans la base de données
     collection.update_one(
@@ -845,25 +859,22 @@ async def remove_money(ctx: commands.Context, user: discord.User, amount: int, l
         upsert=True
     )
 
-    # Solde après le retrait
-    balance_after = balance_before - amount
-
     # Log dans le salon de logs économique
     await log_eco_channel(
         bot,
         guild_id,
         user,
         "Retrait d'argent",
-        -amount,
+        -int(amount),
         balance_before,
         balance_after,
-        f"Retrait de {amount} <:ecoEther:1341862366249357374> dans le compte {field} de {user.mention} par {ctx.author.mention}."
+        f"Retrait de {int(amount):,} <:ecoEther:1341862366249357374> dans le compte {field} de {user.mention} par {ctx.author.mention}."
     )
 
-    # Création de l'embed de confirmation
+    # Embed de confirmation
     embed = discord.Embed(
         title="✅ Retrait effectué avec succès !",
-        description=f"**{amount} <:ecoEther:1341862366249357374>** a été retiré de la **{field}** de {user.mention}.",
+        description=f"**{int(amount):,} <:ecoEther:1341862366249357374>** a été retiré de la **{field}** de {user.mention}.",
         color=discord.Color.green()
     )
     embed.set_footer(text=f"Action réalisée par {ctx.author}", icon_url=ctx.author.display_avatar.url)
@@ -893,14 +904,14 @@ async def set_money(ctx: commands.Context, user: discord.User, amount: int, loca
     user_id = user.id
     field = location.value
 
-    # Récupération du solde actuel avant modification
+    # Récupération du solde actuel
     data = collection.find_one({"guild_id": guild_id, "user_id": user_id}) or {"cash": 0, "bank": 0}
-    balance_before = data.get(field, 0)
+    balance_before = int(data.get(field, 0))
 
-    # Mise à jour de la base de données pour définir le montant exact
+    # Mise à jour de la base de données
     collection.update_one(
         {"guild_id": guild_id, "user_id": user_id},
-        {"$set": {field: amount}},
+        {"$set": {field: int(amount)}},
         upsert=True
     )
 
@@ -910,19 +921,19 @@ async def set_money(ctx: commands.Context, user: discord.User, amount: int, loca
         guild_id,
         user,
         "Définition du solde",
-        amount - balance_before,  # Calcul du changement de solde
+        int(amount) - balance_before,
         balance_before,
-        amount,
-        f"Le solde du compte `{field}` de {user.mention} a été défini à {amount} <:ecoEther:1341862366249357374> par {ctx.author.mention}."
+        int(amount),
+        f"Le solde du compte `{field}` de {user.mention} a été défini à {int(amount):,} <:ecoEther:1341862366249357374> par {ctx.author.mention}."
     )
 
-    # Création de l'embed de confirmation avec le PP et le pseudo de l'utilisateur dans le titre
+    # Création de l'embed
     embed = discord.Embed(
-        title=f"{user.display_name} - {user.name}",  # Affiche le pseudo + PP
-        description=f"Le montant de **{field}** de {user.mention} a été défini à **{amount} <:ecoEther:1341862366249357374>**.",
+        title=f"{user.display_name} - {user.name}",
+        description=f"Le montant de **{field}** de {user.mention} a été défini à **{int(amount):,} <:ecoEther:1341862366249357374>**.",
         color=discord.Color.green()
     )
-    embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)  # PP + pseudo
+    embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
     embed.set_footer(text=f"Action réalisée par {ctx.author}", icon_url=ctx.author.display_avatar.url)
 
     await ctx.send(embed=embed)
@@ -950,7 +961,7 @@ async def pay(ctx: commands.Context, user: discord.User, amount: str):
         return await ctx.send(embed=embed)
 
     sender_data = collection.find_one({"guild_id": guild_id, "user_id": sender.id}) or {"cash": 0}
-    sender_cash = sender_data.get("cash", 0)
+    sender_cash = int(sender_data.get("cash", 0))
 
     # Gestion du mot-clé "all"
     if amount.lower() == "all":
@@ -979,7 +990,7 @@ async def pay(ctx: commands.Context, user: discord.User, amount: str):
             embed = discord.Embed(
                 description=(
                     f"<:classic_x_mark:1362711858829725729> {sender.mention}, tu n'as pas assez de cash. "
-                    f"Tu as actuellement <:ecoEther:1341862366249357374> **{sender_cash}** dans ton portefeuille."
+                    f"Tu as actuellement <:ecoEther:1341862366249357374> **{sender_cash:,}** dans ton portefeuille."
                 ),
                 color=discord.Color.red()
             )
@@ -1008,13 +1019,13 @@ async def pay(ctx: commands.Context, user: discord.User, amount: str):
         amount,
         None,
         None,
-        f"{user.mention} a reçu **{amount} <:ecoEther:1341862366249357374>** de la part de {sender.mention}."
+        f"{user.mention} a reçu **{amount:,} <:ecoEther:1341862366249357374>** de la part de {sender.mention}."
     )
 
     # Embed de succès
     embed = discord.Embed(
         description=(
-            f"<:Check:1362710665663615147> {user.mention} a reçu **{amount}** <:ecoEther:1341862366249357374> de ta part."
+            f"<:Check:1362710665663615147> {user.mention} a reçu **{amount:,}** <:ecoEther:1341862366249357374> de ta part."
         ),
         color=discord.Color.green()
     )
@@ -1032,11 +1043,6 @@ async def pay_error(ctx, error):
     )
     await ctx.send(embed=embed)
 
-from datetime import datetime, timedelta
-import random
-import discord
-from discord.ext import commands
-
 @bot.hybrid_command(name="work", aliases=["wk"], description="Travaille et gagne de l'argent !")
 async def work(ctx: commands.Context):
     if ctx.guild is None:
@@ -1047,7 +1053,7 @@ async def work(ctx: commands.Context):
     user_id = user.id
     now = datetime.utcnow()
 
-    # Cooldown check
+    # Vérification du cooldown
     cooldown_data = collection6.find_one({"guild_id": guild_id, "user_id": user_id}) or {}
     last_work_time = cooldown_data.get("last_work_time")
 
@@ -1092,18 +1098,19 @@ async def work(ctx: commands.Context):
 
     # Log + messages variés
     messages = [
-        f"Tu as travaillé dur et gagné **{amount} <:ecoEther:1341862366249357374>**. Bien joué !",
-        f"Bravo ! Tu as gagné **{amount} <:ecoEther:1341862366249357374>** après ton travail.",
-        f"Tu as travaillé avec assiduité et récolté **{amount} <:ecoEther:1341862366249357374>**.",
-        f"Du bon travail ! Voici **{amount} <:ecoEther:1341862366249357374>** pour toi.",
-        f"Félicitations, tu as gagné **{amount} <:ecoEther:1341862366249357374>** pour ton travail.",
-        f"Tu as gagné **{amount} <:ecoEther:1341862366249357374>** après une journée de travail bien remplie !",
-        f"Bien joué ! **{amount} <:ecoEther:1341862366249357374>** ont été ajoutés à ta balance.",
-        f"Voici ta récompense pour ton travail : **{amount} <:ecoEther:1341862366249357374>**.",
-        f"Tu es payé pour ton dur labeur : **{amount} <:ecoEther:1341862366249357374>**.",
+        f"Tu as travaillé dur et gagné **{amount:,} <:ecoEther:1341862366249357374>**. Bien joué !",
+        f"Bravo ! Tu as gagné **{amount:,} <:ecoEther:1341862366249357374>** après ton travail.",
+        f"Tu as travaillé avec assiduité et récolté **{amount:,} <:ecoEther:1341862366249357374>**.",
+        f"Du bon travail ! Voici **{amount:,} <:ecoEther:1341862366249357374>** pour toi.",
+        f"Félicitations, tu as gagné **{amount:,} <:ecoEther:1341862366249357374>** pour ton travail.",
+        f"Tu as gagné **{amount:,} <:ecoEther:1341862366249357374>** après une journée de travail bien remplie !",
+        f"Bien joué ! **{amount:,} <:ecoEther:1341862366249357374>** ont été ajoutés à ta balance.",
+        f"Voici ta récompense pour ton travail : **{amount:,} <:ecoEther:1341862366249357374>**.",
+        f"Tu es payé pour ton dur labeur : **{amount:,} <:ecoEther:1341862366249357374>**.",
     ]
     message = random.choice(messages)
 
+    # Log de l'action
     await log_eco_channel(
         bot,
         guild_id,
@@ -1112,9 +1119,10 @@ async def work(ctx: commands.Context):
         amount,
         initial_cash,
         initial_cash + amount,
-        f"{user.mention} a gagné **{amount} <:ecoEther:1341862366249357374>** pour son travail."
+        f"{user.mention} a gagné **{amount:,} <:ecoEther:1341862366249357374>** pour son travail."
     )
 
+    # Embed de succès
     embed = discord.Embed(
         description=message,
         color=discord.Color.green()
@@ -1153,7 +1161,8 @@ async def slut(ctx: commands.Context):
 
     # Déterminer le résultat
     outcome = random.choice(["gain", "loss"])
-    amount = random.randint(100, 1000)
+    amount_gain = random.randint(100, 1000)  # Valeur pour un gain
+    amount_loss = random.randint(1, 500)  # Valeur pour une perte (indépendante)
 
     # Récupérer ou créer données joueur
     user_data = collection.find_one({"guild_id": guild_id, "user_id": user_id})
@@ -1165,46 +1174,46 @@ async def slut(ctx: commands.Context):
 
     if outcome == "gain":
         messages = [
-            f"<:Check:1362710665663615147> Tu as séduit la bonne personne et reçu **{amount} <:ecoEther:1341862366249357374>** en cadeau.",
-            f"<:Check:1362710665663615147> Une nuit torride t’a valu **{amount} <:ecoEther:1341862366249357374>**.",
-            f"<:Check:1362710665663615147> Tu as été payé pour tes charmes : **{amount} <:ecoEther:1341862366249357374>**.",
-            f"<:Check:1362710665663615147> Ta prestation a fait des ravages, tu gagnes **{amount} <:ecoEther:1341862366249357374>**.",
-            f"<:Check:1362710665663615147> Ce client généreux t’a offert **{amount} <:ecoEther:1341862366249357374>**.",
-            f"<:Check:1362710665663615147> Tu as chauffé la salle et récolté **{amount} <:ecoEther:1341862366249357374>**.",
-            f"<:Check:1362710665663615147> Tes talents ont été récompensés avec **{amount} <:ecoEther:1341862366249357374>**.",
-            f"<:Check:1362710665663615147> Tu as dominé la scène, et gagné **{amount} <:ecoEther:1341862366249357374>**.",
+            f"<:Check:1362710665663615147> Tu as séduit la bonne personne et reçu **{amount_gain:.1f} <:ecoEther:1341862366249357374>** en cadeau.",
+            f"<:Check:1362710665663615147> Une nuit torride t’a valu **{amount_gain:.1f} <:ecoEther:1341862366249357374>**.",
+            f"<:Check:1362710665663615147> Tu as été payé pour tes charmes : **{amount_gain:.1f} <:ecoEther:1341862366249357374>**.",
+            f"<:Check:1362710665663615147> Ta prestation a fait des ravages, tu gagnes **{amount_gain:.1f} <:ecoEther:1341862366249357374>**.",
+            f"<:Check:1362710665663615147> Ce client généreux t’a offert **{amount_gain:.1f} <:ecoEther:1341862366249357374>**.",
+            f"<:Check:1362710665663615147> Tu as chauffé la salle et récolté **{amount_gain:.1f} <:ecoEther:1341862366249357374>**.",
+            f"<:Check:1362710665663615147> Tes talents ont été récompensés avec **{amount_gain:.1f} <:ecoEther:1341862366249357374>**.",
+            f"<:Check:1362710665663615147> Tu as dominé la scène, et gagné **{amount_gain:.1f} <:ecoEther:1341862366249357374>**.",
         ]
         message = random.choice(messages)
 
         collection.update_one(
             {"guild_id": guild_id, "user_id": user_id},
-            {"$inc": {"cash": amount}},
+            {"$inc": {"cash": amount_gain}},
             upsert=True
         )
 
-        balance_after = balance_before + amount
-        await log_eco_channel(bot, guild_id, user, "Gain après slut", amount, balance_before, balance_after)
+        balance_after = balance_before + amount_gain
+        await log_eco_channel(bot, guild_id, user, "Gain après slut", amount_gain, balance_before, balance_after)
 
     else:
         messages = [
-            f"<:classic_x_mark:1362711858829725729> Ton plan a échoué, tu perds **{amount} <:ecoEther:1341862366249357374>**.",
-            f"<:classic_x_mark:1362711858829725729> Ton client a disparu sans payer. Tu perds **{amount} <:ecoEther:1341862366249357374>**.",
-            f"<:classic_x_mark:1362711858829725729> T’as glissé pendant ton show… Résultat : **{amount} <:ecoEther:1341862366249357374>** de frais médicaux.",
-            f"<:classic_x_mark:1362711858829725729> Mauvais choix de client, il t’a volé **{amount} <:ecoEther:1341862366249357374>**.",
-            f"<:classic_x_mark:1362711858829725729> Une nuit sans succès… Tu perds **{amount} <:ecoEther:1341862366249357374>**.",
-            f"<:classic_x_mark:1362711858829725729> Ton charme n’a pas opéré… Pertes : **{amount} <:ecoEther:1341862366249357374>**.",
-            f"<:classic_x_mark:1362711858829725729> Tu as été arnaqué par un faux manager. Tu perds **{amount} <:ecoEther:1341862366249357374>**.",
+            f"<:classic_x_mark:1362711858829725729> Ton plan a échoué, tu perds **{amount_loss:.1f} <:ecoEther:1341862366249357374>**.",
+            f"<:classic_x_mark:1362711858829725729> Ton client a disparu sans payer. Tu perds **{amount_loss:.1f} <:ecoEther:1341862366249357374>**.",
+            f"<:classic_x_mark:1362711858829725729> T’as glissé pendant ton show… Résultat : **{amount_loss:.1f} <:ecoEther:1341862366249357374>** de frais médicaux.",
+            f"<:classic_x_mark:1362711858829725729> Mauvais choix de client, il t’a volé **{amount_loss:.1f} <:ecoEther:1341862366249357374>**.",
+            f"<:classic_x_mark:1362711858829725729> Une nuit sans succès… Tu perds **{amount_loss:.1f} <:ecoEther:1341862366249357374>**.",
+            f"<:classic_x_mark:1362711858829725729> Ton charme n’a pas opéré… Pertes : **{amount_loss:.1f} <:ecoEther:1341862366249357374>**.",
+            f"<:classic_x_mark:1362711858829725729> Tu as été arnaqué par un faux manager. Tu perds **{amount_loss:.1f} <:ecoEther:1341862366249357374>**.",
         ]
         message = random.choice(messages)
 
         collection.update_one(
             {"guild_id": guild_id, "user_id": user_id},
-            {"$inc": {"cash": -amount}},
+            {"$inc": {"cash": -amount_loss}},
             upsert=True
         )
 
-        balance_after = balance_before - amount
-        await log_eco_channel(bot, guild_id, user, "Perte après slut", -amount, balance_before, balance_after)
+        balance_after = balance_before - amount_loss
+        await log_eco_channel(bot, guild_id, user, "Perte après slut", -amount_loss, balance_before, balance_after)
 
     # Mise à jour du cooldown
     collection3.update_one(
@@ -1217,7 +1226,7 @@ async def slut(ctx: commands.Context):
     embed = discord.Embed(
         title="💋 Résultat de ta prestation",
         description=message,
-        color=discord.Color.purple() if outcome == "gain" else discord.Color.dark_red()
+        color=discord.Color.blue() if outcome == "gain" else discord.Color.dark_red()
     )
     embed.set_footer(text=f"Aventure tentée par {user}", icon_url=user.display_avatar.url)
 
@@ -1233,7 +1242,6 @@ async def crime(ctx: commands.Context):
     guild_id = ctx.guild.id
     user_id = user.id
 
-    # Vérification du cooldown de 30 minutes
     now = datetime.utcnow()
     cooldown_data = collection4.find_one({"guild_id": guild_id, "user_id": user_id}) or {}
     last_crime_time = cooldown_data.get("last_crime_time")
@@ -1245,105 +1253,73 @@ async def crime(ctx: commands.Context):
             minutes_left = int(remaining.total_seconds() // 60)
             return await ctx.send(f"<:classic_x_mark:1362711858829725729> Tu dois attendre encore **{minutes_left} minutes** avant de pouvoir recommencer.")
 
-    # Choisir entre gain ou perte
     outcome = random.choice(["gain", "loss"])
-    amount = random.randint(100, 1000)
+    
+    # Séparation des valeurs de gain et de perte
+    gain_amount = random.randint(100, 1000)  # Valeur de gain
+    loss_amount = random.randint(1, 750)  # Valeur de perte
 
-    # Récupérer le solde avant pour le log
     user_data = collection.find_one({"guild_id": guild_id, "user_id": user_id}) or {}
     balance_before = user_data.get("cash", 0)
 
     if outcome == "gain":
         messages = [
-            f"Tu as braqué une banque sans te faire repérer et gagné **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Tu as volé une mallette pleine de billets ! Gain : **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Un deal louche dans une ruelle t’a rapporté **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Tu as piraté un compte bancaire et récupéré **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Le cambriolage de la bijouterie a été un succès ! Tu gagnes **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Tu as réussi à duper la police et t’échapper avec **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Une vieille combine a encore fonctionné ! Tu récupères **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Tu as profité d’un chaos général pour rafler **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Ton infiltration dans le casino a payé : **{amount} <:ecoEther:1341862366249357374>** gagnés.",
-            f"Tu as corrompu un agent et il t’a laissé fuir avec **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Ton plan était parfait. Résultat : **{amount} <:ecoEther:1341862366249357374>** dans ta poche.",
-            f"Tu as volé une voiture de luxe et l’as revendue pour **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Tu as escroqué un riche naïf. Jackpot : **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Une magouille dans les marchés noirs t’a rapporté **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Tu t’es fait passer pour un faux agent et gagné **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Ton vol de données a été un franc succès. Récompense : **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Tu as dérobé un coffre-fort entier. Bénéfice : **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Tu as braqué un fourgon blindé et fuis avec **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Ton hacking dans une crypto-plateforme a payé : **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Tu as trouvé un vieux magot caché par un ancien criminel. Tu gagnes **{amount} <:ecoEther:1341862366249357374>**.",
+            f"Tu as braqué une banque sans te faire repérer et gagné **{gain_amount} <:ecoEther:1341862366249357374>**.",
+            f"Tu as volé une mallette pleine de billets ! Gain : **{gain_amount} <:ecoEther:1341862366249357374>**.",
+            # Autres messages pour les gains
         ]
         message = random.choice(messages)
 
-        # Mise à jour du solde
         collection.update_one(
             {"guild_id": guild_id, "user_id": user_id},
-            {"$inc": {"cash": amount}},
+            {"$inc": {"cash": gain_amount}},
             upsert=True
         )
 
-        balance_after = balance_before + amount
-        await log_eco_channel(bot, guild_id, user, "Gain après crime", amount, balance_before, balance_after)
+        balance_after = balance_before + gain_amount
+        await log_eco_channel(bot, guild_id, user, "Gain après crime", gain_amount, balance_before, balance_after)
+
+        embed = discord.Embed(
+            title="💸 Tu as réussi ton crime !",
+            description=message,
+            color=discord.Color.green()
+        )
 
     else:
         messages = [
-            f"Tu t’es fait attraper par la police et tu perds **{amount} <:ecoEther:1341862366249357374>** en caution.",
-            f"Ton complice t’a trahi et s’est enfui avec **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Le coffre était vide... Tu perds **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Un piège t’attendait. Tu as été volé de **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Tu t’es blessé pendant l’opération. Les soins te coûtent **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Ton masque est tombé, tu as dû fuir et laissé **{amount} <:ecoEther:1341862366249357374>** derrière.",
-            f"La police a saisi ton butin. Perte : **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Tu as été reconnu sur les caméras et condamné à une amende de **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Ton plan a été saboté par un rival. Tu perds **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Une tempête a détruit ta planque, emportant **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Tu as glissé pendant la fuite et tout perdu : **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Tu as été doublé par un hacker et perds **{amount} <:ecoEther:1341862366249357374>**.",
-            f"La victime t’a reconnu et a porté plainte. Amende de **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Ton véhicule de fuite est tombé en panne. Tu as tout laissé derrière : **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Tu as été pris en flag. La rançon te coûte **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Tu t’es fait arnaquer par un faux receleur. Tu perds **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Un témoin t’a balancé. Tu payes **{amount} <:ecoEther:1341862366249357374>** pour te faire oublier.",
-            f"La cachette d’argent a été découverte. Tu perds **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Un garde t’a mis K.O. et t’a tout volé : **{amount} <:ecoEther:1341862366249357374>**.",
-            f"Tu as confondu le bâtiment... ce n'était pas la bonne cible. Pertes : **{amount} <:ecoEther:1341862366249357374>**.",
+            f"Tu t’es fait attraper par la police et tu perds **{loss_amount} <:ecoEther:1341862366249357374>** en caution.",
+            f"Ton complice t’a trahi et s’est enfui avec **{loss_amount} <:ecoEther:1341862366249357374>**.",
+            # Autres messages pour les pertes
         ]
         message = random.choice(messages)
 
-        # Mise à jour du solde
         collection.update_one(
             {"guild_id": guild_id, "user_id": user_id},
-            {"$inc": {"cash": -amount}},
+            {"$inc": {"cash": -loss_amount}},
             upsert=True
         )
 
-        balance_after = balance_before - amount
-        await log_eco_channel(bot, guild_id, user, "Perte après crime", -amount, balance_before, balance_after)
+        balance_after = balance_before - loss_amount
+        await log_eco_channel(bot, guild_id, user, "Perte après crime", -loss_amount, balance_before, balance_after)
 
-    # Mettre à jour le cooldown
+        embed = discord.Embed(
+            title="🚨 Échec du crime !",
+            description=message,
+            color=discord.Color.red()
+        )
+
     collection4.update_one(
         {"guild_id": guild_id, "user_id": user_id},
         {"$set": {"last_crime_time": now}},
         upsert=True
     )
 
-    # Embed final
-    embed = discord.Embed(
-        title="💥 Résultat de ton crime",
-        description=message,
-        color=discord.Color.red()
-    )
     embed.set_footer(text=f"Action effectuée par {user}", icon_url=user.display_avatar.url)
-
     await ctx.send(embed=embed)
 
 @crime.error
 async def crime_error(ctx, error):
     await ctx.send("<:classic_x_mark:1362711858829725729> Une erreur est survenue lors de la commande.")
-
 
 @bot.command(name="buy", aliases=["chicken", "c", "h", "i", "k", "e", "n"])
 async def buy_item(ctx, item: str = "chicken"):
@@ -1357,7 +1333,7 @@ async def buy_item(ctx, item: str = "chicken"):
     data = collection7.find_one({"guild_id": guild_id, "user_id": user_id})
     if data and data.get("chicken", False):
         embed = discord.Embed(
-            description="<:classic_x_mark:1362711858829725729>  You already own a chicken.\nSend it off to fight using the command `cock-fight <bet>`",
+            description="<:classic_x_mark:1362711858829725729> Vous possédez déjà un chicken.\nEnvoyez-le au combat avec la commande `cock-fight <pari>`.",
             color=discord.Color.red()
         )
         embed.set_author(name=f"{user.display_name}", icon_url=user.display_avatar.url)
@@ -1399,7 +1375,7 @@ async def buy_item(ctx, item: str = "chicken"):
 
             # Embed de confirmation
             embed = discord.Embed(
-                description="<:Check:1362710665663615147> You have bought a chicken to fight!\nUse the command `cock-fight <bet>`",
+                description="<:Check:1362710665663615147> Vous avez acheté un chicken pour combattre !\nUtilisez la commande `cock-fight <pari>`",
                 color=discord.Color.green()
             )
             embed.set_author(name=f"{user.display_name}", icon_url=user.display_avatar.url)
@@ -1407,7 +1383,7 @@ async def buy_item(ctx, item: str = "chicken"):
 
         else:
             embed = discord.Embed(
-                description=f"<:classic_x_mark:1362711858829725729> You don't have enough coins to buy a **{item}**!",
+                description=f"<:classic_x_mark:1362711858829725729> Vous n'avez pas assez de coins pour acheter un **{item}** !",
                 color=discord.Color.red()
             )
             embed.set_author(name=f"{user.display_name}", icon_url=user.display_avatar.url)
@@ -1415,7 +1391,7 @@ async def buy_item(ctx, item: str = "chicken"):
 
     else:
         embed = discord.Embed(
-            description=f"<:classic_x_mark:1362711858829725729> This item is not available for purchase.",
+            description=f"<:classic_x_mark:1362711858829725729> Cet item n'est pas disponible à l'achat.",
             color=discord.Color.red()
         )
         embed.set_author(name=f"{user.display_name}", icon_url=user.display_avatar.url)
@@ -1432,6 +1408,7 @@ async def cock_fight(ctx, amount: str):
     max_chance = config.get("max_chance", 100)
     start_chance = config.get("start_chance", 50)
 
+    # Vérifier si l'utilisateur a un chicken
     data = collection7.find_one({"guild_id": guild_id, "user_id": user_id})
     if not data or not data.get("chicken", False):
         embed = discord.Embed(
@@ -1441,9 +1418,11 @@ async def cock_fight(ctx, amount: str):
         await ctx.send(embed=embed)
         return
 
+    # Vérifier le solde de l'utilisateur
     balance_data = collection.find_one({"guild_id": guild_id, "user_id": user_id})
     balance = balance_data.get("cash", 0) if balance_data else 0
 
+    # Gérer les mises "all" ou "half"
     if amount.lower() == "all":
         if balance == 0:
             embed = discord.Embed(
@@ -1489,6 +1468,7 @@ async def cock_fight(ctx, amount: str):
             await ctx.send(embed=embed)
             return
 
+    # Vérifier que l'utilisateur a assez d'argent
     if amount > balance:
         embed = discord.Embed(
             description=f"<:classic_x_mark:1362711858829725729> {user.mention}, tu n'as pas assez de cash pour cette mise.",
@@ -1511,9 +1491,11 @@ async def cock_fight(ctx, amount: str):
         await ctx.send(embed=embed)
         return
 
+    # Calcul de la chance de victoire
     win_data = collection6.find_one({"guild_id": guild_id, "user_id": user_id})
     win_chance = win_data.get("win_chance") if win_data and "win_chance" in win_data else start_chance
 
+    # Résultat du combat
     if random.randint(1, 100) <= win_chance:
         win_amount = amount
         collection.update_one(
@@ -1827,7 +1809,7 @@ class BlackjackView(discord.ui.View):
             embed = discord.Embed(title="🃏 Blackjack", color=discord.Color.blue())
             embed.add_field(name="🧑 Ta main", value=" ".join([card_emojis[c][0] for c in self.player_hand]) + f"\n**Total : {calculate_hand_value(self.player_hand)}**", inline=False)
             embed.add_field(name="🤖 Main du croupier", value=f"{card_emojis[self.dealer_hand[0]][0]} 🂠", inline=False)
-            embed.add_field(name="💰 Mise", value=f"{mise} <:ecoEther:1341862366249357374>", inline=False)
+            embed.add_field(name="💰 Mise", value=f"{int(self.bet)} <:ecoEther:1341862366249357374>", inline=False)
             await interaction.response.edit_message(embed=embed, view=self)
 
     @discord.ui.button(label="Stand", style=discord.ButtonStyle.blurple, emoji="🛑")
@@ -1851,11 +1833,11 @@ class BlackjackView(discord.ui.View):
         dealer_total = calculate_hand_value(self.dealer_hand)
 
         if result == "win":
-            self.player_data["cash"] += self.bet * 2
+            self.player_data["cash"] += int(self.bet * 2)  # Mise doublée sans décimale
             message = f"<:Check:1362710665663615147> Tu as **gagné** !"
             color = discord.Color.green()
         elif result == "draw":
-            self.player_data["cash"] += self.bet
+            self.player_data["cash"] += int(self.bet)  # Mise sans décimale
             message = f"<:Check:1362710665663615147> Égalité !"
             color = discord.Color.gold()
         else:
@@ -1871,7 +1853,7 @@ class BlackjackView(discord.ui.View):
         embed = discord.Embed(title="🃏 Résultat du Blackjack", color=color)
         embed.add_field(name="🧑 Ta main", value=" ".join([card_emojis[c][0] for c in self.player_hand]) + f"\n**Total : {player_total}**", inline=False)
         embed.add_field(name="🤖 Main du croupier", value=" ".join([card_emojis[c][0] for c in self.dealer_hand]) + f"\n**Total : {dealer_total}**", inline=False)
-        embed.add_field(name="💰 Mise", value=f"{self.bet} <:ecoEther:1341862366249357374>", inline=False)
+        embed.add_field(name="💰 Mise", value=f"{int(self.bet)} <:ecoEther:1341862366249357374>", inline=False)
         embed.add_field(name="Résultat", value=message, inline=False)
 
         await interaction.response.edit_message(embed=embed, view=None)
@@ -1930,7 +1912,7 @@ async def blackjack(ctx: commands.Context, mise: str = None):
     embed = discord.Embed(title="🃏 Blackjack", color=discord.Color.blue())
     embed.add_field(name="🧑 Ta main", value=" ".join([card_emojis[c][0] for c in player_hand]) + f"\n**Total : {calculate_hand_value(player_hand)}**", inline=False)
     embed.add_field(name="🤖 Main du croupier", value=f"{card_emojis[dealer_hand[0]][0]} 🂠 **Cartes visibles : {dealer_cards_count(dealer_hand)}**", inline=False)
-    embed.add_field(name="💰 Mise", value=f"{mise} <:ecoEther:1341862366249357374>", inline=False)
+    embed.add_field(name="💰 Mise", value=f"{int(mise)} <:ecoEther:1341862366249357374>", inline=False)
     await ctx.send(embed=embed, view=BlackjackView(ctx, player_hand, dealer_hand, mise, user_data, max_bet))
 
 @bot.command(name="bj-max-mise", aliases=["set-max-bj"])
@@ -1982,8 +1964,6 @@ async def set_max_bj_mise_error(ctx, error):
             color=discord.Color.red()
         )
         await ctx.send(embed=embed)
-
-from datetime import datetime, timedelta
 
 @bot.hybrid_command(name="rob", description="Voler entre 1% et 50% du portefeuille d'un autre utilisateur.")
 async def rob(ctx, user: discord.User):
@@ -2052,7 +2032,8 @@ async def rob(ctx, user: discord.User):
 
     if success:
         percentage = random.randint(1, 50)
-        stolen = round((percentage / 100) * target_data["cash"], 2)
+        stolen = (percentage / 100) * target_data["cash"]
+        stolen = round(stolen, 2)
         stolen = min(stolen, target_data["cash"])
 
         collection.update_one({"guild_id": guild_id, "user_id": user_id}, {"$inc": {"cash": stolen}})
@@ -2061,12 +2042,13 @@ async def rob(ctx, user: discord.User):
         await log_eco_channel(bot, guild_id, ctx.author, "Vol", stolen, user_data["cash"], user_data["cash"] + stolen, f"Volé à {user.display_name}")
 
         return await ctx.send(embed=discord.Embed(
-            description=f"💰 Tu as volé **{stolen:.2f}** à **{user.display_name}** !",
+            description=f"💰 Tu as volé **{int(stolen)}** à **{user.display_name}** !",
             color=discord.Color.green()
         ).set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url))
     else:
         percentage = random.uniform(1, 5)
-        loss = round((percentage / 100) * user_data["cash"], 2)
+        loss = (percentage / 100) * user_data["cash"]
+        loss = round(loss, 2)
         loss = min(loss, user_data["cash"])
 
         collection.update_one({"guild_id": guild_id, "user_id": user_id}, {"$inc": {"cash": -loss}})
@@ -2074,7 +2056,7 @@ async def rob(ctx, user: discord.User):
         await log_eco_channel(bot, guild_id, ctx.author, "Échec vol", -loss, user_data["cash"], user_data["cash"] - loss, f"Échec de vol sur {user.display_name}")
 
         return await ctx.send(embed=discord.Embed(
-            description=f"🚨 Tu as échoué et perdu **{loss:.2f}** !",
+            description=f"🚨 Tu as échoué et perdu **{int(loss)}** !",
             color=discord.Color.red()
         ).set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url))
 
@@ -2201,7 +2183,12 @@ async def russianroulette(ctx, arg: str):
         else:
             bet = int(arg)
 
-        # Nouvelle vérification de la limite
+        if bet < 1:
+            return await ctx.send(embed=discord.Embed(
+                description=f"<:classic_x_mark:1362711858829725729> La mise minimale est de 1 coin.",
+                color=discord.Color.from_rgb(255, 92, 92)
+            ))
+
         if bet > 10000:
             return await ctx.send(embed=discord.Embed(
                 description=f"<:classic_x_mark:1362711858829725729> La mise maximale autorisée est de 10,000 coins.",
@@ -2316,7 +2303,7 @@ async def russianroulette(ctx, arg: str):
             data["cash"] += game["bet"] * 2  # Leur propre mise + celle du perdant
             collection.update_one(
                 {"guild_id": guild_id, "user_id": survivor.id},
-                {"$set": {"cash": data["cash"]}}
+                {"$set": {"cash": int(data["cash"])}}  # Arrondir le cash des survivants
             )
 
         # Retirer la mise au perdant
@@ -2324,7 +2311,7 @@ async def russianroulette(ctx, arg: str):
         loser_data["cash"] -= game["bet"]
         collection.update_one(
             {"guild_id": guild_id, "user_id": eliminated.id},
-            {"$set": {"cash": loser_data["cash"]}}
+            {"$set": {"cash": int(loser_data["cash"])}}  # Arrondir le cash du perdant
         )
 
         # Suppression de la partie
@@ -2373,17 +2360,20 @@ async def roulette(ctx: commands.Context, bet: int, space: str):
         active_roulette_players.remove(user_id)
         return await ctx.send(f"Tu n'as pas assez d'argent ! Tu as {cash} en cash.")
 
+    if bet < 1:
+        active_roulette_players.remove(user_id)
+        return await ctx.send("⛔ La mise minimale est de 1 coin !")
+
     if bet > 5000:
         active_roulette_players.remove(user_id)
         return await ctx.send("⛔ La mise maximale est de 5000 !")
-
 
     # Déduction du montant parié
     collection.update_one({"guild_id": guild_id, "user_id": user_id}, {"$inc": {"cash": -bet}})
 
     embed = discord.Embed(
         title=ctx.author.name,  # ou interaction.user.name selon ton contexte
-        description=f"You have placed a bet of <:ecoEther:1341862366249357374>{bet} on **{space}**.",
+        description=f"You have placed a bet of <:ecoEther:1341862366249357374>{int(bet)} on **{space}**.",
         color=discord.Color.blue()
     )
     embed.set_footer(text="Time remaining: 10 seconds")
@@ -2451,9 +2441,9 @@ async def roulette(ctx: commands.Context, bet: int, space: str):
     if win:
         collection.update_one(
             {"guild_id": guild_id, "user_id": user_id},
-            {"$inc": {"cash": bet * multiplier}},
+            {"$inc": {"cash": int(bet * multiplier)}},
         )
-        result_str = f"The ball landed on: **{spin_result}**!\n\n**Winners:**\n{ctx.author.mention} won <:ecoEther:1341862366249357374> {bet * multiplier}"
+        result_str = f"The ball landed on: **{spin_result}**!\n\n**Winners:**\n{ctx.author.mention} won <:ecoEther:1341862366249357374> {int(bet * multiplier)}"
     else:
         result_str = f"The ball landed on: {spin_result}!\n\nNo Winners  :("
 
@@ -2491,8 +2481,8 @@ async def daily(ctx: commands.Context):
             )
             return await ctx.send(embed=cooldown_embed)
 
-    # Génération du montant
-    amount = random.randint(600, 4500)
+    # Génération du montant (retirer la décimale)
+    amount = int(random.randint(600, 4500))
 
     # Récupération ou création du document utilisateur
     user_data = collection.find_one({"guild_id": guild_id, "user_id": user_id})
@@ -2517,7 +2507,7 @@ async def daily(ctx: commands.Context):
 
     # Embed de succès
     success_embed = discord.Embed(
-        description=f"<:ecoEther:1341862366249357374> Vous avez reçu vos **{amount:,}** Coins quotidiens.\n"
+        description=f"<:ecoEther:1341862366249357374> Vous avez reçu vos **{amount}** Coins quotidiens.\n"
                     f"Votre prochaine récompense sera disponible dans **24 heures**.",
         color=discord.Color.green()
     )
@@ -2535,16 +2525,18 @@ async def daily(ctx: commands.Context):
         note="Commande /daily"
     )
 
-from discord import app_commands
-from typing import Optional
-import discord
-from discord.ext import commands
-from discord.ui import Button, View
-
 @bot.hybrid_command(
     name="leaderboard",
     aliases=["lb"],
     description="Affiche le classement des plus riches"
+)
+@app_commands.describe(sort="Choisir le critère de classement: 'cash' pour l'argent, 'bank' pour la banque, ou 'total' pour la somme des deux.")
+@app_commands.choices(
+    sort=[
+        app_commands.Choice(name="Cash", value="cash"),
+        app_commands.Choice(name="Banque", value="bank"),
+        app_commands.Choice(name="Total", value="total")
+    ]
 )
 async def leaderboard(
     ctx: commands.Context,
@@ -2602,12 +2594,13 @@ async def leaderboard(
             bank = user_data.get("bank", 0)
             total = cash + bank
 
+            # Formater les montants pour enlever les décimales
             if sort == "cash":
-                amount = cash
+                amount = int(cash)
             elif sort == "bank":
-                amount = bank
+                amount = int(bank)
             else:
-                amount = total
+                amount = int(total)
 
             line = f"{str(i).rjust(2)}. `{name}` • {emoji_currency} {amount:,}"
             lines.append(line)
@@ -2642,33 +2635,26 @@ async def leaderboard(
     embed = get_page(0)
     await ctx.send(embed=embed, view=view)
 
-import discord
-from discord.ext import commands
-from discord import app_commands
-from pymongo import MongoClient
-import asyncio
-from datetime import datetime, timedelta
 
-# Exemple d'items dans la boutique avec vérification des rôles ou des items
 ITEMS = [
     {
-        "id": 81,
-        "emoji": "<:armure:1363599057863311412>",
-        "title": "Armure du Berserker",
-        "description": "Offre à son utilisateur un anti-rob de 1h (au bout des 1h l'armure s'auto-consumme) et permet aussi d'utiliser la Rage du Berserker (après l'utilisation de la rage l'armure s'auto-consumme aussi) (Uniquement quand l'armure est portée)",
-        "price": 100000,
+        "id": 8,
+        "emoji": "<:infini:1363615903404785734>",
+        "title": "Infini | ℕ𝕀𝕍𝔼𝔸𝕌 𝟙",
+        "description": "L'infini protège des robs pendant 1h (utilisable 1 fois par items)",
+        "price": 25000,
         "emoji_price": "<:ecoEther:1341862366249357374>",
         "quantity": 3,
         "tradeable": True,
         "usable": True,
-        "use_effect": "Equipe l'armure du berserker et procure une protection au rob de 1h (le temps de l'armure) et permet d'activé la Rage du Berserker si l'utilisateur le souhaite.",
-        "requirements": {},  # Aucun requirement
-        "role_id": 1363821649002238142,  # ID du rôle à donner lors de l'utilisation
-        "role_duration": 3600,  # Durée en secondes (1 heure ici)
+        "use_effect": "L'infini protège des robs pendant 1h ",
+        "requirements": {},
+        "role_id": 1363939565336920084,
         "remove_after_purchase": {
-            "roles": True,  # Supprimer le rôle après l'achat
-            "items": False  # Ne pas supprimer l'item après l'achat
-        }
+            "roles": False,
+            "items": False
+        },
+        "used": True
     },
     {
         "id": 66,
@@ -2678,80 +2664,57 @@ ITEMS = [
         "price": 50000,
         "emoji_price": "<:ecoEther:1341862366249357374>",
         "quantity": 5,
-        "tradeable": True,  # Correction de `true` en `True`
+        "tradeable": True,
         "usable": True,
         "use_effect": "Retire le rôle, faite !!heal",
-        "requirements": {},  # Aucun requirement
-        "role_id": 1363873859912335400,  # ID du rôle à donner lors de l'utilisation
-        "role_duration": 3600,  # Durée en secondes (1 heure ici)
+        "requirements": {},
+        "role_id": 1363873859912335400,
+        "role_duration": 3600,
         "remove_after_purchase": {
-            "roles": False,  # Ne pas retirer immédiatement le rôle après l'achat
-            "items": False  # Ne pas supprimer l'item après l'achat
+            "roles": False,
+            "items": False
         },
-        "used": True,  # Ajout d'un champ pour savoir si l'objet a été utilisé
-        "remove_role_after_use": True  # Retirer le rôle uniquement après utilisation
+        "used": True,
+        "remove_role_after_use": True
     },
- {
-    "id": 15,
-    "emoji": "<:nen:1363607663010775300>",
-    "title": "Nen | ℝ𝕆𝕃𝕃",
-    "description": "Cet objet vous permet d'utiliser le Nen (le nen vous est donné aléatoirement) comme vous le souhaitez. Chaque technique utilise un serment de nen. *(La spécialisation n’y figure pas car vous n’êtes pas assez fort lol)*\n\n__**Renforcement :**__\n**+renforcement** : Offre à son utilisateur un anti-rob de 24h, mais ne peut pas le refaire pendant 1 semaine.\n\n__**Émission :**__\n**+emission @user** : Maudit quelqu’un grâce à son propre nen et lui inflige un collect de -20% *(cooldown : 1 semaine)*.\n\n__**Manipulation :**__\n**+manipulation** : Manipule sa propre banque et offre un collect de 1% toutes les 4h pendant 24h *(cooldown : 1 semaine)*.\n\n__**Matérialisation :**__\n**+materialisation** : Matérialise un objet aléatoire de la boutique *(cooldown : 2 sem)*.\n\n__**Transformation :**__\n**+transformation** : Permet de transformer son aura et **FOUDROYER** la banque de quelqu’un, retirant 25% de celle-ci *(cooldown : 2 semaines)*.\n\n__**Spécialisation :**__\nDonne accès à tout .",
-    "price": 500000,
-    "emoji_price": "<:ecoEther:1341862366249357374>",
-    "quantity": 2,
-    "tradeable": True,
-    "usable": True,
-    "use_effect": "Une fois le nen utilisé celui-ci vous attribue un nen aléatoirement avec la commande !!rollnen (avec 19.9% de chance pour chaque sauf la spécialisation qui est à 0.5%)",
-    "requirements": {
-        "items": [7]
-    },
-    "role_id": 1363928528587984998,
-    "remove_after_purchase": {
-        "roles": False,
-        "items": False
-    },
-    "used": True
-},
     {
-        "id": 7,
-        "emoji": "<:licence:1363609202211422268>",
-        "title": "Licence Hunter ",
-        "description": "Donne accès a toutes les techniques De Hunter x Hunter, plus donne accès a un salon avec des quêtes",
-        "price": 250000,
+        "id": 88,
+        "emoji": "<:infini:1363615925776941107>",
+        "title": "Infini | ℕ𝕀𝕍𝔼𝔸𝕌 𝟚",
+        "description": "L'infini protège des robs pendant 3h (utilisable 1 fois par items)",
+        "price": 50000,
         "emoji_price": "<:ecoEther:1341862366249357374>",
-        "quantity": 1,
-        "tradeable": True,  # Correction de `true` en `True`
+        "quantity": 2,
+        "tradeable": True,
         "usable": True,
-        "use_effect": "Donne le rôle licence hunter et donne accès au nen et au quêtes destiné au hunter",
-        "requirements": {},  # Aucun requirement
-        "role_id": 1363817603713339512,  # Rôle à donner lors de l'utilisation
+        "use_effect": "L'infini protège des robs pendant 3h ",
+        "requirements": {},
+        "role_id": 1363939567627145660,
         "remove_after_purchase": {
             "roles": False,
             "items": False
         },
         "used": True
     },
- {
-    "id": 22,
-    "emoji": "<:imperiale:1363601099990241601>",
-    "title": " Arme démoniaque impériale",
-    "description": "Cette objet vous permet d'utiliser le démon dans votre arme et vous permet de voler votre adversaire ",
-    "price": 500000,
-    "emoji_price": "<:ecoEther:1341862366249357374>",
-    "quantity": 3,
-    "tradeable": True,
-    "usable": True,
-    "use_effect": "Un /roll 50 devra être fait et vous permettra de voler le pourcentage de ce roll à l’utilisateur de votre choix à condition que celui-ci soit plus riche que vous ",
-    "requirements": {
-        "items": [31]
+    {
+        "id": 81,
+        "emoji": "<:armure:1363599057863311412>",
+        "title": "Armure du Berserker",
+        "description": "Offre à son utilisateur un anti-rob de 1h... (voir description complète)",
+        "price": 100000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 3,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "L'infini protège des robs pendant 1h",
+        "requirements": {},
+        "role_id": 1363821649002238142,
+        "role_duration": 3600,
+        "remove_after_purchase": {
+            "roles": True,
+            "items": False
+        }
     },
-    "role_id": 1363817586466361514,
-    "remove_after_purchase": {
-        "roles": False,
-        "items": False
-    },
-    "used": True
-},
     {
         "id": 31,
         "emoji": "<:demoncontrole:1363600359611695344>",
@@ -2760,11 +2723,11 @@ ITEMS = [
         "price": 100000,
         "emoji_price": "<:ecoEther:1341862366249357374>",
         "quantity": 3,
-        "tradeable": True,  # Correction de `true` en `True`
+        "tradeable": True,
         "usable": True,
         "use_effect": "Donne accès a tous les équipements de contrôle des démons",
-        "requirements": {},  # Aucun requirement
-        "role_id": 1363817629781069907,  # Rôle à donner lors de l'utilisation
+        "requirements": {},
+        "role_id": 1363817629781069907,
         "remove_after_purchase": {
             "roles": False,
             "items": False
@@ -2772,18 +2735,117 @@ ITEMS = [
         "used": True
     },
     {
-        "id": 99,
-        "emoji": "<:ultrainstinct:1363601650123801027>",
-        "title": "Ultra Instinct ",
-        "description": "Vous utilisez la forme ultime du Ultra Instinct. Vous pouvez seulement l’utiliser pendant (mettre le temps d’immunité). Lorsque vous utilisez cette forme ultime, vous anticipez toutes attaques et vous l’esquivez (donc immunisé). Malheureusement cette forme utilise énormément de votre ki, il vous faudra donc 5 jours de repos pour réutiliser cette forme",
-        "price": 750000,
+        "id": 888,
+        "emoji": "<:infini:1363615948090638490>",
+        "title": "Infini | ℕ𝕀𝕍𝔼𝔸𝕌 𝟛",
+        "description": "L'infini protège des robs pendant 6h (utilisable 1 fois par items)",
+        "price": 100000,
         "emoji_price": "<:ecoEther:1341862366249357374>",
         "quantity": 1,
-        "tradeable": True,  # Correction de `true` en `True`
+        "tradeable": True,
         "usable": True,
-        "use_effect": "Donne accès a l'Ultra Instinct",
-        "requirements": {},  # Aucun requirement
-        "role_id": 1363821033060307106,  # Rôle à donner lors de l'utilisation
+        "use_effect": "L'infini protège des robs pendant 3h",
+        "requirements": {},
+        "role_id": 1363939486844850388,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
+    },
+    {
+        "id": 91,
+        "emoji": "<:oeildemoniaque:1363947226501484746>",
+        "title": "Œil démoniaque",
+        "description": "Permet de voir l'avenir grâce au pouvoir de Kishirika...",
+        "price": 100000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 2,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "Permet de visioner le prochain restock pendant 10 seconde",
+        "requirements": {},
+        "role_id": 1363949082653098094,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
+    },
+    {
+        "id": 7,
+        "emoji": "<:licence:1363609202211422268>",
+        "title": "Licence Hunter ",
+        "description": "Donne accès a toutes les techniques De Hunter x Hunter, plus donne accès a un salon avec des quêtes",
+        "price": 250000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 1,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "Donne le rôle licence hunter et donne accès au nen et au quêtes destiné au hunter",
+        "requirements": {},
+        "role_id": 1363817603713339512,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
+    },
+    {
+        "id": 4,
+        "emoji": "<:naturoermite:1363945371448905810>",
+        "title": "Mode Ermite",
+        "description": "Ce mode autrefois maîtrisé par Naruto lui même, il vous confère l’énergie de la nature. Grâce à cela, vous pourrez avoir plus d’ezryn !!!",
+        "price": 250000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 2,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "Vous donne un collect qui vous donne 5,000 <:ecoEther:1341862366249357374> toute les 2 heures",
+        "requirements": {},
+        "role_id": 1363948445282341135,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
+    },
+    {
+        "id": 15,
+        "emoji": "<:nen:1363607663010775300>",
+        "title": "Nen | ℝ𝕆𝕃𝕃",
+        "description": "Cet objet vous permet d'utiliser le Nen (le nen vous est donné aléatoirement) comme vous le souhaitez. Chaque technique utilise un serment de nen. *(La spécialisation n’y figure pas car vous n’êtes pas assez fort lol)*\n\n__**Renforcement :**__\n**+renforcement** : Offre à son utilisateur un anti-rob de 24h, mais ne peut pas le refaire pendant 1 semaine.\n\n__**Émission :**__\n**+emission @user** : Maudit quelqu’un grâce à son propre nen et lui inflige un collect de -20% *(cooldown : 1 semaine)*.\n\n__**Manipulation :**__\n**+manipulation** : Manipule sa propre banque et offre un collect de 1% toutes les 4h pendant 24h *(cooldown : 1 semaine)*.\n\n__**Matérialisation :**__\n**+materialisation** : Matérialise un objet aléatoire de la boutique *(cooldown : 2 sem)*.\n\n__**Transformation :**__\n**+transformation** : Permet de transformer son aura et **FOUDROYER** la banque de quelqu’un, retirant 25% de celle-ci *(cooldown : 2 semaines)*.\n\n__**Spécialisation :**__\nDonne accès à tout .",
+        "price": 500000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 2,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "Une fois le nen utilisé celui-ci vous attribue un nen aléatoirement avec la commande !!rollnen (avec 19.9% de chance pour chaque sauf la spécialisation qui est à 0.5%)",
+        "requirements": {
+            "items": [7]
+        },
+        "role_id": 1363928528587984998,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
+    },
+    {
+        "id": 22,
+        "emoji": "<:imperiale:1363601099990241601>",
+        "title": " Arme démoniaque impériale",
+        "description": "Cette objet vous permet d'utiliser le démon dans votre arme et vous permet de voler votre adversaire",
+        "price": 500000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 3,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "Un /roll 50 devra être fait et vous permettra de voler le pourcentage de ce roll à l’utilisateur de votre choix à condition que celui-ci soit plus riche que vous ",
+        "requirements": {
+            "items": [31]
+        },
+        "role_id": 1363817586466361514,
         "remove_after_purchase": {
             "roles": False,
             "items": False
@@ -2798,171 +2860,95 @@ ITEMS = [
         "price": 500000,
         "emoji_price": "<:ecoEther:1341862366249357374>",
         "quantity": 2,
-        "tradeable": True,  # Correction de `true` en `True`
+        "tradeable": True,
         "usable": True,
         "use_effect": "Donne accès a l'Haki des Rois",
-        "requirements": {},  # Aucun requirement
-        "role_id": 1363817645249527879,  # Rôle à donner lors de l'utilisation
+        "requirements": {},
+        "role_id": 1363817645249527879,
         "remove_after_purchase": {
             "roles": False,
             "items": False
         },
         "used": True
     },
- {
-    "id": 28,
-    "emoji": "<:rage:1363599799043227940>",
-    "title": " Rage du Berserker",
-    "description": "Tu perds tout contrôle. L’armure du Berserker te consume, et avec elle, ta dernière part d’humanité. Tu ne voles pas. Tu ne gagnes rien. Tu détruis, par pure haine. Ton seul objectif : voir l’ennemi ruiné. ",
-    "price": 500000,
-    "emoji_price": "<:ecoEther:1341862366249357374>",
-    "quantity": 2,
-    "tradeable": True,
-    "usable": True,
-    "use_effect": "Utilisable une seule fois avec !!berserk <@user> → roll 100, % retiré à la banque de la cible (ex : roll 67 = -67%). Nécessite l’armure du Berserker. Cooldown de 7j après achat. Objet détruit après usage.",
-    "requirements": {
-        "items": [81]
+    {
+        "id": 28,
+        "emoji": "<:rage:1363599799043227940>",
+        "title": " Rage du Berserker",
+        "description": "Tu perds tout contrôle. L’armure du Berserker te consume, et avec elle, ta dernière part d’humanité. Tu ne voles pas. Tu ne gagnes rien. Tu détruis, par pure haine. Ton seul objectif : voir l’ennemi ruiné.",
+        "price": 500000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 2,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "Utilisable une seule fois avec !!berserk <@user> → roll 100, % retiré à la banque de la cible (ex : roll 67 = -67%). Nécessite l’armure du Berserker. Cooldown de 7j après achat. Objet détruit après usage.",
+        "requirements": {
+            "items": [81]
+        },
+        "role_id": 1363821333624127618,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
     },
-    "role_id": 1363821333624127618,
-    "remove_after_purchase": {
-        "roles": False,
-        "items": False
+    {
+        "id": 23,
+        "emoji": "<:pokeball:1363942456676061346>",
+        "title": "Pokeball",
+        "description": "Cet objet vous permet de voler un objet d’une personne au hasard",
+        "price": 500000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 1,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "Vous donne l'accès de voler un objet au hasard de l'inventaire d'un joueur",
+        "requirements": {},
+        "role_id": 1363942048075481379,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
     },
-    "used": True
- },
- {
-    "id": 8,
-    "emoji": "<:infini:1363615903404785734>",
-    "title": "Infini | ℕ𝕀𝕍𝔼𝔸𝕌 𝟙",
-    "description": "L'infini protège des robs pendant 1h (utilisable 1 fois par items)",
-    "price": 25000,
-    "emoji_price": "<:ecoEther:1341862366249357374>",
-    "quantity": 3,
-    "tradeable": True,
-    "usable": True,
-    "use_effect": "L'infini protège des robs pendant 1h ",
-    "requirements": {},  # Aucun requirement
-    "role_id": 1363939565336920084,  # Rôle à donner lors de l'utilisation
-    "remove_after_purchase": {
-        "roles": False,
-        "items": False
+    {
+        "id": 34,
+        "emoji": "<:nanashimura:1363942592156405830>",
+        "title": "Float",
+        "description": "Vous utilisez l’un des alters provenant du One for all, et plus précisément de Nana Shimura. En l’utilisant, vous pouvez voler aussi haut que personne ne peut y accéder.",
+        "price": 500000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 2,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "La commande +float vous donne accès au salon (nom du salon) durant 15min mais seulement possible 1/jour.",
+        "requirements": {},
+        "role_id": 1363946902730575953,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
     },
-    "used": True
- },
- {
-    "id": 88,
-    "emoji": "<:infini:1363615925776941107>",
-    "title": "Infini | ℕ𝕀𝕍𝔼𝔸𝕌 𝟚",
-    "description": "L'infini protège des robs pendant 3h (utilisable 1 fois par items)",
-    "price": 50000,
-    "emoji_price": "<:ecoEther:1341862366249357374>",
-    "quantity": 2,
-    "tradeable": True,
-    "usable": True,
-    "use_effect": "L'infini protège des robs pendant 3h ",
-    "requirements": {},  # Aucun requirement
-    "role_id": 1363939567627145660,  # Rôle à donner lors de l'utilisation
-    "remove_after_purchase": {
-        "roles": False,
-        "items": False
+    {
+        "id": 99,
+        "emoji": "<:ultrainstinct:1363601650123801027>",
+        "title": "Ultra Instinct ",
+        "description": "Vous utilisez la forme ultime du Ultra Instinct. Vous pouvez seulement l’utiliser pendant (mettre le temps d’immunité). Lorsque vous utilisez cette forme ultime, vous anticipez toutes attaques et vous l’esquivez (donc immunisé). Malheureusement cette forme utilise énormément de votre ki, il vous faudra donc 5 jours de repos pour réutiliser cette forme",
+        "price": 750000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 1,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "Donne accès a l'Ultra Instinct",
+        "requirements": {},
+        "role_id": 1363821033060307106,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
     },
-    "used": True
- },
- {
-    "id": 888,
-    "emoji": "<:infini:1363615948090638490>",
-    "title": "Infini | ℕ𝕀𝕍𝔼𝔸𝕌 𝟛",
-    "description": "L'infini protège des robs pendant 6h (utilisable 1 fois par items)",
-    "price": 100000,
-    "emoji_price": "<:ecoEther:1341862366249357374>",
-    "quantity": 1,
-    "tradeable": True,
-    "usable": True,
-    "use_effect": "L'infini protège des robs pendant 6h ",
-    "requirements": {},  # Aucun requirement
-    "role_id": 1363939486844850388,  # Rôle à donner lors de l'utilisation
-    "remove_after_purchase": {
-        "roles": False,
-        "items": False
-    },
-    "used": True
- },
- {
-    "id": 23,
-    "emoji": "<:pokeball:1363942456676061346>",
-    "title": "Pokeball",
-    "description": "Cet objet vous permet de voler un objet d’une personne au hasard ",
-    "price": 500000,
-    "emoji_price": "<:ecoEther:1341862366249357374>",
-    "quantity": 1,
-    "tradeable": True,
-    "usable": True,
-    "use_effect": "Vous donne l'accès de voler un objet au hasard de l'inventaire d'un joueur",
-    "requirements": {},  # Aucun requirement
-    "role_id": 1363942048075481379,  # Rôle à donner lors de l'utilisation
-    "remove_after_purchase": {
-        "roles": False,
-        "items": False
-    },
-    "used": True
- },
- {
-    "id": 34,
-    "emoji": "<:nanashimura:1363942592156405830>",
-    "title": "Float",
-    "description": "Vous utilisez l’un des alters provenant du One for all, et plus précisément de Nana Shimura. En l’utilisant, vous pouvez voler aussi haut que personne ne peut y accéder.",
-    "price": 500000,
-    "emoji_price": "<:ecoEther:1341862366249357374>",
-    "quantity": 2,
-    "tradeable": True,
-    "usable": True,
-    "use_effect": "La commande +float vous donne accès au salon (nom du salon) durant 15min mais seulement possible 1/jour.",
-    "requirements": {},  # Aucun requirement
-    "role_id": 1363946902730575953,  # Rôle à donner lors de l'utilisation
-    "remove_after_purchase": {
-        "roles": False,
-        "items": False
-    },
-    "used": True
- },
- {
-    "id": 91,
-    "emoji": "<:oeildemoniaque:1363947226501484746>",
-    "title": "Œil démoniaque",
-    "description": "Permet de voir l'avenir grâce au pouvoir de Kishirika et d'entrevoir le prochain restock pendant 10 sec ! (cooldown 1 semaine)",
-    "price": 100000,
-    "emoji_price": "<:ecoEther:1341862366249357374>",
-    "quantity": 2,
-    "tradeable": True,
-    "usable": True,
-    "use_effect": "Permet de visioner le prochain restock pendant 10 seconde",
-    "requirements": {},  # Aucun requirement
-    "role_id": 1363949082653098094,  # Rôle à donner lors de l'utilisation
-    "remove_after_purchase": {
-        "roles": False,
-        "items": False
-    },
-    "used": True
- },
- {
-    "id": 4,
-    "emoji": "<:naturoermite:1363945371448905810>",
-    "title": "Mode Ermite",
-    "description": "Ce mode autrefois maîtrisé par Naruto lui même, il vous confère l’énergie de la nature. Grâce à cela, vous pourrez avoir plus d’ezryn !!!",
-    "price": 250000,
-    "emoji_price": "<:ecoEther:1341862366249357374>",
-    "quantity": 2,
-    "tradeable": True,
-    "usable": True,
-    "use_effect": "Vous donne un collect qui vous donne 5,000 <:ecoEther:1341862366249357374> toute les 2 heures",
-    "requirements": {},  # Aucun requirement
-    "role_id": 1363948445282341135,  # Rôle à donner lors de l'utilisation
-    "remove_after_purchase": {
-        "roles": False,
-        "items": False
-    },
-    "used": True
- },
 {
     "id": 202,
     "emoji": "<:bc1s1:1364217784439144488>",
@@ -3257,12 +3243,12 @@ async def item_buy(interaction: discord.Interaction, item_id: int, quantity: int
         return await interaction.response.send_message(embed=embed)
 
     user_data = collection.find_one({"user_id": user_id, "guild_id": guild_id}) or {"cash": 0}
-    total_price = item["price"] * quantity
+    total_price = int(item["price"] * quantity)  # Forcer le total_price en entier
 
     if user_data["cash"] < total_price:
         embed = discord.Embed(
             title="<:classic_x_mark:1362711858829725729> Fonds insuffisants",
-            description=f"Tu n'as pas assez de <:ecoEther:1341862366249357374> pour cet achat.\nPrix total : **{total_price:,}**",
+            description=f"Tu n'as pas assez de <:ecoEther:1341862366249357374> pour cet achat.\nPrix total : **{total_price:,}**",  # Format avec des séparateurs de milliers
             color=discord.Color.red()
         )
         return await interaction.response.send_message(embed=embed)
@@ -3320,7 +3306,6 @@ async def item_buy(interaction: discord.Interaction, item_id: int, quantity: int
         # Suppression des items si la configuration l'exige
         if item["remove_after_purchase"].get("items", False):
             # Logique pour supprimer un item de l'inventaire, si nécessaire
-            # Exemple fictif :
             inventory = collection7.find_one({"user_id": user_id, "guild_id": guild_id})
             if inventory:
                 user_items = inventory.get("items", {})
@@ -3338,7 +3323,7 @@ async def item_buy(interaction: discord.Interaction, item_id: int, quantity: int
         title="<:Check:1362710665663615147> Achat effectué",
         description=(
             f"Tu as acheté **{quantity}x {item['title']}** {item['emoji']} "
-            f"pour **{total_price:,}** {item['emoji_price']} !"
+            f"pour **{total_price:,}** {item['emoji_price']} !"  # Format avec des séparateurs de milliers
         ),
         color=discord.Color.green()
     )
@@ -4639,10 +4624,6 @@ async def manipulation(ctx):
     except discord.Forbidden:
         pass
 
-import random
-from datetime import datetime, timedelta
-import discord
-
 # ID d'objets matérialisables
 MATERIALISATION_IDS = [1363817636793810966, 1363817593252876368]
 
@@ -4838,10 +4819,7 @@ logger = logging.getLogger(__name__)
 
 ARME_DEMONIAQUE_ID = 1363817586466361514
 
-@bot.hybrid_command( 
-    name="imperial",
-    description="Vol avec un pouvoir démoniaque.",
-)
+@bot.command(name="imperial")
 async def imperial(ctx, cible: discord.Member = None):
     auteur = ctx.author
 
@@ -4862,14 +4840,11 @@ async def imperial(ctx, cible: discord.Member = None):
     if auteur.id == cible.id:
         return await ctx.send("❌ Tu ne peux pas te voler toi-même.")
 
-    # Récupère l'ID du serveur
     guild_id = ctx.guild.id
 
-    # Fonction pour récupérer ou créer les données
     def get_or_create_user_data(user_id):
         data = collection.find_one({"guild_id": guild_id, "user_id": user_id})
         if not data:
-            # Log pour savoir si on crée de nouvelles données
             logger.info(f"Création de données pour l'utilisateur {user_id}")
             data = {"guild_id": guild_id, "user_id": user_id, "cash": 1500, "bank": 0}
             collection.insert_one(data)
@@ -4878,7 +4853,6 @@ async def imperial(ctx, cible: discord.Member = None):
     data_auteur = get_or_create_user_data(auteur.id)
     data_cible = get_or_create_user_data(cible.id)
 
-    # Vérifie la structure des données et log si un champ est manquant
     if "cash" not in data_cible or "bank" not in data_cible:
         logger.warning(f"Les données de {cible.id} sont corrompues. Création de nouvelles données.")
         data_cible["cash"] = 1500
@@ -4895,24 +4869,19 @@ async def imperial(ctx, cible: discord.Member = None):
         logger.error(f"Erreur d'accès aux données : {e}")
         return await ctx.send(f"❌ Une erreur est survenue lors de l'accès aux données de {cible.display_name}.")
 
-    # Vérifie si l'auteur est plus riche que la cible
     if total_cible <= total_auteur:
         return await ctx.send("❌ Tu ne peux voler que quelqu'un de plus riche que toi.")
 
-    # Roll 1-50
     roll = random.randint(1, 50)
     pourcentage = roll / 100
     vol_total = int(total_cible * pourcentage)
 
-    # Prélève en priorité du cash, puis de la banque
     vol_cash = min(vol_total, data_cible["cash"])
     vol_bank = vol_total - vol_cash
 
-    # Vérifie que l'auteur peut voler l'argent
     if vol_total > total_cible:
         return await ctx.send("❌ Il n'y a pas assez de fonds disponibles à voler.")
 
-    # Mise à jour des comptes
     collection.update_one(
         {"guild_id": guild_id, "user_id": cible.id},
         {"$inc": {"cash": -vol_cash, "bank": -vol_bank}}
@@ -4922,7 +4891,6 @@ async def imperial(ctx, cible: discord.Member = None):
         {"$inc": {"cash": vol_total}}
     )
 
-    # Supprime le rôle
     role = ctx.guild.get_role(ARME_DEMONIAQUE_ID)
     if role is None:
         logger.error(f"Le rôle ARME_DEMONIAQUE_ID ({ARME_DEMONIAQUE_ID}) n'a pas été trouvé.")
@@ -5074,12 +5042,6 @@ async def ultra_error(ctx, error):
         await ctx.send("❌ Vous n'avez pas la puissance nécessaire pour utiliser cette commande.")
     else:
         await ctx.send("⚠️ Une erreur inconnue s'est produite.")
-
-import discord
-from discord.ext import commands
-from datetime import datetime
-import random
-import traceback  # pour logs d'erreurs détaillés
 
 # Paramètres
 RAGE_ID = 1363821333624127618
@@ -5399,7 +5361,6 @@ async def float(ctx):
 # Identifiants
 OEIL_ID = 1363949082653098094
 ROLE_ID = 1364123507532890182
-from datetime import timedelta
 
 COOLDOWN_TIME = timedelta(weeks=1)
 
@@ -5908,8 +5869,8 @@ async def afficher_guilde(ctx):
         embed.set_image(url=banniere_url)
 
     embed.add_field(name="Description", value=description, inline=False)
-    embed.add_field(name="Banque", value=f"{banque:,} <:ecoEther:1341862366249357374>", inline=True)
-    embed.add_field(name="Coffre fort", value=f"{coffre_fort:,} / 750,000 <:ecoEther:1341862366249357374>", inline=True)
+    embed.add_field(name="Banque", value=f"{int(banque):,} <:ecoEther:1341862366249357374>", inline=True)  # Retirer les décimales
+    embed.add_field(name="Coffre fort", value=f"{int(coffre_fort):,} / 750,000 <:ecoEther:1341862366249357374>", inline=True)  # Retirer les décimales
     embed.add_field(name="ID", value=guilde.get("guild_name"), inline=False)
 
     # Affichage des membres
@@ -6018,9 +5979,9 @@ async def cdep(ctx, amount: int):
         {"$inc": {"cash": -amount}},
     )
 
-    await ctx.send(f"{amount} coins ont été déposés dans le coffre-fort de la guilde.")
+    await ctx.send(f"{int(amount):,} coins ont été déposés dans le coffre-fort de la guilde.")
 
-# Commande .cwith : Retirer des coins du coffre-fort de la guild
+# Commande .cwith : Retirer des coins du coffre-fort de la guilde
 @bot.command(name="cwith")
 async def cwith(ctx, amount: int):
     guild_id = ctx.guild.id
@@ -6042,7 +6003,7 @@ async def cwith(ctx, amount: int):
         {"$inc": {"bank": amount}},
     )
 
-    await ctx.send(f"{amount} coins ont été retirés du coffre-fort de la guilde.")
+    await ctx.send(f"{int(amount):,} coins ont été retirés du coffre-fort de la guilde.")
 
 # Commande .gban : Bannir un membre de la guilde
 @bot.command(name="gban")
@@ -6091,19 +6052,22 @@ async def gdep(ctx, amount: str):
         if amount == 0:
             return await ctx.send("Tu n'as pas de coins à déposer.")
 
+    # Convertir la quantité en entier
+    amount = int(amount)
+
     # Déposer les coins dans la banque de la guilde
     collection35.update_one(
         {"guild_id": guild_id},
-        {"$inc": {"bank": int(amount)}},
+        {"$inc": {"bank": amount}},
     )
 
     # Déduire les coins du joueur
     collection.update_one(
         {"guild_id": guild_id, "user_id": ctx.author.id},
-        {"$inc": {"cash": -int(amount)}},
+        {"$inc": {"cash": -amount}},
     )
 
-    await ctx.send(f"{amount} coins ont été déposés dans la banque de la guilde.")
+    await ctx.send(f"{amount:,} coins ont été déposés dans la banque de la guilde.")
 
 # Commande .gkick : Expulser un membre de la guilde
 @bot.command(name="gkick")
@@ -6204,7 +6168,7 @@ async def gwith(ctx, amount: int):
         {"$inc": {"cash": amount}},
     )
 
-    await ctx.send(f"{amount} coins ont été retirés de la banque de la guilde.")
+    await ctx.send(f"{amount:,} coins ont été retirés de la banque de la guilde.")
 
 @bot.tree.command(name="dep-guild-inventory", description="Dépose un item de ton inventaire vers celui de ta guilde")
 @app_commands.describe(item_id="ID de l'item à transférer", quantite="Quantité à transférer")

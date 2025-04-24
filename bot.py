@@ -340,6 +340,13 @@ COLLECT_ROLES_CONFIG = [
         "target": "bank"
     },
     {
+        "role_id": 1365087320277127190,
+        "percent": 10,
+        "cooldown": 604800,
+        "auto": True,
+        "target": "bank"
+    },
+    {
         "role_id": 1365075014432587776,
         "percent": 5,
         "cooldown": 3600,

@@ -462,19 +462,12 @@ async def update_top_roles():
                     print(f"Retiré {role.name} de {member.display_name}")
 
 
-# --- Événement on_ready ---
 @bot.event
 async def on_ready():
     print(f"{bot.user.name} est connecté.")
-
-    if not update_top_roles.is_running():
-        update_top_roles.start()
-    if not auto_collect_loop.is_running():
-        auto_collect_loop.start()
-    if not reset_bounties_and_honor.is_running():
-        reset_bounties_and_honor.start()
-
-    print(f"✅ Le bot {bot.user} est maintenant connecté ! (ID: {bot.user.id})")
+    
+    # Utiliser asyncio.create_task pour lancer les tâches après la connexion
+    bot.loop.create_task(start_background_tasks())  # Assurez-vous que les tâches démarrent après l'initialisation complète
 
     activity = discord.Activity(
         type=discord.ActivityType.streaming,
@@ -494,6 +487,15 @@ async def on_ready():
         print(f"✅ Commandes slash synchronisées : {[cmd.name for cmd in synced]}")
     except Exception as e:
         print(f"❌ Erreur de synchronisation des commandes slash : {e}")
+
+async def start_background_tasks():
+    # Vérifie si les tâches sont déjà en cours, sinon démarre-les
+    if not update_top_roles.is_running():
+        update_top_roles.start()
+    if not auto_collect_loop.is_running():
+        auto_collect_loop.start()
+    if not reset_bounties_and_honor.is_running():
+        reset_bounties_and_honor.start()
 
 # --- Gestion globale des erreurs ---
 @bot.event

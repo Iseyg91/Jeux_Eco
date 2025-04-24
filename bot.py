@@ -461,23 +461,12 @@ async def update_top_roles():
                     await member.remove_roles(role)
                     print(f"Retiré {role.name} de {member.display_name}")
 
-# Lancer les tâches de réinitialisation après la connexion du bot
-async def start_background_tasks():
-    # Vérifie si les tâches sont déjà en cours, sinon démarre-les
-    if not reset_bounties_and_honor.is_running():
-        reset_bounties_and_honor.start()  # Démarre la tâche de réinitialisation des primes et honneurs
-    if not auto_collect_loop.is_running():
-        auto_collect_loop.start()  # Démarre la boucle d'auto-collecte
-    if not update_top_roles.is_running():
-        update_top_roles.start()  # Démarre la boucle de mise à jour des rôles
-
-# Modifiez la fonction on_ready pour démarrer les tâches correctement
 @bot.event
 async def on_ready():
     print(f"{bot.user.name} est connecté.")
     
     # Utiliser asyncio.create_task pour lancer les tâches après la connexion
-    bot.loop.create_task(start_background_tasks())  # Assurez-vous que les tâches démarrent après l'initialisation complète
+    bot.loop.create_task(start_background_tasks())  # Démarre les tâches après l'initialisation complète du bot
 
     activity = discord.Activity(
         type=discord.ActivityType.streaming,
@@ -497,6 +486,16 @@ async def on_ready():
         print(f"✅ Commandes slash synchronisées : {[cmd.name for cmd in synced]}")
     except Exception as e:
         print(f"❌ Erreur de synchronisation des commandes slash : {e}")
+
+# Cette fonction sera appelée pour démarrer les tâches en arrière-plan
+async def start_background_tasks():
+    # Vérifie si les tâches sont déjà en cours, sinon démarre-les
+    if not reset_bounties_and_honor.is_running():
+        reset_bounties_and_honor.start()  # Démarre la tâche de réinitialisation des primes et honneurs
+    if not auto_collect_loop.is_running():
+        auto_collect_loop.start()  # Démarre la boucle d'auto-collecte
+    if not update_top_roles.is_running():
+        update_top_roles.start()  # Démarre la boucle de mise à jour des rôles
 
 # --- Gestion globale des erreurs ---
 @bot.event

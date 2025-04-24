@@ -3322,7 +3322,7 @@ ITEMS = [
             "items": False
         },
         "used": False
-    },
+    }
 ]
 
 # Fonction pour insérer les items dans MongoDB

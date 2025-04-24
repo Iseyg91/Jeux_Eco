@@ -3181,7 +3181,6 @@ ITEMS = [
         "tradeable": True,
         "usable": True,
         "use_effect": "Le **Uo Uo no Mi, Seiryu** transforme en dragon céleste, protège la banque (30% vol max) pendant 1 semaine, lance des flammes dévastatrices (vol de 75%) et invoque un orage réduisant les gains de 70% et renvoyant les attaques contre toi. *Colère Draconique* détruit l'économie d'un joueur une fois par mois.",
-        "requirements": {
         "requirements": {},
         "role_id": 1365041330585337926,
         "remove_after_purchase": {

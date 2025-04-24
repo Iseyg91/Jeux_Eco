@@ -6402,7 +6402,7 @@ async def bounty(ctx):
     embed = Embed(
         title="🏴‍☠️ Feuille de Prime",
         description=(
-            f"💰 **Prime actuelle** : **{bounty} B**\n"
+            f"💰 **Prime actuelle** : **{bounty}**\n"
             f"⚠️ Statut : Pirate recherché vivant ou mort\n"
             f"📅 Dernière mise à jour : aujourd'hui\n\n"
             f"Continuez vos méfaits... ou surveillez vos arrières. 🩸"

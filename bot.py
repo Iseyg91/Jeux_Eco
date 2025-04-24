@@ -84,6 +84,20 @@ collection36 = db['guild_inventaire'] #Stock les inventaire de Guild
 collection37 = db['ether_bounty'] #Stock les Primes de Pirates
 collection38 = db['ether_honor'] #Stock les Honor des Marines
 collection39 = db['cd_capture_ether'] #Stock les cd d'attaque
+collection40 = db['cd_bombe'] #Stock les cd des bombes
+collection41 = db['cd_gura'] #Stock les cd de seismes
+collection42 = db['cd_glace'] #Stock les cd d'attaque de glace
+collection43 = db['glace_subis'] #Stock le cd avant de retirer le rôle de subis de glace
+collection44 = db['cd_tenebre'] #Stock les cd de Yami
+collection45 = db['cd_protection_tenebre'] #Stock le temps de protection de Yami
+collection46 = db['cd_gear_second'] #Stock le cd des Gear Second
+collection47 = db['cd_gear_fourth'] #Stock les cd des Gear Fourth
+collection48 = db['cd_use_fourth'] #Stock les cd des utilisation du Gear Fourth
+collection49 = db['cd_royaume_nika'] #Stock le cd des utilisation du Royaume
+collection50 = db['cd_acces_royaume'] #Stock le cd d'acces au Royaume
+collection51 = db['cd_nika_collect'] #Stock le cd de reutilisation du Nika Collect
+collection52 = db['cd_eveil_attaque'] #Stock le cd de reutilisation du Nika Eveil
+collection52 = db['cd_eveil_subis'] #Stock le cd de soumission du Nika Eveil
 
 # Fonction pour vérifier si l'utilisateur possède un item (fictif, à adapter à ta DB)
 async def check_user_has_item(user: discord.Member, item_id: int):
@@ -188,6 +202,20 @@ def load_guild_settings(guild_id):
     ether_bounty_data = collection37.find_one({"guild_id": guild_id}) or {}
     ether_honnor_data = collection38.find_one({"guild_id": guild_id}) or {}
     cd_capture_ether_data = collection39.find_one({"guild_id": guild_id}) or {}
+    cd_bombe_data = collection40.find_one({"guild_id": guild_id}) or {}
+    cd_gura_data = collection41.find_one({"guild_id": guild_id}) or {}
+    cd_glace_data = collection42.fing_one({"guild_id": guild_id}) or {}
+    glace_subis_data = collection43.find_one({"guild_id": guild_id}) or {}
+    cd_tenebre_data = collection44.find_one({"guild_id": guild_id}) or {}
+    cd_protection_tenebre_data = collection45.find_one({"guild_id": guild_id}) or {}
+    cd_gear_second_data = collection46.find_one({"guild_id": guild_id}) or {}
+    cd_gear_fourth_data = collection47.find_one({"guild_id": guild_id}) or {}
+    cd_use_fourth_data = collection48.find_one({"guild_id": guild_id}) or {}
+    cd_royaume_nika_data = collection49.find_one({"guild_id": guild_id}) or {}
+    cd_acces_royaume_data = collection50.find_one({"guild_id": guild_id}) or {}
+    cd_nika_collect_data = collection51.find_one({"guild_id": guild_id}) or {}
+    cd_eveil_attaque_data = collection52.find_one({"guild_id": guild_id}) or {}
+    cd_eveil_subis_data = collection53.find_one({"guild_id": guild_id}) or {}
 
     # Débogage : Afficher les données de setup
     print(f"Setup data for guild {guild_id}: {setup_data}")
@@ -231,7 +259,21 @@ def load_guild_settings(guild_id):
         "guild_inventaire": guild_inventaire_data,
         "ether_bounty": ether_bounty_data,
         "ether_honnor": ether_honnor_data,
-        "cd_capture_ether": cd_capture_ether_data
+        "cd_capture_ether": cd_capture_ether_data,
+        "cd_bombe": cd_bombe_data,
+        "cd_gura": cd_gura_data,
+        "cd_glace": cd_glace_data,
+        "glace_subis": glace_subis_data,
+        "cd_tenebre": cd_tenebre_data,
+        "cd_protection_tenebre": cd_protection_tenebre_data,
+        "cd_gear_second": cd_gear_second_data,
+        "cd_gear_fourth": cd_gear_fourth_data,
+        "cd_use_fourth": cd_use_fourth_data,
+        "cd_royaume_nika": cd_royaume_nika_data,
+        "cd_acces_royaume": cd_acces_royaume_data,
+        "cd_nika_collect": cd_nika_collect_data,
+        "cd_eveil_attaque": cd_eveil_attaque_data,
+        "cd_eveil_subis_data": cd_eveil_subis_data
     }
 
     return combined_data
@@ -286,6 +328,27 @@ COLLECT_ROLES_CONFIG = [
     {
         "role_id": 1363969965572755537,
         "percent": -20,
+        "cooldown": 3600,
+        "auto": True,
+        "target": "bank"
+    },
+    {
+        "role_id": 1365085598401953794,
+        "percent": -10,
+        "cooldown": 86400,
+        "auto": True,
+        "target": "bank"
+    },
+    {
+        "role_id": 1365075014432587776,
+        "percent": 5,
+        "cooldown": 3600,
+        "auto": True,
+        "target": "bank"
+    },
+    {
+        "role_id": 1365083240544600094,
+        "percent": 500,
         "cooldown": 3600,
         "auto": True,
         "target": "bank"
@@ -367,23 +430,36 @@ from discord.ext import tasks
 import discord
 from datetime import datetime
 
-# Commande pour réinitialiser les primes et honneurs chaque semaine
-@tasks.loop(hours=168)  # Toutes les 168 heures (1 semaine)
+# --- Boucle suppression des rôles de gel économique ---
+@tasks.loop(minutes=30)
+async def remove_glace_roles():
+    now = datetime.utcnow()
+    users_to_unfreeze = collection43.find({"remove_at": {"$lte": now}})
+    role_id = 1365063792513515570
+
+    for user_data in users_to_unfreeze:
+        guild = bot.get_guild(VOTRE_GUILD_ID)  # Remplace par l'ID de ton serveur
+        member = guild.get_member(user_data["user_id"])
+        if member:
+            role = guild.get_role(role_id)
+            if role in member.roles:
+                await member.remove_roles(role, reason="Fin du gel économique")
+        collection43.delete_one({"user_id": user_data["user_id"]})
+
+
+# --- Commande pour réinitialiser les primes et honneurs chaque semaine ---
+@tasks.loop(hours=168)
 async def reset_bounties_and_honor():
-    # Reset des primes (utilisation de collection37 pour les primes)
     collection37.update_many({}, {"$set": {"bounty": 50}})
-
-    # Reset des honneurs (utilisation de collection38 pour les honneurs)
     collection38.update_many({}, {"$set": {"honor": 50}})
-
-    # Redistribution des rôles
     await redistribute_roles()
 
 async def redistribute_roles():
     # Logique pour réattribuer les rôles en fonction de la prime ou de l'honneur
     pass
 
-# Boucle auto-collecte
+
+# --- Boucle auto-collecte ---
 @tasks.loop(seconds=60)
 async def auto_collect_loop():
     for guild in bot.guilds:
@@ -400,26 +476,22 @@ async def auto_collect_loop():
                     last_collect = cd_data.get("last_collect") if cd_data else None
 
                     if not last_collect or (now - last_collect).total_seconds() >= config["cooldown"]:
-                        # Assurez-vous que 'cash' et 'bank' existent
                         eco_data = collection.find_one({
                             "guild_id": guild.id,
                             "user_id": member.id
                         }) or {"guild_id": guild.id, "user_id": member.id, "cash": 1500, "bank": 0}
 
-                        # Si 'cash' ou 'bank' n'existe pas, les initialiser à 0
                         if "cash" not in eco_data:
                             eco_data["cash"] = 0
                         if "bank" not in eco_data:
                             eco_data["bank"] = 0
 
-                        before = eco_data[config["target"]]  # "cash" ou "bank"
-
+                        before = eco_data[config["target"]]
                         if "amount" in config:
                             eco_data[config["target"]] += config["amount"]
                         elif "percent" in config:
                             eco_data[config["target"]] += eco_data[config["target"]] * (config["percent"] / 100)
 
-                        # Mise à jour de la base de données
                         collection.update_one(
                             {"guild_id": guild.id, "user_id": member.id},
                             {"$set": {config["target"]: eco_data[config["target"]]}},
@@ -441,11 +513,7 @@ async def auto_collect_loop():
 async def update_top_roles():
     for guild in bot.guilds:
         all_users_data = list(collection.find({"guild_id": guild.id}))
-        sorted_users = sorted(
-            all_users_data,
-            key=lambda u: u.get("cash", 0) + u.get("bank", 0),
-            reverse=True
-        )
+        sorted_users = sorted(all_users_data, key=lambda u: u.get("cash", 0) + u.get("bank", 0), reverse=True)
         top_users = sorted_users[:3]
 
         for rank, user_data in enumerate(top_users, start=1):
@@ -475,12 +543,12 @@ async def update_top_roles():
                     await member.remove_roles(role)
                     print(f"Retiré {role.name} de {member.display_name}")
 
+
+# --- Initialisation au démarrage ---
 @bot.event
 async def on_ready():
     print(f"{bot.user.name} est connecté.")
-    
-    # Démarre les tâches uniquement après la connexion
-    bot.loop.create_task(start_background_tasks())  # Lancer les tâches après l'initialisation complète du bot
+    bot.loop.create_task(start_background_tasks())
 
     activity = discord.Activity(
         type=discord.ActivityType.streaming,
@@ -490,7 +558,6 @@ async def on_ready():
     await bot.change_presence(activity=activity, status=discord.Status.online)
 
     print(f"🎉 **{bot.user}** est maintenant connecté et affiche son activité de stream avec succès !")
-
     print("📌 Commandes disponibles 😊")
     for command in bot.commands:
         print(f"- {command.name}")
@@ -501,14 +568,16 @@ async def on_ready():
     except Exception as e:
         print(f"❌ Erreur de synchronisation des commandes slash : {e}")
 
+
 async def start_background_tasks():
-    # Démarre les tâches si elles ne sont pas déjà en cours
     if not reset_bounties_and_honor.is_running():
-        reset_bounties_and_honor.start()  # Démarre la tâche de réinitialisation des primes et honneurs
+        reset_bounties_and_honor.start()
     if not auto_collect_loop.is_running():
-        auto_collect_loop.start()  # Démarre la boucle d'auto-collecte
+        auto_collect_loop.start()
     if not update_top_roles.is_running():
-        update_top_roles.start()  # Démarre la boucle de mise à jour des rôles
+        update_top_roles.start()
+    if not remove_glace_roles.is_running():
+        remove_glace_roles.start()
 
 # --- Gestion globale des erreurs ---
 @bot.event
@@ -1091,11 +1160,6 @@ async def pay_error(ctx, error):
     )
     await ctx.send(embed=embed)
 
-from datetime import datetime, timedelta
-import random
-import discord
-from discord.ext import commands
-
 @bot.hybrid_command(name="work", aliases=["wk"], description="Travaille et gagne de l'argent !")
 async def work(ctx: commands.Context):
     if ctx.guild is None:
@@ -1225,7 +1289,10 @@ async def slut(ctx: commands.Context):
 
     balance_before = user_data.get("cash", 1500)
 
-    if outcome == "gain":
+    # Vérifier si l'utilisateur a le rôle spécial
+    has_special_role = any(role.id == 1365037905633869914 for role in user.roles)
+
+    if outcome == "gain" or has_special_role:
         messages = [
             f"<:Check:1362710665663615147> Tu as séduit la bonne personne et reçu **{amount_gain:.1f} <:ecoEther:1341862366249357374>** en cadeau.",
             f"<:Check:1362710665663615147> Une nuit torride t’a valu **{amount_gain:.1f} <:ecoEther:1341862366249357374>**.",
@@ -1315,7 +1382,10 @@ async def crime(ctx: commands.Context):
     user_data = collection.find_one({"guild_id": guild_id, "user_id": user_id}) or {}
     balance_before = user_data.get("cash", 0)
 
-    if outcome == "gain":
+    # Vérifier si l'utilisateur a le rôle spécial
+    has_special_role = any(role.id == 1365037905633869914 for role in user.roles)
+
+    if outcome == "gain" or has_special_role:
         messages = [
             f"Tu as braqué une banque sans te faire repérer et gagné **{gain_amount} <:ecoEther:1341862366249357374>**.",
             f"Tu as volé une mallette pleine de billets ! Gain : **{gain_amount} <:ecoEther:1341862366249357374>**.",
@@ -2018,8 +2088,6 @@ async def set_max_bj_mise_error(ctx, error):
         )
         await ctx.send(embed=embed)
 
-from datetime import datetime, timedelta
-
 @bot.hybrid_command(name="rob", description="Voler entre 1% et 50% du portefeuille d'un autre utilisateur.")
 async def rob(ctx, user: discord.User):
     guild_id = ctx.guild.id
@@ -2047,7 +2115,7 @@ async def rob(ctx, user: discord.User):
             embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url)
             return await ctx.send(embed=embed)
 
-    # Role protection
+    # Récupération du membre cible
     target_member = ctx.guild.get_member(target_id)
     if not target_member:
         return await ctx.send(embed=discord.Embed(
@@ -2055,6 +2123,7 @@ async def rob(ctx, user: discord.User):
             color=discord.Color.red()
         ))
 
+    # Anti rob par rôles stockés dans MongoDB
     anti_rob_data = collection15.find_one({"guild_id": guild_id}) or {"roles": []}
     if any(role.name in anti_rob_data["roles"] for role in target_member.roles):
         return await ctx.send(embed=discord.Embed(
@@ -2062,7 +2131,22 @@ async def rob(ctx, user: discord.User):
             color=discord.Color.red()
         ))
 
-    # Get data
+    # Vérifier si la cible a le rôle qui repousse les vols et fait perdre 300% de la banque de l'attaquant
+    has_anti_rob_reflect = discord.utils.get(target_member.roles, id=1365076692410044467)
+    if has_anti_rob_reflect:
+        penalty = round(user_data["bank"] * 3.00, 2)  # 300% de la banque
+        penalty = min(penalty, user_data["bank"])  # Limiter la pénalité à la somme de la banque
+        collection.update_one({"guild_id": guild_id, "user_id": user_id}, {"$inc": {"bank": -penalty}})
+
+        await log_eco_channel(bot, guild_id, ctx.author, "Vol repoussé", -penalty, user_data["bank"], user_data["bank"] - penalty, f"Repoussé par {user.display_name}")
+
+        return await ctx.send(embed=discord.Embed(
+            description=f"⚠️ {user.display_name} a tenté de voler **{target_member.display_name}**, mais a été **repoussé par une aura protectrice** !\n"
+                        f"💸 Il perd **{int(penalty)}** coins de sa banque !",
+            color=discord.Color.red()
+        ).set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url))
+
+    # Data utilisateur/target
     user_data = collection.find_one({"guild_id": guild_id, "user_id": user_id}) or {"cash": 1500, "bank": 0}
     target_data = collection.find_one({"guild_id": guild_id, "user_id": target_id}) or {"cash": 1500, "bank": 0}
     collection.update_one({"guild_id": guild_id, "user_id": user_id}, {"$setOnInsert": user_data}, upsert=True)
@@ -2074,11 +2158,35 @@ async def rob(ctx, user: discord.User):
             color=discord.Color.red()
         ))
 
-    # Success calculation
+    # Barrière bancaire
+    if discord.utils.get(target_member.roles, id=1365031085934903357):
+        now = datetime.utcnow()
+        today_str = now.strftime("%Y-%m-%d")
+        barrier_data = collection.find_one({"guild_id": guild_id, "user_id": target_id, "barriere_date": today_str})
+        if not barrier_data:
+            # Activer barrière pour aujourd'hui
+            collection.update_one(
+                {"guild_id": guild_id, "user_id": target_id},
+                {"$set": {"barriere_date": today_str}},
+                upsert=True
+            )
+            return await ctx.send(embed=discord.Embed(
+                description=f"🛡️ La **barrière bancaire** de {user.display_name} a annulé le vol !",
+                color=discord.Color.blue()
+            ))
+
+    # Détection rôle réduction 50%
+    has_half_rob_protection = discord.utils.get(target_member.roles, id=1365029481206775878)
+
+    # Détection rôle contre-attaque 200%
+    has_counter_role = discord.utils.get(target_member.roles, id=1365070571704156241)
+
+    # Calcul succès du vol
     robber_total = user_data["cash"] + user_data["bank"]
     rob_chance = max(80 - (robber_total // 1000), 10)
     success = random.randint(1, 100) <= rob_chance
 
+    # Enregistrement du cooldown
     collection14.update_one(
         {"guild_id": guild_id, "user_id": user_id},
         {"$set": {"last_rob": datetime.utcnow()}},
@@ -2088,11 +2196,32 @@ async def rob(ctx, user: discord.User):
     if success:
         percentage = random.randint(1, 50)
         stolen = (percentage / 100) * target_data["cash"]
+
+        if has_half_rob_protection:
+            stolen /= 2
+
         stolen = round(stolen, 2)
         stolen = min(stolen, target_data["cash"])
+        initial_stolen = stolen
 
+        # Application du vol
         collection.update_one({"guild_id": guild_id, "user_id": user_id}, {"$inc": {"cash": stolen}})
         collection.update_one({"guild_id": guild_id, "user_id": target_id}, {"$inc": {"cash": -stolen}})
+
+        # Contre-attaque si rôle
+        if has_counter_role:
+            counter_amount = round(initial_stolen * 2, 2)
+            collection.update_one({"guild_id": guild_id, "user_id": user_id}, {"$inc": {"cash": -counter_amount}})
+            collection.update_one({"guild_id": guild_id, "user_id": target_id}, {"$inc": {"cash": counter_amount}})
+
+            new_cash = user_data["cash"] - counter_amount
+            await log_eco_channel(bot, guild_id, ctx.author, "Contre-vol subi", -counter_amount, user_data["cash"], new_cash, f"Contre-attaque de {user.display_name}")
+            await log_eco_channel(bot, guild_id, target_member, "Contre-vol réussi", counter_amount, target_data["cash"], target_data["cash"] + counter_amount, f"Contre-attaque sur {ctx.author.display_name}")
+
+            return await ctx.send(embed=discord.Embed(
+                description=f"🔥 Mauvais choix ! {user.display_name} a été **contre-attaqué** et a perdu **{int(counter_amount)}** — il est maintenant **dans le négatif** !",
+                color=discord.Color.red()
+            ).set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url))
 
         await log_eco_channel(bot, guild_id, ctx.author, "Vol", stolen, user_data["cash"], user_data["cash"] + stolen, f"Volé à {user.display_name}")
 
@@ -2100,6 +2229,7 @@ async def rob(ctx, user: discord.User):
             description=f"💰 Tu as volé **{int(stolen)}** à **{user.display_name}** !",
             color=discord.Color.green()
         ).set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url))
+
     else:
         percentage = random.uniform(1, 5)
         loss = (percentage / 100) * user_data["cash"]
@@ -2765,8 +2895,8 @@ ITEMS = [
     },
     {
         "id": 763,
-        "emoji": "<:bakubakunomi:1365025003728273428>",
-        "title": "Baku Baku no Mi",
+        "emoji": "<:BomuBomunoMi:1365056026784563261>",
+        "title": "Bomu Bomu no Mi",
         "description": "Permet d'exploser 10% de la banque d’un joueur ciblé chaque semaine.",
         "price": 80000,
         "emoji_price": "<:ecoEther:1341862366249357374>",
@@ -6719,6 +6849,448 @@ async def reset_prime(ctx):
     # Réinitialisation de la collection honor (collection 38)
     collection38.delete_many({})  # Nettoyer la collection honor
     await ctx.send("La collection des honneurs a été réinitialisée avec succès.")
+
+@bot.command()
+async def bombe(ctx, target: discord.Member):
+    author_id = ctx.author.id
+    if author_id != 1365027878928126096:
+        return await ctx.send("❌ Tu n'es pas autorisé à utiliser cette commande.")
+
+    guild_id = ctx.guild.id
+    user_id = target.id
+
+    # Vérification du cooldown
+    cooldown_data = collection40.find_one({"guild_id": guild_id, "user_id": user_id})
+    now = datetime.utcnow()
+
+    if cooldown_data and now < cooldown_data["used_at"] + timedelta(days=7):
+        next_use = cooldown_data["used_at"] + timedelta(days=7)
+        remaining = next_use - now
+        hours, remainder = divmod(int(remaining.total_seconds()), 3600)
+        minutes = remainder // 60
+        return await ctx.send(f"🕒 Ce joueur a déjà été bombardé récemment. Réessaye dans {hours}h{minutes}m.")
+
+    # Récupération des données du joueur ciblé
+    target_data = collection.find_one({"guild_id": guild_id, "user_id": user_id})
+    if not target_data:
+        return await ctx.send("❌ Ce joueur n'a pas de données économiques.")
+
+    bank_before = target_data.get("bank", 0)
+    amount_to_remove = int(bank_before * 0.10)
+    new_bank = bank_before - amount_to_remove
+
+    # Mise à jour de la banque
+    collection.update_one(
+        {"guild_id": guild_id, "user_id": user_id},
+        {"$set": {"bank": new_bank}}
+    )
+
+    # Mise à jour du cooldown
+    collection40.update_one(
+        {"guild_id": guild_id, "user_id": user_id},
+        {"$set": {"used_at": now}},
+        upsert=True
+    )
+
+    # Log
+    await log_eco_channel(
+        bot, guild_id, target,
+        action="💣 Bombe économique",
+        amount=amount_to_remove,
+        balance_before=f"{bank_before} en banque",
+        balance_after=f"{new_bank} en banque",
+        note=f"Par {ctx.author.name}"
+    )
+
+    # Embed de retour
+    embed = discord.Embed(
+        title="💥 Explosion Économique !",
+        description=f"{ctx.author.mention} a largué une **bombe** sur {target.mention} !\n"
+                    f"💸 **10%** de sa banque ont été volés : **{amount_to_remove:,}** <:ecoEther:1341862366249357374>",
+        color=discord.Color.red(),
+        timestamp=datetime.utcnow()
+    )
+    embed.set_thumbnail(url="https://static.wikia.nocookie.net/onepiece/images/8/86/Bomu_Bomu_no_Mi_Anime_Infobox.png/revision/latest?cb=20181120231615&path-prefix=fr")
+    await ctx.send(embed=embed)
+
+@bot.command(name="gura")
+@commands.guild_only()
+async def gura(ctx, target: discord.Member):
+    role_required = 1365031927127478302
+    cooldown_weeks = 3
+
+    # Vérifie si l'auteur a le rôle requis
+    if role_required not in [role.id for role in ctx.author.roles]:
+        return await ctx.send("🚫 Tu n'as pas la puissance nécessaire pour invoquer un séisme destructeur.")
+
+    user_id = ctx.author.id
+    guild_id = ctx.guild.id
+
+    # Vérification du cooldown
+    cd_data = collection41.find_one({"user_id": user_id, "guild_id": guild_id})
+    now = datetime.utcnow()
+
+    if cd_data:
+        last_used = cd_data.get("last_used", now - timedelta(weeks=cooldown_weeks + 1))
+        if now - last_used < timedelta(weeks=cooldown_weeks):
+            remaining = timedelta(weeks=cooldown_weeks) - (now - last_used)
+            return await ctx.send(f"🕒 Tu dois encore attendre `{str(remaining).split('.')[0]}` avant de pouvoir utiliser à nouveau le **Gura Gura no Mi**.")
+    
+    # Mise à jour du cooldown
+    collection41.update_one(
+        {"user_id": user_id, "guild_id": guild_id},
+        {"$set": {"last_used": now}},
+        upsert=True
+    )
+
+    # Embed RP
+    embed = discord.Embed(
+        title="🌊 Gura Gura no Mi - Séisme Déclenché !",
+        description=(
+            f"**{ctx.author.mention}** a libéré une onde sismique destructrice contre **{target.mention}** !\n\n"
+            "Les fondations de la banque tremblent... les coffres s'effondrent sous la puissance du fruit du tremblement !"
+        ),
+        color=discord.Color.dark_red(),
+        timestamp=now
+    )
+    embed.set_thumbnail(url="https://static.wikia.nocookie.net/onepiece/images/3/38/Gura_Gura_no_Mi_Anime_Infobox.png/revision/latest?cb=20130509112508&path-prefix=fr")
+    embed.set_footer(text="Cooldown: 3 semaines")
+
+    await ctx.send(embed=embed)
+
+
+# Identifiants de rôles
+ROLE_UTILISATEUR_GLACE = 1365033009312698509
+ROLE_GEL = 1365063792513515570
+
+# Durées
+DUREE_COOLDOWN = timedelta(weeks=1)
+DUREE_GEL = timedelta(days=3)
+
+@bot.command(name="glace")
+@commands.guild_only()
+async def glace(ctx, cible: discord.Member):
+    auteur = ctx.author
+
+    # Vérification du rôle autorisé
+    if ROLE_UTILISATEUR_GLACE not in [r.id for r in auteur.roles]:
+        return await ctx.send("❌ Tu n'as pas le rôle requis pour utiliser cette commande.")
+
+    # Vérifier si l'utilisateur est en cooldown
+    cooldown_data = collection42.find_one({"user_id": auteur.id})
+    now = datetime.utcnow()
+
+    if cooldown_data and cooldown_data["timestamp"] > now:
+        remaining = cooldown_data["timestamp"] - now
+        return await ctx.send(f"⏳ Tu dois attendre encore {remaining.days}j {remaining.seconds//3600}h avant de pouvoir utiliser `.glace` à nouveau.")
+
+    # Appliquer le rôle de gel à la cible
+    role = discord.utils.get(ctx.guild.roles, id=ROLE_GEL)
+    if not role:
+        return await ctx.send("❌ Rôle de gel introuvable sur ce serveur.")
+    
+    try:
+        await cible.add_roles(role, reason="Gel économique via .glace")
+    except discord.Forbidden:
+        return await ctx.send("❌ Impossible d'ajouter le rôle à cet utilisateur.")
+
+    # Enregistrer le cooldown dans Mongo
+    collection42.update_one(
+        {"user_id": auteur.id},
+        {"$set": {"timestamp": now + DUREE_COOLDOWN}},
+        upsert=True
+    )
+
+    # Enregistrer la fin du gel de la cible
+    collection43.update_one(
+        {"user_id": cible.id},
+        {"$set": {"remove_at": now + DUREE_GEL}},
+        upsert=True
+    )
+
+    # Embed d'information
+    embed = discord.Embed(
+        title="❄️ Gel économique !",
+        description=f"{cible.mention} est gelé pendant **3 jours** !",
+        color=discord.Color.blue(),
+        timestamp=now
+    )
+    embed.set_thumbnail(url="https://static.wikia.nocookie.net/onepiece/images/9/9b/Hie_Hie_no_Mi_Anime_Infobox.png/revision/latest?cb=20160604184118&path-prefix=fr")
+    embed.set_footer(text=f"L'utilisateur {auteur.display_name} a utilisé le pouvoir de la Glace.")
+    
+    await ctx.send(embed=embed)
+
+@bot.command(name="tenebre")
+@commands.has_role(1365035636351959153)
+async def tenebre(ctx):
+    user_id = ctx.author.id
+    now = datetime.utcnow()
+    cd_doc = collection44.find_one({"user_id": user_id})
+
+    # Vérifie le cooldown de 24h
+    if cd_doc and (now - cd_doc["last_use"]).total_seconds() < 86400:
+        remaining = timedelta(seconds=86400 - (now - cd_doc["last_use"]).total_seconds())
+        return await ctx.send(f"⏳ Tu dois encore attendre {remaining} avant de réutiliser cette capacité.")
+
+    # Ajoute ou met à jour le cooldown
+    collection44.update_one(
+        {"user_id": user_id},
+        {"$set": {"last_use": now}},
+        upsert=True
+    )
+
+    # Ajoute la protection de 6h contre les robs
+    collection45.update_one(
+        {"user_id": user_id},
+        {"$set": {"protection_start": now}},
+        upsert=True
+    )
+
+    # Donne le rôle temporaire (3 jours)
+    role_id = 1365070571704156241
+    role = ctx.guild.get_role(role_id)
+    if role:
+        await ctx.author.add_roles(role)
+        await asyncio.sleep(259200)  # 3 jours en secondes
+        await ctx.author.remove_roles(role)
+
+    # Embed de confirmation
+    embed = discord.Embed(
+        title="🌑 Pouvoir des Ténèbres activé !",
+        description="Tu as activé le **Yami Yami no Mi**.\nTu renverras **200%** des vols et es **protégé pendant 6h** contre les tentatives de vol.",
+        color=discord.Color.dark_purple()
+    )
+    embed.set_thumbnail(url="https://static.wikia.nocookie.net/onepiece/images/1/1f/Yami_Yami_no_Mi_Anime_Infobox.png/revision/latest?cb=20130221181805&path-prefix=fr")
+    embed.set_footer(text="Effets du fruit des ténèbres")
+    await ctx.send(embed=embed)
+
+@bot.command()
+async def gearsecond(ctx):
+    # Vérifier si l'utilisateur a le rôle requis
+    role_id = 1365037444608819221
+    role = discord.utils.get(ctx.author.roles, id=role_id)
+    if not role:
+        await ctx.send("Tu n'as pas le rôle requis pour utiliser cette commande.")
+        return
+
+    # Vérifier si l'utilisateur a un cooldown
+    cooldown_data = collection46.find_one({"user_id": ctx.author.id})
+    if cooldown_data:
+        last_used = cooldown_data["last_used"]
+        cooldown_end = last_used + timedelta(weeks=2)
+        if datetime.utcnow() < cooldown_end:
+            await ctx.send(f"Tu dois attendre encore {cooldown_end - datetime.utcnow()} avant de réutiliser cette commande.")
+            return
+
+    # Ajouter le cooldown de 2 semaines
+    collection46.update_one(
+        {"user_id": ctx.author.id},
+        {"$set": {"last_used": datetime.utcnow()}},
+        upsert=True
+    )
+
+    # Ajouter le rôle à l'utilisateur
+    gear_second_role_id = 1365075014432587776
+    gear_second_role = discord.utils.get(ctx.guild.roles, id=gear_second_role_id)
+    await ctx.author.add_roles(gear_second_role)
+    
+    # Retirer le rôle après 1 semaine
+    await ctx.send(f"Tu as activé le Gear Second, {ctx.author.mention} ! Ton rôle sera retiré dans 1 semaine.")
+
+    # Enlever le rôle après 1 semaine
+    await discord.utils.sleep_until(datetime.utcnow() + timedelta(weeks=1))
+    await ctx.author.remove_roles(gear_second_role)
+
+    # Envoyer un embed avec l'image
+    embed = discord.Embed(
+        title="Gear Second Activé",
+        description="Tu as activé ton mode Gear Second pour une semaine !",
+        color=discord.Color.green(),
+        timestamp=datetime.utcnow()
+    )
+    embed.set_image(url="https://www.univers-otaku.com/wp-content/uploads/2021/06/Luffy-Gear-2nd-vs-Blueno.jpg")
+    await ctx.send(embed=embed)
+
+@bot.command()
+async def gearfourth(ctx):
+    # Vérifier si l'utilisateur a le bon rôle
+    if not any(role.id == 1365037444608819221 for role in ctx.author.roles):
+        await ctx.send("Désolé, tu n'as pas le rôle nécessaire pour utiliser cette commande.")
+        return
+    
+    # Vérifier le cooldown
+    cooldown_data = collection47.find_one({"user_id": ctx.author.id})
+    if cooldown_data:
+        last_used = cooldown_data.get("last_used")
+        if last_used:
+            cooldown_end = last_used + datetime.timedelta(days=7)
+            if datetime.datetime.utcnow() < cooldown_end:
+                await ctx.send(f"Tu dois attendre encore {str(cooldown_end - datetime.datetime.utcnow()).split('.')[0]} avant de pouvoir réutiliser cette commande.")
+                return
+
+    # Ajouter le rôle Gear Fourth
+    gearfourth_role = discord.utils.get(ctx.guild.roles, id=1365076692410044467)
+    await ctx.author.add_roles(gearfourth_role)
+    
+    # Mettre à jour le cooldown
+    collection47.update_one({"user_id": ctx.author.id}, {"$set": {"last_used": datetime.datetime.utcnow()}}, upsert=True)
+    
+    # Retirer le rôle après 1 jour
+    await ctx.send(f"Félicitations {ctx.author.mention}, tu as activé le Gear Fourth ! Le rôle sera retiré dans 24 heures.")
+    
+    # Délai de 1 jour pour retirer le rôle
+    await asyncio.sleep(86400)  # 86400 secondes = 1 jour
+    await ctx.author.remove_roles(gearfourth_role)
+    
+    await ctx.send(f"{ctx.author.mention}, ton rôle Gear Fourth a été retiré après 24 heures.")
+
+    # Image de l'embed
+    embed = discord.Embed(
+        title="Gear Fourth Activated!",
+        description="Tu as activé la transformation Gear Fourth, tu deviens plus puissant pendant 1 jour !",
+        color=discord.Color.gold(),
+        timestamp=datetime.datetime.utcnow()
+    )
+    embed.set_image(url="https://pm1.aminoapps.com/7268/e216da33726458f8e0600f4affbd934465ea7c72r1-750-500v2_uhq.jpg")
+    await ctx.send(embed=embed)
+
+# Commande .nika
+@bot.command()
+async def nika(ctx):
+    user = ctx.author
+    role_id = 1365037905633869914  # Le rôle nécessaire pour utiliser la commande
+
+    # Vérification du rôle de l'utilisateur
+    if not any(role.id == role_id for role in user.roles):
+        await ctx.send("Désolé, vous n'avez pas le rôle requis pour utiliser cette commande.")
+        return
+
+    # Vérification du cooldown
+    cooldown_data = collection49.find_one({"user_id": user.id})
+    if cooldown_data:
+        last_used = cooldown_data["last_used"]
+        cooldown_end = last_used + timedelta(weeks=2)
+        if datetime.utcnow() < cooldown_end:
+            await ctx.send(f"Vous devez attendre encore {cooldown_end - datetime.utcnow()} avant de réutiliser la commande.")
+            return
+
+    # Appliquer le rôle
+    new_role = discord.utils.get(ctx.guild.roles, id=1365080818543755324)  # Rôle à attribuer
+    if new_role:
+        await user.add_roles(new_role)
+        await ctx.send(f"{user.mention}, vous avez reçu le rôle {new_role.name} pendant 1 semaine.")
+
+        # Retirer le rôle après 1 semaine
+        await asyncio.sleep(604800)  # Attendre 1 semaine (604800 secondes)
+        await user.remove_roles(new_role)
+        await ctx.send(f"{user.mention}, le rôle {new_role.name} a été retiré après 1 semaine.")
+
+    # Enregistrer le cooldown
+    collection49.update_one(
+        {"user_id": user.id},
+        {"$set": {"last_used": datetime.utcnow()}},
+        upsert=True
+    )
+
+    # Ajouter l'image à l'embed
+    embed = discord.Embed(
+        title="Royaume de Nika activé!",
+        description="Vous avez activé le pouvoir du Hito Hito no Mi - modèle Nika.",
+        color=discord.Color.gold(),
+        timestamp=datetime.utcnow()
+    )
+    embed.set_image(url="https://onepiecetheorie.fr/wp-content/uploads/2022/03/Hito-Hito-no-Mi-modele-Nika.jpg")
+    
+    await ctx.send(embed=embed)
+
+@bot.command()
+async def eveil(ctx):
+    user_id = ctx.author.id
+    role_required = 1365082775845081148
+    role_temporaire = 1365083240544600094
+    cooldown_duration = 30 * 24 * 60 * 60  # 1 mois en secondes
+
+    # Vérifie si l'utilisateur a le rôle requis
+    if role_required not in [role.id for role in ctx.author.roles]:
+        return await ctx.send("Tu n'as pas le rôle nécessaire pour utiliser cette commande.")
+
+    now = datetime.datetime.utcnow()
+    cooldown_data = cd_eveil.find_one({"_id": user_id})
+
+    if cooldown_data:
+        cooldown_time = cooldown_data["cooldown"]
+        if now < cooldown_time:
+            remaining = cooldown_time - now
+            hours, remainder = divmod(int(remaining.total_seconds()), 3600)
+            minutes, seconds = divmod(remainder, 60)
+            return await ctx.send(
+                f"⏳ Tu dois attendre encore {hours}h {minutes}m {seconds}s avant de pouvoir utiliser cette commande à nouveau."
+            )
+
+    # Appliquer le rôle temporaire
+    role = ctx.guild.get_role(role_temporaire)
+    await ctx.author.add_roles(role)
+    await ctx.send(f"{ctx.author.mention} s'éveille... 🌟 (Rôle actif pendant 20 secondes)")
+
+    # Mettre à jour le cooldown
+    cd_eveil.update_one({"_id": user_id}, {"$set": {"cooldown": now + datetime.timedelta(seconds=cooldown_duration)}}, upsert=True)
+
+    # Attendre 20 secondes puis retirer le rôle
+    await asyncio.sleep(20)
+    await ctx.author.remove_roles(role)
+    await ctx.send(f"{ctx.author.mention}, ton éveil est terminé. 🌌")
+
+@bot.command(name="eveil2")
+@commands.has_role(1365082775845081148)
+async def eveil2(ctx, member: discord.Member):
+    author_id = ctx.author.id
+    now = datetime.utcnow()
+
+    # Vérification du cooldown
+    cooldown_data = collection_cd_eveil2.find_one({"user_id": author_id})
+    if cooldown_data:
+        last_used = cooldown_data["last_used"]
+        cooldown_expiry = last_used + timedelta(weeks=5)  # 1 mois et 1 semaine
+        if now < cooldown_expiry:
+            remaining = cooldown_expiry - now
+            days = remaining.days
+            hours = remaining.seconds // 3600
+            minutes = (remaining.seconds % 3600) // 60
+            return await ctx.send(f"⛔ Tu dois encore attendre {days} jours, {hours} heures et {minutes} minutes avant de réutiliser cette commande.")
+
+    # Application du rôle
+    role = ctx.guild.get_role(1365085598401953794)
+    if not role:
+        return await ctx.send("❌ Le rôle à donner est introuvable.")
+    
+    await member.add_roles(role)
+    await ctx.send(f"✅ Le rôle **{role.name}** a été donné à {member.mention} pour **7 jours**.")
+
+    # Enregistrement du cooldown
+    collection_cd_eveil2.update_one(
+        {"user_id": author_id},
+        {"$set": {"last_used": now}},
+        upsert=True
+    )
+
+    # Retirer le rôle après 7 jours
+    await asyncio.sleep(7 * 24 * 60 * 60)  # 7 jours en secondes
+    try:
+        await member.remove_roles(role)
+        await ctx.send(f"⏳ Le rôle **{role.name}** a été retiré de {member.mention} après 7 jours.")
+    except Exception as e:
+        print(f"Erreur en retirant le rôle : {e}")
+
+# Gestion des erreurs d'accès
+@eveil2.error
+async def eveil2_error(ctx, error):
+    if isinstance(error, commands.MissingRole):
+        await ctx.send("⛔ Tu n’as pas le rôle requis pour utiliser cette commande.")
+    elif isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send("❗ Utilisation : `.eveil2 @membre`")
+    else:
+        await ctx.send("❌ Une erreur est survenue.")
+        raise error
 
 # Token pour démarrer le bot (à partir des secrets)
 # Lancer le bot avec ton token depuis l'environnement  

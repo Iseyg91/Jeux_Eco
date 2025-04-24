@@ -465,8 +465,8 @@ async def update_top_roles():
 async def on_ready():
     print(f"{bot.user.name} est connecté.")
     
-    # Utiliser asyncio.create_task pour lancer les tâches après la connexion
-    bot.loop.create_task(start_background_tasks())  # Démarre les tâches après l'initialisation complète du bot
+    # Démarre les tâches uniquement après la connexion
+    bot.loop.create_task(start_background_tasks())  # Lancer les tâches après l'initialisation complète du bot
 
     activity = discord.Activity(
         type=discord.ActivityType.streaming,
@@ -487,9 +487,8 @@ async def on_ready():
     except Exception as e:
         print(f"❌ Erreur de synchronisation des commandes slash : {e}")
 
-# Cette fonction sera appelée pour démarrer les tâches en arrière-plan
 async def start_background_tasks():
-    # Vérifie si les tâches sont déjà en cours, sinon démarre-les
+    # Démarre les tâches si elles ne sont pas déjà en cours
     if not reset_bounties_and_honor.is_running():
         reset_bounties_and_honor.start()  # Démarre la tâche de réinitialisation des primes et honneurs
     if not auto_collect_loop.is_running():

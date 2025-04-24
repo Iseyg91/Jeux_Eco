@@ -6413,15 +6413,21 @@ async def honor(ctx):
 
         # Créer l'embed
         embed = Embed(
-            title="Votre Honneur",
-            description=f"Votre honneur actuel est: {honor}.",
-            color=0x00ff00  # Vert, tu peux changer la couleur selon ton souhait
+            title="🔹 Votre Honneur 🔹",
+            description=f"Votre honneur actuel est: **{honor}**.",
+            color=0x003366  # Bleu marine
         )
+        
+        # Ajouter un champ supplémentaire pour plus d'infos (optionnel)
+        embed.add_field(name="Rôle:", value="Marine", inline=True)
+        
+        # Ajouter un pied de page personnalisé
+        embed.set_footer(text="Bot Discord | Commande honneur")
 
         # Envoyer l'embed uniquement à l'utilisateur
         await ctx.author.send(embed=embed)
     else:
-        await ctx.send("Vous n'avez pas le rôle requis pour utiliser cette commande.")
+        await ctx.send("❌ Vous n'avez pas le rôle requis pour utiliser cette commande.")
 
 # Fonction pour récupérer la prime
 async def get_bounty(user_id):

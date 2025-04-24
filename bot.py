@@ -6429,9 +6429,6 @@ async def capture(ctx, target: discord.Member):
     else:
         await ctx.send("Seuls les pirates peuvent capturer des cibles.")
 
-# Lancer la tâche de réinitialisation
-reset_bounties_and_honor.start()
-
 # Token pour démarrer le bot (à partir des secrets)
 # Lancer le bot avec ton token depuis l'environnement  
 keep_alive()

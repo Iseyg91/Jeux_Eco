@@ -6386,6 +6386,12 @@ async def get_honor(user_id):
 # Commande !!bounty (pour les pirates)
 @bot.command()
 async def bounty(ctx):
+    # Vérifier si l'utilisateur a le rôle spécifique
+    role_id = 1364973120624001055
+    if role_id not in [role.id for role in ctx.author.roles]:
+        await ctx.send("Vous n'avez pas l'autorisation d'utiliser cette commande.")
+        return
+
     user_id = ctx.author.id
     prime = await get_bounty(user_id)
     await ctx.send(f"Votre prime actuelle est: {prime}.")
@@ -6393,9 +6399,13 @@ async def bounty(ctx):
 # Commande !!honor (pour les marines)
 @bot.command()
 async def honor(ctx):
-    user_id = ctx.author.id
-    honor = await get_honor(user_id)
-    await ctx.send(f"Votre honneur actuel est: {honor}.")
+    # Vérifier si l'utilisateur a le rôle spécifique
+    if any(role.id == 1364973130807906436 for role in ctx.author.roles):
+        user_id = ctx.author.id
+        honor = await get_honor(user_id)
+        await ctx.send(f"Votre honneur actuel est: {honor}.")
+    else:
+        await ctx.send("Vous n'avez pas le rôle requis pour utiliser cette commande.")
 
 # Fonction pour capturer un utilisateur
 async def capture_user(captor_id, target_id):
@@ -6431,17 +6441,23 @@ async def capture_user(captor_id, target_id):
     # Mise à jour du cooldown
     cd_capture_ether_collection.update_one({"user_id": captor_id}, {"$set": {"next_capture": datetime.utcnow() + timedelta(hours=12)}}, upsert=True)
 
-# Commande !!capture
 @bot.command()
 async def capture(ctx, target: discord.Member):
     captor_id = ctx.author.id
     target_id = target.id
+
+    # Vérifier si l'auteur a l'un des rôles autorisés
+    allowed_roles = [1364973120624001055, 1364973130807906436]
+    if not any(role.id in allowed_roles for role in ctx.author.roles):
+        await ctx.send("Vous devez avoir un rôle autorisé pour capturer des cibles.")
+        return
 
     # Vérifier si la cible est un pirate ou un marine
     if await get_bounty(captor_id) > 0:  # Si le captor est un pirate
         await capture_user(captor_id, target_id)
     else:
         await ctx.send("Seuls les pirates peuvent capturer des cibles.")
+
 
 # Token pour démarrer le bot (à partir des secrets)
 # Lancer le bot avec ton token depuis l'environnement  

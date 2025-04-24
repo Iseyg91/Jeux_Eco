@@ -106,6 +106,21 @@ def get_cf_config(guild_id):
         collection8.insert_one(config)
     return config
 
+async def initialize_bounty_or_honor(user_id, is_pirate, is_marine):
+    # Vérifier si le joueur est un pirate et n'a pas encore de prime
+    if is_pirate:
+        bounty_data = collection37.find_one({"user_id": user_id})
+        if not bounty_data:
+            # Si le joueur n'a pas de prime, initialiser à 50
+            collection37.insert_one({"user_id": user_id, "bounty": 50})
+
+    # Vérifier si le joueur est un marine et n'a pas encore d'honneur
+    if is_marine:
+        honor_data = collection38.find_one({"user_id": user_id})
+        if not honor_data:
+            # Si le joueur n'a pas d'honneur, initialiser à 50
+            collection38.insert_one({"user_id": user_id, "honor": 50})
+
 async def log_eco_channel(bot, guild_id, user, action, amount, balance_before, balance_after, note=""):
     config = collection9.find_one({"guild_id": guild_id})
     channel_id = config.get("eco_log_channel") if config else None

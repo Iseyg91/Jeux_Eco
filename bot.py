@@ -355,11 +355,11 @@ from datetime import datetime
 # Commande pour réinitialiser les primes et honneurs chaque semaine
 @tasks.loop(hours=168)  # Toutes les 168 heures (1 semaine)
 async def reset_bounties_and_honor():
-    # Reset des primes
-    ether_bounty_collection.update_many({}, {"$set": {"prime": 0}})
+    # Reset des primes (utilisation de collection37 pour les primes)
+    collection37.update_many({}, {"$set": {"prime": 0}})
     
-    # Reset des honneurs
-    ether_honor_collection.update_many({}, {"$set": {"honor": 0}})
+    # Reset des honneurs (utilisation de collection38 pour les honneurs)
+    collection38.update_many({}, {"$set": {"honor": 0}})
 
     # Redistribution des rôles
     await redistribute_roles()
@@ -367,7 +367,6 @@ async def reset_bounties_and_honor():
 async def redistribute_roles():
     # Logique pour réattribuer les rôles en fonction de la prime ou de l'honneur
     pass
-
 
 # Boucle auto-collecte
 @tasks.loop(seconds=60)

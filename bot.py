@@ -81,7 +81,9 @@ collection33 = db['inventory_collect'] #Stock les items de quetes
 collection34 = db['collect_items'] #Stock les items collector
 collection35 = db['ether_guild'] #Stock les Guild
 collection36 = db['guild_inventaire'] #Stock les inventaire de Guild
-
+collection37 = db['ether_bounty'] #Stock les Primes de Pirates
+collection38 = db['ether_honor'] #Stock les Honor des Marines
+collection39 = db['cd_capture_ether'] #Stock les cd d'attaque
 
 # Fonction pour vérifier si l'utilisateur possède un item (fictif, à adapter à ta DB)
 async def check_user_has_item(user: discord.Member, item_id: int):
@@ -168,6 +170,9 @@ def load_guild_settings(guild_id):
     collect_items_data = collection34.find_one({"guild_id": guild_id}) or {}
     ether_guild_data = collection35.find_one({"guild_id": guild_id}) or {}
     guild_inventaire_data = collection36.find_one({"guild_id": guild_id}) or {}
+    ether_bounty_data = collection37.find_one({"guild_id": guild_id}) or {}
+    ether_honnor_data = collection38.find_one({"guild_id": guild_id}) or {}
+    cd_capture_ether_data = collection39.find_one({"guild_id": guild_id}) or {}
 
     # Débogage : Afficher les données de setup
     print(f"Setup data for guild {guild_id}: {setup_data}")
@@ -208,8 +213,10 @@ def load_guild_settings(guild_id):
         "inventory_collect": inventory_collect_data,
         "collect_items": collect_items_data,
         "ether_guild": ether_guild_data,
-        "guild_inventaire": guild_inventaire
-
+        "guild_inventaire": guild_inventaire_data,
+        "ether_bounty": ether_bounty_data,
+        "ether_honnor": ether_honnor_data,
+        "cd_capture_ether": cd_capture_ether_data
     }
 
     return combined_data
@@ -341,6 +348,28 @@ COLLECT_ROLES_CONFIG = [
 ]
 
 # --- Boucle Auto Collect ---
+from discord.ext import tasks
+import discord
+from datetime import datetime
+
+# Commande pour réinitialiser les primes et honneurs chaque semaine
+@tasks.loop(hours=168)  # Toutes les 168 heures (1 semaine)
+async def reset_bounties_and_honor():
+    # Reset des primes
+    ether_bounty_collection.update_many({}, {"$set": {"prime": 0}})
+    
+    # Reset des honneurs
+    ether_honor_collection.update_many({}, {"$set": {"honor": 0}})
+
+    # Redistribution des rôles
+    await redistribute_roles()
+
+async def redistribute_roles():
+    # Logique pour réattribuer les rôles en fonction de la prime ou de l'honneur
+    pass
+
+
+# Boucle auto-collecte
 @tasks.loop(seconds=60)
 async def auto_collect_loop():
     for guild in bot.guilds:
@@ -392,6 +421,7 @@ async def auto_collect_loop():
                         after = eco_data[config["target"]]
                         await log_eco_channel(bot, guild.id, member, f"Auto Collect ({role.name})", config.get("amount", config.get("percent")), before, after, note="Collect automatique")
 
+
 # --- Boucle Top Roles ---
 @tasks.loop(seconds=5)
 async def update_top_roles():
@@ -431,6 +461,7 @@ async def update_top_roles():
                     await member.remove_roles(role)
                     print(f"Retiré {role.name} de {member.display_name}")
 
+
 # --- Événement on_ready ---
 @bot.event
 async def on_ready():
@@ -440,6 +471,8 @@ async def on_ready():
         update_top_roles.start()
     if not auto_collect_loop.is_running():
         auto_collect_loop.start()
+    if not reset_bounties_and_honor.is_running():
+        reset_bounties_and_honor.start()
 
     print(f"✅ Le bot {bot.user} est maintenant connecté ! (ID: {bot.user.id})")
 
@@ -6309,6 +6342,94 @@ async def with_guild_inventory(interaction: discord.Interaction, item_id: int, q
         f"📦 Tu as récupéré **{quantite}x** `{item_id}` depuis l'inventaire de la guilde.",
         ephemeral=True
     )
+
+# Roles
+marine_roles = {
+    "Amiral en chef": 1364961952480104560,
+    "Commandant": 1364961949242228756,
+    "Lieutenant": 1364961999896707072,
+    "Matelot": 1364961988588994571,
+}
+
+pirate_roles = {
+    "Roi des Pirates": 1364962003579568228,
+    "Yonko": 1364961946234785792,
+    "Corsaire": 1364961997296242688,
+    "Pirate": 1364961860230578191,
+}
+
+# Fonction pour récupérer la prime
+async def get_bounty(user_id):
+    bounty = ether_bounty_collection.find_one({"user_id": user_id})
+    return bounty['prime'] if bounty else 0
+
+# Fonction pour récupérer l'honneur
+async def get_honor(user_id):
+    honor = ether_honor_collection.find_one({"user_id": user_id})
+    return honor['honor'] if honor else 0
+
+# Commande !!bounty (pour les pirates)
+@bot.command()
+async def bounty(ctx):
+    user_id = ctx.author.id
+    prime = await get_bounty(user_id)
+    await ctx.send(f"Votre prime actuelle est: {prime}.")
+
+# Commande !!honor (pour les marines)
+@bot.command()
+async def honor(ctx):
+    user_id = ctx.author.id
+    honor = await get_honor(user_id)
+    await ctx.send(f"Votre honneur actuel est: {honor}.")
+
+# Fonction pour capturer un utilisateur
+async def capture_user(captor_id, target_id):
+    captor_bounty = await get_bounty(captor_id)
+    target_bounty = await get_bounty(target_id)
+    captor_honor = await get_honor(captor_id)
+    target_honor = await get_honor(target_id)
+
+    # Récupérer le cooldown de capture
+    cooldown_data = cd_capture_ether_collection.find_one({"user_id": captor_id})
+    if cooldown_data and datetime.utcnow() < cooldown_data["next_capture"]:
+        time_remaining = cooldown_data["next_capture"] - datetime.utcnow()
+        await captor.send(f"Vous devez attendre encore {time_remaining} avant de capturer quelqu'un.")
+        return
+
+    # Calcul des résultats de capture
+    if captor_bounty > target_bounty:
+        # Le captor gagne une partie de la prime du target
+        gain = target_bounty // 2
+        ether_bounty_collection.update_one({"user_id": captor_id}, {"$inc": {"prime": gain}}, upsert=True)
+        ether_bounty_collection.update_one({"user_id": target_id}, {"$inc": {"prime": -gain}}, upsert=True)
+        await ctx.send(f"{ctx.author.name} a capturé {target.name} et a gagné {gain} de prime !")
+    elif captor_honor > target_honor:
+        # Le captor perd de l'honneur
+        loss = target_honor // 2
+        ether_honor_collection.update_one({"user_id": captor_id}, {"$inc": {"honor": -loss}}, upsert=True)
+        ether_honor_collection.update_one({"user_id": target_id}, {"$inc": {"honor": loss}}, upsert=True)
+        await ctx.send(f"{ctx.author.name} a capturé {target.name} et a perdu {loss} d'honneur.")
+    else:
+        # Autres cas
+        await ctx.send(f"{ctx.author.name} a tenté de capturer {target.name}, mais la capture a échoué.")
+
+    # Mise à jour du cooldown
+    cd_capture_ether_collection.update_one({"user_id": captor_id}, {"$set": {"next_capture": datetime.utcnow() + timedelta(hours=12)}}, upsert=True)
+
+# Commande !!capture
+@bot.command()
+async def capture(ctx, target: discord.Member):
+    captor_id = ctx.author.id
+    target_id = target.id
+
+    # Vérifier si la cible est un pirate ou un marine
+    if await get_bounty(captor_id) > 0:  # Si le captor est un pirate
+        await capture_user(captor_id, target_id)
+    else:
+        await ctx.send("Seuls les pirates peuvent capturer des cibles.")
+
+# Lancer la tâche de réinitialisation
+reset_bounties_and_honor.start()
 
 # Token pour démarrer le bot (à partir des secrets)
 # Lancer le bot avec ton token depuis l'environnement  

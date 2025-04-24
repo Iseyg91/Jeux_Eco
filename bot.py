@@ -6383,26 +6383,41 @@ async def get_honor(user_id):
     honor = collection38.find_one({"user_id": user_id})
     return honor['honor'] if honor else 50
 
+from discord import Embed
+
 @bot.command()
 async def bounty(ctx):
-    # Vérifier si l'utilisateur a le rôle spécifique
-    role_id = 1364973120624001055
-    if role_id not in [role.id for role in ctx.author.roles]:
-        await ctx.send("Vous n'avez pas l'autorisation d'utiliser cette commande.")
+    pirate_role_id = 1364973120624001055
+
+    # Vérifier si l'utilisateur a le rôle Pirate
+    if pirate_role_id not in [role.id for role in ctx.author.roles]:
+        await ctx.send("❌ Vous n'avez pas l'autorisation d'utiliser cette commande.")
         return
 
-    user_id = ctx.author.id
-    prime = await get_bounty(user_id)
+    user = ctx.author
+    user_id = user.id
+    bounty = await get_bounty(user_id)
 
-    # Créer l'embed
+    # Créer l'embed personnalisé
     embed = Embed(
-        title="Votre Prime",
-        description=f"Votre prime actuelle est: {prime}.",
-        color=0xff0000  # Rouge, tu peux changer la couleur selon ton souhait
+        title="🏴‍☠️ Feuille de Prime",
+        description=(
+            f"💰 **Prime actuelle** : **{bounty} B**\n"
+            f"⚠️ Statut : Pirate recherché vivant ou mort\n"
+            f"📅 Dernière mise à jour : aujourd'hui\n\n"
+            f"Continuez vos méfaits... ou surveillez vos arrières. 🩸"
+        ),
+        color=0x8B0000  # Rouge foncé style sang
     )
 
-    # Envoyer l'embed uniquement à l'utilisateur
-    await ctx.author.send(embed=embed)
+    # Nom + PP en haut à gauche
+    embed.set_author(name=f"{user.name}#{user.discriminator}", icon_url=user.avatar.url if user.avatar else user.default_avatar.url)
+
+    # Footer stylisé
+    embed.set_footer(text="Empire Pirate • Commande /bounty", icon_url=user.avatar.url if user.avatar else user.default_avatar.url)
+
+    # Envoi en message privé
+    await user.send(embed=embed)
 
 @bot.command()
 async def honor(ctx):

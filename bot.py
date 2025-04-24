@@ -6406,7 +6406,6 @@ async def bounty(ctx):
 
 @bot.command()
 async def honor(ctx):
-    # ID du rôle Marine
     marine_role_id = 1364973130807906436
 
     # Vérifie si l'utilisateur a le rôle requis
@@ -6415,28 +6414,25 @@ async def honor(ctx):
         user_id = user.id
         honor = await get_honor(user_id)
 
-        # Récupère le rôle à ping
-        marine_role = ctx.guild.get_role(marine_role_id)
-
-        # Créer l'embed avec les infos demandées
+        # Crée un embed stylisé
         embed = Embed(
-            title=f"{user.name}",  # Titre : nom de l'utilisateur
+            title="📜 Rapport d'Honneur",
             description=(
                 f"🎖️ **Honneur actuel** : **{honor}**\n"
-                f"🔹 Statut : Membre de la Marine\n"
-                f"📅 Dernière mise à jour : aujourd'hui\n\n"
-                f"{marine_role.mention} – continuez à servir avec fierté !"
+                f"🔹 Statut : Membre loyal de la Marine\n"
+                f"📅 Dernière inspection : aujourd'hui\n\n"
+                f"Continuez à servir avec fierté et discipline. 💙"
             ),
             color=0x003366  # Bleu marine
         )
 
-        # Image de profil de l'utilisateur
-        embed.set_thumbnail(url=user.avatar.url if user.avatar else user.default_avatar.url)
+        # Affiche la PP en haut à gauche + nom complet
+        embed.set_author(name=f"{user.name}#{user.discriminator}", icon_url=user.avatar.url if user.avatar else user.default_avatar.url)
 
-        # Footer stylisé
+        # Footer avec le tag + icône
         embed.set_footer(text="Gloire à la Marine • Commande /honor", icon_url=user.avatar.url if user.avatar else user.default_avatar.url)
 
-        # Envoie l'embed en DM
+        # Envoi en message privé
         await user.send(embed=embed)
     else:
         await ctx.send("❌ Vous n'avez pas le rôle requis pour utiliser cette commande.")

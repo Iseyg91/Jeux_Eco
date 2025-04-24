@@ -6383,7 +6383,6 @@ async def get_honor(user_id):
     honor = collection38.find_one({"user_id": user_id})
     return honor['honor'] if honor else 50
 
-# Commande !!bounty (pour les pirates)
 @bot.command()
 async def bounty(ctx):
     # Vérifier si l'utilisateur a le rôle spécifique
@@ -6394,49 +6393,87 @@ async def bounty(ctx):
 
     user_id = ctx.author.id
     prime = await get_bounty(user_id)
-    await ctx.send(f"Votre prime actuelle est: {prime}.")
 
-# Commande !!honor (pour les marines)
+    # Créer l'embed
+    embed = Embed(
+        title="Votre Prime",
+        description=f"Votre prime actuelle est: {prime}.",
+        color=0xff0000  # Rouge, tu peux changer la couleur selon ton souhait
+    )
+
+    # Envoyer l'embed uniquement à l'utilisateur
+    await ctx.author.send(embed=embed)
+
 @bot.command()
 async def honor(ctx):
     # Vérifier si l'utilisateur a le rôle spécifique
     if any(role.id == 1364973130807906436 for role in ctx.author.roles):
         user_id = ctx.author.id
         honor = await get_honor(user_id)
-        await ctx.send(f"Votre honneur actuel est: {honor}.")
+
+        # Créer l'embed
+        embed = Embed(
+            title="Votre Honneur",
+            description=f"Votre honneur actuel est: {honor}.",
+            color=0x00ff00  # Vert, tu peux changer la couleur selon ton souhait
+        )
+
+        # Envoyer l'embed uniquement à l'utilisateur
+        await ctx.author.send(embed=embed)
     else:
         await ctx.send("Vous n'avez pas le rôle requis pour utiliser cette commande.")
+
+# Fonction pour récupérer la prime
+async def get_bounty(user_id):
+    bounty = collection37.find_one({"user_id": user_id})
+    return bounty['prime'] if bounty else 50
+
+# Fonction pour récupérer l'honneur
+async def get_honor(user_id):
+    honor = collection38.find_one({"user_id": user_id})
+    return honor['honor'] if honor else 50
 
 # Fonction pour capturer un utilisateur
 async def capture_user(captor_id, target_id):
     captor_bounty = await get_bounty(captor_id)
     target_bounty = await get_bounty(target_id)
-    captor_honor = await get_honor(captor_id)
-    target_honor = await get_honor(target_id)
+
+    # Vérifier les rôles des capturants et des cibles
+    captor_is_marine = any(role.id in marine_roles.values() for role in ctx.author.roles)
+    target_is_pirate = any(role.id in pirate_roles.values() for role in target.roles)
+
+    captor_is_pirate = any(role.id in pirate_roles.values() for role in ctx.author.roles)
+    target_is_marine = any(role.id in marine_roles.values() for role in target.roles)
+
+    if (captor_is_marine and target_is_marine) or (captor_is_pirate and target_is_pirate):
+        await ctx.send("Les Marines ne peuvent capturer que les Pirates et inversement.")
+        return
 
     # Récupérer le cooldown de capture
     cooldown_data = cd_capture_ether_collection.find_one({"user_id": captor_id})
     if cooldown_data and datetime.utcnow() < cooldown_data["next_capture"]:
         time_remaining = cooldown_data["next_capture"] - datetime.utcnow()
-        await captor.send(f"Vous devez attendre encore {time_remaining} avant de capturer quelqu'un.")
+        await ctx.send(f"Vous devez attendre encore {time_remaining} avant de capturer quelqu'un.")
         return
 
-    # Calcul des résultats de capture
-    if captor_bounty > target_bounty:
-        # Le captor gagne une partie de la prime du target
-        gain = target_bounty // 2
-        ether_bounty_collection.update_one({"user_id": captor_id}, {"$inc": {"prime": gain}}, upsert=True)
-        ether_bounty_collection.update_one({"user_id": target_id}, {"$inc": {"prime": -gain}}, upsert=True)
-        await ctx.send(f"{ctx.author.name} a capturé {target.name} et a gagné {gain} de prime !")
-    elif captor_honor > target_honor:
-        # Le captor perd de l'honneur
-        loss = target_honor // 2
-        ether_honor_collection.update_one({"user_id": captor_id}, {"$inc": {"honor": -loss}}, upsert=True)
-        ether_honor_collection.update_one({"user_id": target_id}, {"$inc": {"honor": loss}}, upsert=True)
-        await ctx.send(f"{ctx.author.name} a capturé {target.name} et a perdu {loss} d'honneur.")
-    else:
-        # Autres cas
+    # Calcul des chances de réussite basées sur la prime de la cible
+    success_chance = max(0.1, 1 - (target_bounty / 200))  # Moins de chances si la prime est élevée
+    if random.random() > success_chance:
         await ctx.send(f"{ctx.author.name} a tenté de capturer {target.name}, mais la capture a échoué.")
+        return
+
+    # Si la prime de la cible est plus élevée que celle du captor
+    if target_bounty > captor_bounty:
+        # Le captor perd une partie de sa prime, et la cible gagne une partie
+        loss = target_bounty // 2
+        gain = loss
+
+        # Mise à jour des primes
+        ether_bounty_collection.update_one({"user_id": captor_id}, {"$inc": {"prime": -loss}}, upsert=True)
+        ether_bounty_collection.update_one({"user_id": target_id}, {"$inc": {"prime": gain}}, upsert=True)
+        await ctx.send(f"{ctx.author.name} a capturé {target.name}, il a perdu {loss} de prime et {target.name} a gagné {gain} de prime.")
+    else:
+        await ctx.send(f"{ctx.author.name} a capturé {target.name}, mais rien n'a changé car les primes sont égales ou {ctx.author.name} a plus de prime.")
 
     # Mise à jour du cooldown
     cd_capture_ether_collection.update_one({"user_id": captor_id}, {"$set": {"next_capture": datetime.utcnow() + timedelta(hours=12)}}, upsert=True)
@@ -6453,7 +6490,7 @@ async def capture(ctx, target: discord.Member):
         return
 
     # Vérifier si la cible est un pirate ou un marine
-    if await get_bounty(captor_id) > 0:  # Si le captor est un pirate
+    if any(role.id in pirate_roles.values() for role in ctx.author.roles):  # Si le captor est un pirate
         await capture_user(captor_id, target_id)
     else:
         await ctx.send("Seuls les pirates peuvent capturer des cibles.")

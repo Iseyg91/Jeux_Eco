@@ -119,8 +119,8 @@ RENFORCEMENT_IDS = [1363306813688381681, 1363817593252876368]
 RENFORCEMENT_ROLE_ID = 1363306813688381681 
 
 # --- ID Etherya Fruits du Démon ---
-ROLE_UTILISATEUR_GLACE = 1365033009312698509
-ROLE_GEL = 1365063792513515570
+ROLE_UTILISATEUR_GLACE = 1365311608259346462
+ROLE_GEL = 1365313259280007168
 
 # --- ID Etherya Pirates & Marines ---
 # Roles
@@ -445,7 +445,7 @@ COLLECT_ROLES_CONFIG = [
         "amount": 250,
         "cooldown": 3600,
         "auto": False,
-        "target": "bank"  # ou "bank"
+        "target": "bank"
     },
     {
         "role_id": 1363969965572755537,
@@ -455,42 +455,42 @@ COLLECT_ROLES_CONFIG = [
         "target": "bank"
     },
     {
-        "role_id": 1365085598401953794,
+        "role_id": 1365313255471579297,
         "percent": -10,
         "cooldown": 86400,
         "auto": True,
         "target": "bank"
     },
     {
-        "role_id": 1365087320277127190,
+        "role_id": 1365313257279062067,
         "percent": 10,
         "cooldown": 604800,
         "auto": True,
         "target": "bank"
     },
     {
-        "role_id": 1365075014432587776,
+        "role_id": 1365313261129568297,
         "percent": 5,
         "cooldown": 3600,
         "auto": True,
         "target": "bank"
     },
     {
-        "role_id": 1365083240544600094,
+        "role_id": 1365312301900501063,
         "percent": 500,
         "cooldown": 3600,
         "auto": True,
         "target": "bank"
     },
     {
-        "role_id": 1365235019869847572,
+        "role_id": 1365313287964725290,
         "percent": -50,
         "cooldown": 3600,
         "auto": True,
         "target": "bank"
     },
     {
-        "role_id": 1365238838603288637,
+        "role_id": 1365312292069048443,
         "percent": -70,
         "cooldown": 86400,
         "auto": True,
@@ -3373,8 +3373,9 @@ ITEMS = [
         "tradeable": True,
         "usable": True,
         "use_effect": "Explose 10% de la banque d’un joueur ciblé. Faite !!bombe <@user> ",
+        "blocked_roles": [1365316070172393572, 1365311588139274354, 1365313257279062067, 1365311602290851880, 1365313248269828116, 1365311608259346462, 1365313251201519697, 1365311611019202744, 1365311614332571739, 1365313292477927464]
         "requirements": {},
-        "role_id": 1365027878928126096,
+        "role_id": 1365316070172393572,
         "remove_after_purchase": {
             "roles": False,
             "items": False
@@ -3392,8 +3393,9 @@ ITEMS = [
         "tradeable": True,
         "usable": True,
         "use_effect": "Réduit de 50% toutes les robs subies.",
+        "blocked_roles": [1365316070172393572, 1365311588139274354, 1365313257279062067, 1365311602290851880, 1365313248269828116, 1365311608259346462, 1365313251201519697, 1365311611019202744, 1365311614332571739, 1365313292477927464]
         "requirements": {},
-        "role_id": 1365029481206775878,
+        "role_id": 1365311588139274354,
         "remove_after_purchase": {
             "roles": False,
             "items": False
@@ -3411,8 +3413,9 @@ ITEMS = [
         "tradeable": True,
         "usable": True,
         "use_effect": "Crée une barrière bancaire : la première attaque de la journée est entièrement annulée. Se recharge automatiquement chaque jour a 00:00. ",
+        "blocked_roles": [1365316070172393572, 1365311588139274354, 1365313257279062067, 1365311602290851880, 1365313248269828116, 1365311608259346462, 1365313251201519697, 1365311611019202744, 1365311614332571739, 1365313292477927464]
         "requirements": {},
-        "role_id": 1365031085934903357,
+        "role_id": 1365311602290851880,
         "remove_after_purchase": {
             "roles": False,
             "items": False
@@ -3430,8 +3433,9 @@ ITEMS = [
         "tradeable": True,
         "usable": True,
         "use_effect": "Offre un collect de 10% de sa banque chaque semaine",
+        "blocked_roles": [1365316070172393572, 1365311588139274354, 1365313257279062067, 1365311602290851880, 1365313248269828116, 1365311608259346462, 1365313251201519697, 1365311611019202744, 1365311614332571739, 1365313292477927464]
         "requirements": {},
-        "role_id": 1365087320277127190,
+        "role_id": 1365313257279062067,
         "remove_after_purchase": {
             "roles": False,
             "items": False
@@ -3702,8 +3706,9 @@ ITEMS = [
         "tradeable": True,
         "usable": True,
         "use_effect": "Créer des séismes dévastateurs à une échelle massive. Détruit des banques entières en faisant des secousses.",
+        "blocked_roles": [1365316070172393572, 1365311588139274354, 1365313257279062067, 1365311602290851880, 1365313248269828116, 1365311608259346462, 1365313251201519697, 1365311611019202744, 1365311614332571739, 1365313292477927464]
         "requirements": {},
-        "role_id": 1365031927127478302,
+        "role_id": 1365313248269828116,
         "remove_after_purchase": {
             "roles": False,
             "items": False
@@ -3721,8 +3726,9 @@ ITEMS = [
         "tradeable": True,
         "usable": True,
         "use_effect": "Créer des séismes dévastateurs à une échelle massive. Détruit des banques entières en faisant des secousses.",
+        "blocked_roles": [1365316070172393572, 1365311588139274354, 1365313257279062067, 1365311602290851880, 1365313248269828116, 1365311608259346462, 1365313251201519697, 1365311611019202744, 1365311614332571739, 1365313292477927464]
         "requirements": {},
-        "role_id": 1365033009312698509,
+        "role_id": 1365311608259346462,
         "remove_after_purchase": {
             "roles": False,
             "items": False
@@ -3740,8 +3746,9 @@ ITEMS = [
         "tradeable": True,
         "usable": True,
         "use_effect": "Absorbe les vols et les renvoie avec 200% de puissance. 6h de protection, 24h de cooldown.",
+        "blocked_roles": [1365316070172393572, 1365311588139274354, 1365313257279062067, 1365311602290851880, 1365313248269828116, 1365311608259346462, 1365313251201519697, 1365311611019202744, 1365311614332571739, 1365313292477927464]
         "requirements": {},
-        "role_id": 1365035636351959153,
+        "role_id": 1365313251201519697,
         "remove_after_purchase": {
             "roles": False,
             "items": False
@@ -3759,8 +3766,9 @@ ITEMS = [
         "tradeable": True,
         "usable": True,
         "use_effect": "Renvoie 150% des attaques bancaires, booste tes revenus de 5% (1 semaine) et bloque/renvoie 300% des attaques tout en doublant les revenus (24h).",
+        "blocked_roles": [1365316070172393572, 1365311588139274354, 1365313257279062067, 1365311602290851880, 1365313248269828116, 1365311608259346462, 1365313251201519697, 1365311611019202744, 1365311614332571739, 1365313292477927464]
         "requirements": {},
-        "role_id": 1365037444608819221,
+        "role_id": 1365311611019202744,
         "remove_after_purchase": {
             "roles": False,
             "items": False
@@ -3778,10 +3786,11 @@ ITEMS = [
         "tradeable": True,
         "usable": True,
         "use_effect": "Le Nika Nika no Mi permet de créer des ressources, effacer dettes, et avec Gear Fifth, booste tes fonds de 500% et influe sur l'économie des autres.",
+        "blocked_roles": [1365316070172393572, 1365311588139274354, 1365313257279062067, 1365311602290851880, 1365313248269828116, 1365311608259346462, 1365313251201519697, 1365311614332571739, 1365313292477927464]
         "requirements": {
-            "role_id": 1365037444608819221
+            "role_id": 1365311611019202744
         },
-        "role_id": 1365037905633869914,
+        "role_id": 1365313292477927464,
         "remove_after_purchase": {
             "roles": False,
             "items": False
@@ -3800,7 +3809,8 @@ ITEMS = [
         "usable": True,
         "use_effect": "Le **Uo Uo no Mi, Seiryu** transforme en dragon céleste, protège la banque (30% vol max) pendant 1 semaine, lance des flammes dévastatrices (vol de 75%) et invoque un orage réduisant les gains de 70% et renvoyant les attaques contre toi. *Colère Draconique* détruit l'économie d'un joueur une fois par mois.",
         "requirements": {},
-        "role_id": 1365041330585337926,
+        "blocked_roles": [1365316070172393572, 1365311588139274354, 1365313257279062067, 1365311602290851880, 1365313248269828116, 1365311608259346462, 1365313251201519697, 1365311611019202744, 1365311614332571739, 1365313292477927464]
+        "role_id": 1365311614332571739,
         "remove_after_purchase": {
             "roles": False,
             "items": False
@@ -4326,34 +4336,34 @@ async def item_use(interaction: discord.Interaction, item_id: int):
         )
         return await interaction.response.send_message(embed=embed)
 
-    # Vérifier les prérequis
-    if item_data.get("requirements"):
-        requirements = item_data["requirements"]
-        req_message = []
+    # Vérifier si l'utilisateur a le rôle spécifique qui permet d'utiliser des items malgré les rôles bloquants
+    special_role_id = 1365310665417556011
+    if special_role_id in [role.id for role in user.roles]:
+        # L'utilisateur a ce rôle, on l'autorise à utiliser l'item
+        embed = discord.Embed(
+            title=f"<:Check:1362710665663615147> Utilisation de l'item",
+            description=f"Tu as utilisé **{item_data['title']}** {item_data.get('emoji', '')}, malgré les restrictions de rôle.",
+            color=discord.Color.green()
+        )
+        return await interaction.response.send_message(embed=embed)
 
-        # Vérifier les rôles requis
-        if "roles" in requirements:
-            for role_id in requirements["roles"]:
-                role = discord.utils.get(interaction.guild.roles, id=role_id)
-                if role and role not in user.roles:
-                    req_message.append(f"• Rôle requis: <@&{role_id}> ({role.name})")
+    # Vérification des rôles bloquants
+    if item_data.get("blocked_roles"):
+        blocked_roles = item_data["blocked_roles"]
         
-        # Vérifier les items requis
-        if "items" in requirements:
-            for required_item_id in requirements["items"]:
-                item_in_inventory = await check_user_has_item(interaction.user, required_item_id)
-                if not item_in_inventory:
-                    req_message.append(f"• Item requis: ID {required_item_id} (Non possédé)")
-
-        # Si des prérequis ne sont pas remplis, empêcher l'utilisation de l'item
-        if req_message:
+        # Compter combien de rôles bloquants l'utilisateur possède
+        user_blocked_roles = [role for role in user.roles if role.id in blocked_roles]
+        
+        # Si l'utilisateur a 2 rôles bloquants ou plus, on bloque l'utilisation
+        if len(user_blocked_roles) >= 2:
             embed = discord.Embed(
-                title="<:classic_x_mark:1362711858829725729> Prérequis non remplis",
-                description="Tu ne remplis pas les prérequis suivants pour utiliser cet item :\n" + "\n".join(req_message),
+                title="<:classic_x_mark:1362711858829725729> Utilisation bloquée",
+                description="Tu ne peux pas utiliser cet item en raison de tes rôles bloquants.",
                 color=discord.Color.red()
             )
             return await interaction.response.send_message(embed=embed)
 
+    # Si aucun rôle ne bloque, continuer normalement (comme dans ton code actuel)
     # Supprime un exemplaire dans l'inventaire
     collection17.delete_one({
         "user_id": user_id,

@@ -1288,12 +1288,17 @@ async def deposit(ctx: commands.Context, amount: str):
     await ctx.send(embed=embed)
 
 @bot.hybrid_command(name="withdraw", aliases=["with"], description="Retire de l'argent de ta banque vers ton portefeuille.")
-async def withdraw(ctx: commands.Context, amount: str):
+@app_commands.describe(amount="Montant à retirer ou 'all'")
+async def withdraw(ctx: commands.Context, amount: str = None):
     user = ctx.author
     guild_id = ctx.guild.id
     user_id = user.id
 
-    # Chercher les données actuelles
+    # Si amount est une coroutine ou None, on l'attend
+    if callable(amount):
+        amount = await amount()
+
+    # Récupérer les données actuelles
     data = collection.find_one({"guild_id": guild_id, "user_id": user_id}) or {"cash": 0, "bank": 0}
     cash = data.get("cash", 0)
     bank = data.get("bank", 0)
@@ -1312,9 +1317,9 @@ async def withdraw(ctx: commands.Context, amount: str):
         try:
             # Gère à la fois les entiers classiques et la notation scientifique
             withdrawn_amount = int(float(amount))
-        except ValueError:
+        except (ValueError, TypeError):
             embed = discord.Embed(
-                description="❌ Montant invalide. Utilise un nombre valide ou `all`.",
+                description="❌ Montant invalide. Utilise un nombre valide ou 'all'.",
                 color=discord.Color.red()
             )
             embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
@@ -1339,14 +1344,14 @@ async def withdraw(ctx: commands.Context, amount: str):
             embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
             return await ctx.send(embed=embed)
 
-    # Mise à jour dans la base de données
+    # Mise à jour de la base de données
     collection.update_one(
         {"guild_id": guild_id, "user_id": user_id},
         {"$inc": {"cash": withdrawn_amount, "bank": -withdrawn_amount}},
         upsert=True
     )
 
-    # Création de l'embed de succès
+    # Embed de succès
     embed = discord.Embed(
         description=f"<:Check:1362710665663615147> Tu as retiré <:ecoEther:1341862366249357374> **{int(withdrawn_amount):,}** de ta banque !",
         color=discord.Color.green()

@@ -7188,6 +7188,8 @@ async def tenebre(ctx):
         {"$set": {"last_use": now}},
         upsert=True
     )
+    # Log de mise à jour du cooldown
+    print(f"{now} - {ctx.author} a utilisé la commande tenebre. Cooldown mis à jour.")
 
     # Ajoute la protection de 6h contre les robs
     collection45.update_one(
@@ -7195,6 +7197,8 @@ async def tenebre(ctx):
         {"$set": {"protection_start": now}},
         upsert=True
     )
+    # Log de protection ajoutée
+    print(f"{now} - {ctx.author} a activé la protection contre les robs pour 6h.")
 
     # Donne le rôle temporaire (3 jours)
     role_id = 1365070571704156241
@@ -7203,6 +7207,8 @@ async def tenebre(ctx):
         await ctx.author.add_roles(role)
         await asyncio.sleep(259200)  # 3 jours en secondes
         await ctx.author.remove_roles(role)
+        # Log de l'ajout et retrait du rôle
+        print(f"{now} - {ctx.author} a reçu le rôle des ténèbres pendant 3 jours.")
 
     # Embed de confirmation
     embed = discord.Embed(

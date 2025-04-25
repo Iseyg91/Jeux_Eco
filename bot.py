@@ -421,13 +421,24 @@ daily_rewards = {
     2: {"coins": 2500, "badge": None, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.2.png?raw=true"},
     3: {"coins": 3500, "badge": 4, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.3.png?raw=true"},
     4: {"coins": 4500, "badge": None, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.4.png?raw=true"},
-5: {
-    "coins": 5500,
-    "badge": None,
-    "item": None, 
-    "random_items": [763, 203, 542, 352],  # Liste d'IDs d'items possibles
-    "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.5.png?raw=true"
-},
+    5: {
+        "coins": 5500,
+        "badge": None,
+        "item": None,
+        "random_items": [
+            {"id": 763, "chance": 30},   # Bomu
+            {"id": 203, "chance": 25},   # Tetsu
+            {"id": 542, "chance": 20},   # Joki
+            {"id": 352, "chance": 15},   # Gol
+            {"id": 801, "chance": 5},    # Gura
+            {"id": 802, "chance": 3},    # Hie
+            {"id": 803, "chance": 1},    # Yami
+            {"id": 804, "chance": 1},    # Gomu
+            {"id": 805, "chance": 0},    # Nika
+            {"id": 806, "chance": 0}     # Uo
+        ],
+        "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.5.png?raw=true"
+    },
     6: {"coins": 6500, "badge": None, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.6.png?raw=true"},
     7: {"coins": 7500, "badge": 3, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.7.png?raw=true"}
 }
@@ -3725,7 +3736,7 @@ ITEMS = [
         "emoji": "<:guraguranomi:1365020132048506991>",
         "title": "Gura Gura no Mi",
         "description": "Permet de créer des séismes dévastateurs à une échelle massive. Peut détruire des banques entières en faisant des secousses.",
-        "price": 750000,
+        "price": 1000000,
         "emoji_price": "<:ecoEther:1341862366249357374>",
         "quantity": 1,
         "tradeable": True,
@@ -5236,9 +5247,16 @@ async def give_reward(interaction: discord.Interaction, day: int):
     item = reward.get("item")
     random_items = reward.get("random_items")
 
-    # Si random_items est défini, choisir un item au hasard
+    # Si random_items est défini, choisir un item au hasard en fonction des chances
     if random_items and isinstance(random_items, list):
-        item = random.choice(random_items)
+        total_chance = sum(entry["chance"] for entry in random_items)  # Somme des chances
+        roll = random.uniform(0, total_chance)  # Tirage au sort entre 0 et la somme totale des chances
+        cumulative_chance = 0
+        for entry in random_items:
+            cumulative_chance += entry["chance"]
+            if roll <= cumulative_chance:  # Si le tirage est inférieur ou égal à la chance cumulative
+                item = entry["id"]  # Choisir cet item
+                break
 
     # === Récompense enregistrée (collection23) ===
     user_data = collection23.find_one({"guild_id": interaction.guild.id, "user_id": interaction.user.id})
@@ -5310,8 +5328,7 @@ async def give_reward(interaction: discord.Interaction, day: int):
     embed.add_field(name="Progression", value=f"{progress} ({days_received}/{total_days})", inline=False)
 
     await interaction.response.send_message(embed=embed, ephemeral=True)
-
-
+#------------------------------------------------------------------------- Nen
 # === Vérifie si le joueur a une licence Hunter (item 7)
 def has_license(user_id, guild_id):
     items_cursor = collection17.find({"guild_id": guild_id, "user_id": user_id})

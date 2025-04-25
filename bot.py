@@ -8445,7 +8445,7 @@ async def slot_machine(ctx, bet):
     embed.description = description
 
     embed.add_field(
-        name="Jetons",
+        name="\u200b",  # Champ sans titre
         value=f"{lines[0]}\n{lines[1]} <:emoji_14:1365415542466281593>\n{lines[2]}"
     )
 

@@ -8376,6 +8376,99 @@ async def getbotinfo(ctx):
     except Exception as e:
         print(f"Erreur dans la commande `getbotinfo` : {e}")
 
+# Définition des symboles
+symbols = {
+    'delta': "<:delta_jeton:1365410293206880296>",
+    'alpha': "<:alpha_jeton:1365410328363667599>",
+    'beta': "<:beta_jeton:1365410310860705863>"
+}
+
+# Fonction pour obtenir ou créer les données de l'utilisateur
+def get_or_create_user_data(guild_id, user_id):
+    data = collection.find_one({"guild_id": guild_id, "user_id": user_id})
+    if not data:
+        data = {"guild_id": guild_id, "user_id": user_id, "cash": 1500, "bank": 0}
+        collection.insert_one(data)
+    return data
+
+# Mise à jour de la balance du joueur
+async def update_balance(guild_id, user_id, amount):
+    # Récupérer les données de l'utilisateur
+    data = get_or_create_user_data(guild_id, user_id)
+    
+    # Calculer la nouvelle balance
+    new_cash = data['cash'] + amount
+    # Mettre à jour la base de données uniquement sur le cash
+    collection.update_one(
+        {"guild_id": guild_id, "user_id": user_id},
+        {"$set": {"cash": new_cash}}
+    )
+    return new_cash
+
+# Fonction principale de la machine à sous
+async def slot_machine(ctx, bet):
+    # Limite des mises
+    if bet < 1 or bet > 5000:
+        await ctx.send("La mise doit être entre 1 et 5000.")
+        return
+
+    # Récupérer les données de l'utilisateur
+    data = get_or_create_user_data(ctx.guild.id, ctx.author.id)
+    cash = data.get("cash", 0)
+
+    # Vérifier si l'utilisateur a assez d'argent pour jouer
+    if bet > cash:
+        await ctx.send("Vous n'avez pas assez d'argent pour jouer à cette mise.")
+        return
+
+    # Tirage des symboles
+    reels = [random.choice(list(symbols.values())) for _ in range(9)]
+    lines = [
+        "|".join(reels[0:3]),
+        "|".join(reels[3:6]),
+        "|".join(reels[6:9])
+    ]
+    
+    # Vérification des gains
+    if lines[1] == "|".join([symbols['delta']] * 3):
+        win_amount = bet * 3
+        color = discord.Color.green()
+        description = f"**You won** <:ecoEther:1341862366249357374> {win_amount:,}!"
+    elif lines[1] == "|".join([symbols['alpha']] * 3):
+        win_amount = bet * 2
+        color = discord.Color.green()
+        description = f"**You won** <:ecoEther:1341862366249357374> {win_amount:,}!"
+    elif lines[1] == "|".join([symbols['beta']] * 3):
+        win_amount = bet * 1
+        color = discord.Color.green()
+        description = f"**You won** <:ecoEther:1341862366249357374> {win_amount:,}!"
+    else:
+        win_amount = -bet  # Si le joueur perd, on retire la mise
+        color = discord.Color.red()
+        description = f"**You lost** <:ecoEther:1341862366249357374> {bet:,}!"
+
+    # Mettre à jour la balance du joueur
+    new_cash = await update_balance(ctx.guild.id, ctx.author.id, win_amount)
+
+    # Embed de résultat
+    embed = discord.Embed(color=color)
+    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar.url)
+    embed.description = description
+
+    # Affichage des lignes avec la flèche à droite
+    embed.add_field(name="Jetons", value=f"{lines[0]}\n{lines[1]} <:emoji_14:1365415542466281593}\n{lines[2]}")
+    
+    # Affichage du solde actuel
+    embed.add_field(name="Solde actuel", value=f"Cash: {new_cash:,} <:ecoEther:1341862366249357374>")
+    
+    # Envoi de l'embed
+    await ctx.send(embed=embed)
+
+# Commande pour jouer à la machine à sous
+@bot.hybrid_command(name="slot-machine", aliases=["sm"], description="Jouer à la machine à sous.")
+async def slot(ctx, bet: int):
+    await slot_machine(ctx, bet)
+
 # Token pour démarrer le bot (à partir des secrets)
 # Lancer le bot avec ton token depuis l'environnement  
 keep_alive()

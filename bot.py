@@ -1241,16 +1241,15 @@ async def deposit(ctx: commands.Context, amount: str):
         deposit_amount = int(cash)
 
     else:
-        try:
-            # Gère à la fois les entiers classiques et la notation scientifique
-            deposit_amount = int(float(amount))
-        except ValueError:
+        if not amount.isdigit():
             embed = discord.Embed(
-                description=f"<:classic_x_mark:1362711858829725729> {user.mention}, montant invalide. Utilise un nombre valide ou `all`.",
+                description=f"<:classic_x_mark:1362711858829725729> {user.mention}, montant invalide. Utilise un nombre ou `all`.",
                 color=discord.Color.red()
             )
             embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
             return await ctx.send(embed=embed)
+
+        deposit_amount = int(amount)
 
         if deposit_amount <= 0:
             embed = discord.Embed(
@@ -1288,17 +1287,12 @@ async def deposit(ctx: commands.Context, amount: str):
     await ctx.send(embed=embed)
 
 @bot.hybrid_command(name="withdraw", aliases=["with"], description="Retire de l'argent de ta banque vers ton portefeuille.")
-@app_commands.describe(amount="Montant à retirer ou 'all'")
-async def withdraw(ctx: commands.Context, amount: str = None):
+async def withdraw(ctx: commands.Context, amount: str):
     user = ctx.author
     guild_id = ctx.guild.id
     user_id = user.id
 
-    # Si amount est une coroutine ou None, on l'attend
-    if callable(amount):
-        amount = await amount()
-
-    # Récupérer les données actuelles
+    # Chercher les données actuelles
     data = collection.find_one({"guild_id": guild_id, "user_id": user_id}) or {"cash": 0, "bank": 0}
     cash = data.get("cash", 0)
     bank = data.get("bank", 0)
@@ -1314,16 +1308,16 @@ async def withdraw(ctx: commands.Context, amount: str = None):
             return await ctx.send(embed=embed)
         withdrawn_amount = int(bank)
     else:
-        try:
-            # Gère à la fois les entiers classiques et la notation scientifique
-            withdrawn_amount = int(float(amount))
-        except (ValueError, TypeError):
+        # Vérifie que c'est un nombre valide
+        if not amount.isdigit():
             embed = discord.Embed(
-                description="❌ Montant invalide. Utilise un nombre valide ou 'all'.",
+                description="❌ Montant invalide. Utilise un nombre ou `all`.",
                 color=discord.Color.red()
             )
             embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
             return await ctx.send(embed=embed)
+
+        withdrawn_amount = int(amount)
 
         if withdrawn_amount <= 0:
             embed = discord.Embed(
@@ -1344,14 +1338,14 @@ async def withdraw(ctx: commands.Context, amount: str = None):
             embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
             return await ctx.send(embed=embed)
 
-    # Mise à jour de la base de données
+    # Mise à jour dans la base de données
     collection.update_one(
         {"guild_id": guild_id, "user_id": user_id},
         {"$inc": {"cash": withdrawn_amount, "bank": -withdrawn_amount}},
         upsert=True
     )
 
-    # Embed de succès
+    # Création de l'embed de succès
     embed = discord.Embed(
         description=f"<:Check:1362710665663615147> Tu as retiré <:ecoEther:1341862366249357374> **{int(withdrawn_amount):,}** de ta banque !",
         color=discord.Color.green()
@@ -1566,7 +1560,7 @@ async def pay(ctx: commands.Context, user: discord.User, amount: str):
         amount = sender_cash
     else:
         try:
-            amount = int(float(amount))  # accepte 1e3, 2.5e2, etc.
+            amount = int(amount)
             if amount <= 0:
                 raise ValueError
         except ValueError:
@@ -2056,7 +2050,7 @@ async def cock_fight(ctx, amount: str):
 
     else:
         try:
-            amount = int(float(amount))  # Accepte la notation scientifique
+            amount = int(amount)
         except ValueError:
             embed = discord.Embed(
                 description=f"<:classic_x_mark:1362711858829725729> {user.mention}, entre un montant valide, ou utilise `all` ou `half`.",
@@ -2471,6 +2465,7 @@ class BlackjackView(discord.ui.View):
 
         await interaction.response.edit_message(embed=embed, view=None)
 
+# Lorsqu'un joueur joue au blackjack
 @bot.hybrid_command(name="blackjack", aliases=["bj"], description="Joue au blackjack et tente de gagner !")
 async def blackjack(ctx: commands.Context, mise: str = None):
     if ctx.guild is None:
@@ -2496,12 +2491,7 @@ async def blackjack(ctx: commands.Context, mise: str = None):
             mise = half_cash
 
     elif mise:
-        try:
-            # Tentative de conversion de la mise, incluant les notations scientifiques
-            mise = int(float(mise))  # Convertit le chiffre en float puis en int
-        except ValueError:
-            return await ctx.send(embed=discord.Embed(description="La mise doit être un nombre valide, incluant les notations scientifiques (par exemple `5e2` pour 500).", color=discord.Color.red()))
-
+        mise = int(mise)
         user_data = get_or_create_user_data(ctx.guild.id, ctx.author.id)
         max_bet = 15000  # La mise maximale
 
@@ -3035,7 +3025,7 @@ COLUMN_2 = [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35]
 COLUMN_3 = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36]
 
 @bot.command(name="roulette", description="Parie sur la roulette avec un montant spécifique")
-async def roulette(ctx: commands.Context, bet: str, space: str):
+async def roulette(ctx: commands.Context, bet: int, space: str):
     guild_id = ctx.guild.id
     user_id = ctx.author.id
 
@@ -3054,36 +3044,24 @@ async def roulette(ctx: commands.Context, bet: str, space: str):
     data = get_or_create_user_data(guild_id, user_id)
     cash = data.get("cash", 0)
 
-    # Vérifier si le format du pari est valide
-    bet_match = re.match(r"(\d+)e(\d+)", bet)
-    if bet_match:
-        base = int(bet_match.group(1))  # la base du chiffre (ex : 5)
-        exponent = int(bet_match.group(2))  # l'exposant (ex : 2)
-        bet_value = base * (10 ** exponent)  # Calcul du pari en valeur absolue (ex : 5e2 -> 500)
-    else:
-        try:
-            bet_value = int(bet)  # Si ce n'est pas au format exponentiel, essayer comme un entier normal
-        except ValueError:
-            return await ctx.send("⛔ Format de pari invalide. Utilisez par exemple 5e2 pour 500.")
-
-    if bet_value > cash:
+    if bet > cash:
         active_roulette_players.remove(user_id)
         return await ctx.send(f"Tu n'as pas assez d'argent ! Tu as {cash} en cash.")
 
-    if bet_value < 1:
+    if bet < 1:
         active_roulette_players.remove(user_id)
         return await ctx.send("⛔ La mise minimale est de 1 coin !")
 
-    if bet_value > 5000:
+    if bet > 5000:
         active_roulette_players.remove(user_id)
         return await ctx.send("⛔ La mise maximale est de 5000 !")
 
     # Déduction du montant parié
-    collection.update_one({"guild_id": guild_id, "user_id": user_id}, {"$inc": {"cash": -bet_value}})
+    collection.update_one({"guild_id": guild_id, "user_id": user_id}, {"$inc": {"cash": -bet}})
 
     embed = discord.Embed(
-        title=ctx.author.name,
-        description=f"You have placed a bet of <:ecoEther:1341862366249357374>{bet_value} on **{space}**.",
+        title=ctx.author.name,  # ou interaction.user.name selon ton contexte
+        description=f"You have placed a bet of <:ecoEther:1341862366249357374>{int(bet)} on **{space}**.",
         color=discord.Color.blue()
     )
     embed.set_footer(text="Time remaining: 10 seconds")
@@ -3151,9 +3129,9 @@ async def roulette(ctx: commands.Context, bet: str, space: str):
     if win:
         collection.update_one(
             {"guild_id": guild_id, "user_id": user_id},
-            {"$inc": {"cash": int(bet_value * multiplier)}},
+            {"$inc": {"cash": int(bet * multiplier)}},
         )
-        result_str = f"The ball landed on: **{spin_result}**!\n\n**Winners:**\n{ctx.author.mention} won <:ecoEther:1341862366249357374> {int(bet_value * multiplier)}"
+        result_str = f"The ball landed on: **{spin_result}**!\n\n**Winners:**\n{ctx.author.mention} won <:ecoEther:1341862366249357374> {int(bet * multiplier)}"
     else:
         result_str = f"The ball landed on: {spin_result}!\n\nNo Winners  :("
 

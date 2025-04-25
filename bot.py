@@ -4397,7 +4397,7 @@ async def item_use(interaction: discord.Interaction, item_id: int):
         user_blocked_roles = [role for role in user.roles if role.id in blocked_roles]
         
         # Si l'utilisateur a 2 rôles bloquants ou plus, on bloque l'utilisation
-        if len(user_blocked_roles) >= 2:
+        if len(user_blocked_roles) >= 3:
             embed = discord.Embed(
                 title="<:classic_x_mark:1362711858829725729> Utilisation bloquée",
                 description="Tu ne peux pas utiliser cet item en raison de tes rôles bloquants.",
@@ -8282,6 +8282,99 @@ async def roll(ctx, x: str = None):
         color=discord.Color.green()
     )
     await ctx.send(embed=embed)
+
+@bot.command()
+async def getbotinfo(ctx):
+    """Affiche les statistiques détaillées du bot avec un embed amélioré visuellement."""
+    try:
+        start_time = time.time()
+        
+        # Calcul de l'uptime du bot
+        uptime_seconds = int(time.time() - bot.uptime)
+        uptime_days, remainder = divmod(uptime_seconds, 86400)
+        uptime_hours, remainder = divmod(remainder, 3600)
+        uptime_minutes, uptime_seconds = divmod(remainder, 60)
+
+        # Récupération des statistiques
+        total_servers = len(bot.guilds)
+        total_users = sum(g.member_count for g in bot.guilds if g.member_count)
+        total_text_channels = sum(len(g.text_channels) for g in bot.guilds)
+        total_voice_channels = sum(len(g.voice_channels) for g in bot.guilds)
+        latency = round(bot.latency * 1000, 2)  # Latence en ms
+        total_commands = len(bot.commands)
+
+        # Création d'une barre de progression plus détaillée pour la latence
+        latency_bar = "🟩" * min(10, int(10 - (latency / 30))) + "🟥" * max(0, int(latency / 30))
+
+        # Création de l'embed
+        embed = discord.Embed(
+            title="✨ **Informations du Bot**",
+            description=f"📌 **Nom :** `{bot.user.name}`\n"
+                        f"🆔 **ID :** `{bot.user.id}`\n"
+                        f"🛠️ **Développé par :** `Iseyg`\n"
+                        f"🔄 **Version :** `1.2.1`",
+            color=discord.Color.blurple(),  # Dégradé bleu-violet pour une touche dynamique
+            timestamp=datetime.utcnow()
+        )
+
+        # Ajout de l'avatar et de la bannière si disponible
+        embed.set_thumbnail(url=bot.user.avatar.url if bot.user.avatar else None)
+        if bot.user.banner:
+            embed.set_image(url=bot.user.banner.url)
+
+        embed.set_footer(text=f"Requête faite par {ctx.author}", icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
+
+        # 📊 Statistiques générales
+        embed.add_field(
+            name="📊 **Statistiques générales**",
+            value=(
+                f"📌 **Serveurs :** `{total_servers:,}`\n"
+                f"👥 **Utilisateurs :** `{total_users:,}`\n"
+                f"💬 **Salons textuels :** `{total_text_channels:,}`\n"
+                f"🔊 **Salons vocaux :** `{total_voice_channels:,}`\n"
+                f"📜 **Commandes :** `{total_commands:,}`\n"
+            ),
+            inline=False
+        )
+
+        # 🔄 Uptime
+        embed.add_field(
+            name="⏳ **Uptime**",
+            value=f"🕰️ `{uptime_days}j {uptime_hours}h {uptime_minutes}m {uptime_seconds}s`",
+            inline=True
+        )
+
+        # 📡 Latence
+        embed.add_field(
+            name="📡 **Latence**",
+            value=f"⏳ `{latency} ms`\n{latency_bar}",
+            inline=True
+        )
+
+        # 📍 Informations supplémentaires
+        embed.add_field(
+            name="📍 **Informations supplémentaires**",
+            value="💡 **Technologies utilisées :** `Python, discord.py`\n"
+                  "⚙️ **Bibliothèques :** `discord.py, asyncio, etc.`",
+            inline=False
+        )
+
+        # Ajout d'un bouton d'invitation
+        view = discord.ui.View()
+        invite_button = discord.ui.Button(
+            label="📩 Inviter le Bot",
+            style=discord.ButtonStyle.link,
+            url="https://discord.com/oauth2/authorize?client_id=1356693934012891176"
+        )
+        view.add_item(invite_button)
+
+        await ctx.send(embed=embed, view=view)
+
+        end_time = time.time()
+        print(f"Commande `getbotinfo` exécutée en {round((end_time - start_time) * 1000, 2)}ms")
+
+    except Exception as e:
+        print(f"Erreur dans la commande `getbotinfo` : {e}")
 
 # Token pour démarrer le bot (à partir des secrets)
 # Lancer le bot avec ton token depuis l'environnement  

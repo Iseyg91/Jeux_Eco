@@ -97,7 +97,12 @@ collection49 = db['cd_royaume_nika'] #Stock le cd des utilisation du Royaume
 collection50 = db['cd_acces_royaume'] #Stock le cd d'acces au Royaume
 collection51 = db['cd_nika_collect'] #Stock le cd de reutilisation du Nika Collect
 collection52 = db['cd_eveil_attaque'] #Stock le cd de reutilisation du Nika Eveil
-collection52 = db['cd_eveil_subis'] #Stock le cd de soumission du Nika Eveil
+collection53 = db['cd_eveil_subis'] #Stock le cd de soumission du Nika Eveil
+collection54 = db['cd_bourrasque'] #Stock le cd de reutilisation du Uo Uo no Mi
+collection55 = db['cd_bourrasque_subis'] #Stock le cd de soumission du Uo Uo no Mi
+collection56 = db['cd_tonnerre_attaque'] #Stock les cd de reutillisation du Tonnerre Divin
+collection57 = db['cd_tonnerre_subis'] #Stock les cd de soumission du Tonnerre Divin
+collection58 = db['cd_eveil_uo'] #Stock les cd d'eveil du Dragon
 
 # Fonction pour vérifier si l'utilisateur possède un item (fictif, à adapter à ta DB)
 async def check_user_has_item(user: discord.Member, item_id: int):
@@ -216,7 +221,12 @@ def load_guild_settings(guild_id):
     cd_nika_collect_data = collection51.find_one({"guild_id": guild_id}) or {}
     cd_eveil_attaque_data = collection52.find_one({"guild_id": guild_id}) or {}
     cd_eveil_subis_data = collection53.find_one({"guild_id": guild_id}) or {}
-
+    cd_bourrasque_data = collection54.find_one({"guild_id": guild_id}) or {}
+    cd_bourrasque_subis_data = collection55.find_one({"guild_id": guild_id}) or {}
+    cd_tonnerre_attaque_data = collection56.find_one({"guild_id": guil_id}) or {}
+    cd_tonnerre_subis_data = collection57.find_one({"guild_id": guild_id}) or {}
+    cd_eveil_uo_data = collection58.find_one({"guild_id": guild_id}) or {}
+    
     # Débogage : Afficher les données de setup
     print(f"Setup data for guild {guild_id}: {setup_data}")
 
@@ -273,7 +283,12 @@ def load_guild_settings(guild_id):
         "cd_acces_royaume": cd_acces_royaume_data,
         "cd_nika_collect": cd_nika_collect_data,
         "cd_eveil_attaque": cd_eveil_attaque_data,
-        "cd_eveil_subis_data": cd_eveil_subis_data
+        "cd_eveil_subis": cd_eveil_subis_data,
+        "cd_bourrasque": cd_bourrasque_data,
+        "cd_bourrasque_subis": cd_bourrasque_subis_data,
+        "cd_tonnerre_attaque": cd_tonnerre_attaque_data,
+        "cd_tonnerre_subis": cd_tonnerre_subis_data,
+        "cd_eveil_uo": cd_eveil_uo_data
     }
 
     return combined_data
@@ -361,6 +376,20 @@ COLLECT_ROLES_CONFIG = [
         "target": "bank"
     },
     {
+        "role_id": 1365235019869847572,
+        "percent": -50,
+        "cooldown": 3600,
+        "auto": True,
+        "target": "bank"
+    },
+    {
+        "role_id": 1365238838603288637,
+        "percent": -70,
+        "cooldown": 86400,
+        "auto": True,
+        "target": "bank"
+    },
+    {
         "role_id": 1363974710739861676,
         "percent": 1,
         "cooldown": 3600,
@@ -436,6 +465,31 @@ COLLECT_ROLES_CONFIG = [
 from discord.ext import tasks
 import discord
 from datetime import datetime
+
+from datetime import datetime
+from discord.ext import tasks
+
+# --- Boucle suppression des rôles Bourrasque ---
+@tasks.loop(minutes=10)
+async def remove_bourrasque_roles():
+    now = datetime.utcnow()
+    expired = collection54.find({"end_time": {"$lte": now}})
+
+    for doc in expired:
+        guild = bot.get_guild(doc["guild_id"])
+        member = guild.get_member(doc["user_id"])
+        role = guild.get_role(doc["role_id"])
+
+        if member and role:
+            try:
+                await member.remove_roles(role)
+                print(f"✅ Rôle retiré de {member.display_name}")
+            except Exception as e:
+                print(f"❌ Erreur lors du retrait du rôle: {e}")
+
+        # Supprime l'entrée après retrait
+        collection54.delete_one({"_id": doc["_id"]})
+
 
 # --- Boucle suppression des rôles de gel économique ---
 @tasks.loop(minutes=30)
@@ -585,6 +639,8 @@ async def start_background_tasks():
         update_top_roles.start()
     if not remove_glace_roles.is_running():
         remove_glace_roles.start()
+    if not remove_bourrasque_roles.is_running():
+        remove_bourrasque_roles.start()
 
 # --- Gestion globale des erreurs ---
 @bot.event
@@ -2138,11 +2194,12 @@ async def rob(ctx, user: discord.User):
             color=discord.Color.red()
         ))
 
-    # Vérifier si la cible a le rôle qui repousse les vols et fait perdre 300% de la banque de l'attaquant
+    # Vérifier si la cible a le rôle qui repousse les vols (300% banque)
     has_anti_rob_reflect = discord.utils.get(target_member.roles, id=1365076692410044467)
+    user_data = collection.find_one({"guild_id": guild_id, "user_id": user_id}) or {"cash": 1500, "bank": 0}
     if has_anti_rob_reflect:
-        penalty = round(user_data["bank"] * 3.00, 2)  # 300% de la banque
-        penalty = min(penalty, user_data["bank"])  # Limiter la pénalité à la somme de la banque
+        penalty = round(user_data["bank"] * 3.00, 2)
+        penalty = min(penalty, user_data["bank"])
         collection.update_one({"guild_id": guild_id, "user_id": user_id}, {"$inc": {"bank": -penalty}})
 
         await log_eco_channel(bot, guild_id, ctx.author, "Vol repoussé", -penalty, user_data["bank"], user_data["bank"] - penalty, f"Repoussé par {user.display_name}")
@@ -2154,7 +2211,6 @@ async def rob(ctx, user: discord.User):
         ).set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url))
 
     # Data utilisateur/target
-    user_data = collection.find_one({"guild_id": guild_id, "user_id": user_id}) or {"cash": 1500, "bank": 0}
     target_data = collection.find_one({"guild_id": guild_id, "user_id": target_id}) or {"cash": 1500, "bank": 0}
     collection.update_one({"guild_id": guild_id, "user_id": user_id}, {"$setOnInsert": user_data}, upsert=True)
     collection.update_one({"guild_id": guild_id, "user_id": target_id}, {"$setOnInsert": target_data}, upsert=True)
@@ -2171,7 +2227,6 @@ async def rob(ctx, user: discord.User):
         today_str = now.strftime("%Y-%m-%d")
         barrier_data = collection.find_one({"guild_id": guild_id, "user_id": target_id, "barriere_date": today_str})
         if not barrier_data:
-            # Activer barrière pour aujourd'hui
             collection.update_one(
                 {"guild_id": guild_id, "user_id": target_id},
                 {"$set": {"barriere_date": today_str}},
@@ -2182,11 +2237,10 @@ async def rob(ctx, user: discord.User):
                 color=discord.Color.blue()
             ))
 
-    # Détection rôle réduction 50%
+    # Rôles spéciaux
     has_half_rob_protection = discord.utils.get(target_member.roles, id=1365029481206775878)
-
-    # Détection rôle contre-attaque 200%
     has_counter_role = discord.utils.get(target_member.roles, id=1365070571704156241)
+    has_30_percent_protection = discord.utils.get(target_member.roles, id=1365231259340505148)
 
     # Calcul succès du vol
     robber_total = user_data["cash"] + user_data["bank"]
@@ -2206,6 +2260,11 @@ async def rob(ctx, user: discord.User):
 
         if has_half_rob_protection:
             stolen /= 2
+
+        # Limiter à 30% si protection active
+        if has_30_percent_protection:
+            max_stealable = target_data["cash"] * 0.30
+            stolen = min(stolen, max_stealable)
 
         stolen = round(stolen, 2)
         stolen = min(stolen, target_data["cash"])
@@ -7215,11 +7274,10 @@ async def eveil(ctx):
     user_id = ctx.author.id
     role_required = 1365082775845081148
     role_temporaire = 1365083240544600094
-    cooldown_duration = 30 * 24 * 60 * 60  # 1 mois en secondes
+    cooldown_duration = 30 * 24 * 60 * 60  # 1 mois
 
-    # Vérifie si l'utilisateur a le rôle requis
     if role_required not in [role.id for role in ctx.author.roles]:
-        return await ctx.send("Tu n'as pas le rôle nécessaire pour utiliser cette commande.")
+        return await ctx.send("❌ Tu n'as pas le rôle nécessaire pour utiliser cette commande.")
 
     now = datetime.datetime.utcnow()
     cooldown_data = cd_eveil.find_one({"_id": user_id})
@@ -7231,21 +7289,39 @@ async def eveil(ctx):
             hours, remainder = divmod(int(remaining.total_seconds()), 3600)
             minutes, seconds = divmod(remainder, 60)
             return await ctx.send(
-                f"⏳ Tu dois attendre encore {hours}h {minutes}m {seconds}s avant de pouvoir utiliser cette commande à nouveau."
+                f"⏳ Tu dois attendre encore **{hours}h {minutes}m {seconds}s** avant de pouvoir utiliser cette commande à nouveau."
             )
 
     # Appliquer le rôle temporaire
     role = ctx.guild.get_role(role_temporaire)
     await ctx.author.add_roles(role)
-    await ctx.send(f"{ctx.author.mention} s'éveille... 🌟 (Rôle actif pendant 20 secondes)")
+
+    embed = discord.Embed(
+        title="🌟 Éveil Activé !",
+        description=f"{ctx.author.mention} entre dans un état d'éveil absolu !",
+        color=discord.Color.gold()
+    )
+    embed.set_footer(text="Durée : 20 secondes", icon_url=ctx.author.display_avatar.url)
+    embed.set_image(url="https://www.melty.fr/wp-content/uploads/meltyfr/2022/08/one-piece-capitulo-1045-poderes-luffy.jpg")
+    await ctx.send(embed=embed)
 
     # Mettre à jour le cooldown
-    cd_eveil.update_one({"_id": user_id}, {"$set": {"cooldown": now + datetime.timedelta(seconds=cooldown_duration)}}, upsert=True)
+    cd_eveil.update_one(
+        {"_id": user_id},
+        {"$set": {"cooldown": now + datetime.timedelta(seconds=cooldown_duration)}},
+        upsert=True
+    )
 
-    # Attendre 20 secondes puis retirer le rôle
+    # Attente et retrait du rôle
     await asyncio.sleep(20)
     await ctx.author.remove_roles(role)
-    await ctx.send(f"{ctx.author.mention}, ton éveil est terminé. 🌌")
+
+    embed_fin = discord.Embed(
+        title="🌌 Fin de l'Éveil",
+        description=f"L'état éveillé de {ctx.author.mention} s'est dissipé...",
+        color=discord.Color.dark_blue()
+    )
+    await ctx.send(embed=embed_fin)
 
 @bot.command(name="eveil2")
 @commands.has_role(1365082775845081148)
@@ -7257,21 +7333,36 @@ async def eveil2(ctx, member: discord.Member):
     cooldown_data = collection_cd_eveil2.find_one({"user_id": author_id})
     if cooldown_data:
         last_used = cooldown_data["last_used"]
-        cooldown_expiry = last_used + timedelta(weeks=5)  # 1 mois et 1 semaine
+        cooldown_expiry = last_used + timedelta(weeks=5)  # 1 mois + 1 semaine
         if now < cooldown_expiry:
             remaining = cooldown_expiry - now
             days = remaining.days
             hours = remaining.seconds // 3600
             minutes = (remaining.seconds % 3600) // 60
-            return await ctx.send(f"⛔ Tu dois encore attendre {days} jours, {hours} heures et {minutes} minutes avant de réutiliser cette commande.")
+
+            embed_cd = discord.Embed(
+                title="⛔ Cooldown actif",
+                description=f"Tu dois encore attendre **{days} jours, {hours} heures et {minutes} minutes** avant de réutiliser cette commande.",
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed_cd)
+            return
 
     # Application du rôle
     role = ctx.guild.get_role(1365085598401953794)
     if not role:
         return await ctx.send("❌ Le rôle à donner est introuvable.")
-    
+
     await member.add_roles(role)
-    await ctx.send(f"✅ Le rôle **{role.name}** a été donné à {member.mention} pour **7 jours**.")
+
+    embed = discord.Embed(
+        title="🌟 Éveil Transcendantal",
+        description=f"{ctx.author.mention} a accordé à {member.mention} un **pouvoir éveillé** pour **7 jours**.",
+        color=discord.Color.purple()
+    )
+    embed.set_footer(text="Un pouvoir rare accordé pour une durée limitée.", icon_url=member.display_avatar.url)
+    embed.set_image(url="https://staticg.sportskeeda.com/editor/2023/08/d9dc7-16914260703952-1920.jpg")
+    await ctx.send(embed=embed)
 
     # Enregistrement du cooldown
     collection_cd_eveil2.update_one(
@@ -7280,11 +7371,16 @@ async def eveil2(ctx, member: discord.Member):
         upsert=True
     )
 
-    # Retirer le rôle après 7 jours
-    await asyncio.sleep(7 * 24 * 60 * 60)  # 7 jours en secondes
+    # Supprimer le rôle après 7 jours
+    await asyncio.sleep(7 * 24 * 60 * 60)  # 7 jours
     try:
         await member.remove_roles(role)
-        await ctx.send(f"⏳ Le rôle **{role.name}** a été retiré de {member.mention} après 7 jours.")
+        embed_fin = discord.Embed(
+            title="⏳ Pouvoir dissipé",
+            description=f"Le pouvoir éveillé de {member.mention} a disparu...",
+            color=discord.Color.dark_blue()
+        )
+        await ctx.send(embed=embed_fin)
     except Exception as e:
         print(f"Erreur en retirant le rôle : {e}")
 
@@ -7298,6 +7394,180 @@ async def eveil2_error(ctx, error):
     else:
         await ctx.send("❌ Une erreur est survenue.")
         raise error
+
+@bot.command()
+@commands.guild_only()
+async def bourrasque(ctx, member: discord.Member):
+    # Vérifie si l'utilisateur a le bon rôle
+    if not any(role.id == 1365232827657879595 for role in ctx.author.roles):
+        return await ctx.send("❌ Tu n'as pas le pouvoir d'utiliser cette commande.")
+
+    user_id = ctx.author.id
+    target_id = member.id
+    now = datetime.utcnow()
+
+    # Vérification du cooldown (1 mois + 1 semaine)
+    cooldown_data = collection53.find_one({"user_id": user_id})
+    if cooldown_data:
+        last_used = cooldown_data.get("last_used")
+        if last_used and now < last_used + timedelta(weeks=5):
+            remaining = (last_used + timedelta(weeks=5)) - now
+            days = remaining.days
+            hours = remaining.seconds // 3600
+            minutes = (remaining.seconds % 3600) // 60
+            embed_cd = discord.Embed(
+                title="⏳ Cooldown actif",
+                description=f"Tu dois attendre encore **{days} jours, {hours} heures et {minutes} minutes** avant de réutiliser cette commande.",
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed_cd)
+            return
+
+    # Donner le rôle à la cible
+    role = ctx.guild.get_role(1365235019869847572)
+    if not role:
+        return await ctx.send("❌ Le rôle cible est introuvable.")
+
+    await member.add_roles(role)
+
+    embed = discord.Embed(
+        title="🌪️ Bourrasque Déchaînée !",
+        description=f"{ctx.author.mention} a invoqué une **bourrasque puissante** sur {member.mention} !\n"
+                    f"Le rôle est actif pour **24 heures**.",
+        color=discord.Color.teal()
+    )
+    embed.set_image(url="https://static.wikia.nocookie.net/onepiece/images/4/4d/Boro_Breath.png/revision/latest?cb=20210207230101&path-prefix=fr")
+    embed.set_footer(text="Un vent divin balaie tout sur son passage...", icon_url=member.display_avatar.url)
+    await ctx.send(embed=embed)
+
+    # Stocker le cooldown dans MongoDB
+    collection53.update_one(
+        {"user_id": user_id},
+        {"$set": {"last_used": now}},
+        upsert=True
+    )
+
+    # Stocker la fin de l’effet dans une autre collection
+    collection54.update_one(
+        {"user_id": target_id},
+        {
+            "$set": {
+                "end_time": now + timedelta(days=1),
+                "role_id": 1365235019869847572,
+                "guild_id": ctx.guild.id
+            }
+        },
+        upsert=True
+    )
+
+@bot.command()
+async def tonnerre(ctx, member: discord.Member):
+    role_required = 1365041330585337926
+    role_to_give = 1365238838603288637
+    cooldown_collection = collection56  # cd_tonnerre_attaque
+
+    if role_required not in [r.id for r in ctx.author.roles]:
+        return await ctx.send("❌ Tu n'as pas la permission d'utiliser cette commande ⚡.")
+
+    now = datetime.utcnow()
+    user_cooldown = cooldown_collection.find_one({"user_id": ctx.author.id})
+
+    if user_cooldown and (now - user_cooldown["last_use"]).days < 30:
+        remaining = 30 - (now - user_cooldown["last_use"]).days
+        embed_cd = discord.Embed(
+            title="⏳ Cooldown actif",
+            description=f"Tu dois encore attendre **{remaining} jours** avant de pouvoir invoquer la foudre à nouveau.",
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed_cd)
+        return
+
+    # Appliquer le rôle
+    role = ctx.guild.get_role(role_to_give)
+    if not role:
+        return await ctx.send("❌ Le rôle à attribuer est introuvable.")
+
+    await member.add_roles(role)
+
+    embed = discord.Embed(
+        title="⚡ Tonnerre Divin !",
+        description=f"{ctx.author.mention} a libéré un **éclair dévastateur** sur {member.mention} !\n"
+                    f"Le pouvoir du tonnerre sera actif pendant **2 semaines**.",
+        color=discord.Color.dark_purple()
+    )
+    embed.set_image(url="https://www.japanfm.fr/wp-content/uploads/2024/03/one-piece-kaido-scaled.jpg")
+    embed.set_footer(text="Un grondement retentit dans les cieux...", icon_url=member.display_avatar.url)
+    await ctx.send(embed=embed)
+
+    # Mise à jour du cooldown
+    cooldown_collection.update_one(
+        {"user_id": ctx.author.id},
+        {"$set": {"last_use": now}},
+        upsert=True
+    )
+
+    # Planification du retrait après 2 semaines
+    async def remove_role_later():
+        await asyncio.sleep(14 * 24 * 60 * 60)  # 14 jours
+        if role in member.roles:
+            try:
+                await member.remove_roles(role)
+                end_embed = discord.Embed(
+                    title="⚡ Fin du Jugement",
+                    description=f"Le **tonnerre** s'est dissipé. {member.mention} est désormais libéré de son pouvoir électrique.",
+                    color=discord.Color.blue()
+                )
+                await ctx.send(embed=end_embed)
+            except Exception as e:
+                print(f"Erreur lors du retrait du rôle : {e}")
+
+    bot.loop.create_task(remove_role_later())
+
+@bot.command()
+@commands.has_role(1365041330585337926)
+async def dragon(ctx, user: discord.Member):
+    # Vérifie si l'utilisateur a déjà utilisé la commande
+    cd_data = collection58.find_one({"user_id": user.id})
+    
+    if cd_data:
+        cooldown_end = cd_data.get("cooldown_end")
+        if cooldown_end and datetime.utcnow() < cooldown_end:
+            remaining_time = cooldown_end - datetime.utcnow()
+            embed_cd = discord.Embed(
+                title="⏳ Cooldown Actif",
+                description=f"Tu dois attendre encore **{remaining_time}** avant de pouvoir invoquer la puissance du dragon à nouveau.",
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed_cd)
+            return
+
+    # Réduire le total de la personne ciblée à 0
+    collection.update_one(
+        {"user_id": user.id},
+        {"$set": {"balance": 0, "bank": 0}},
+        upsert=True
+    )
+
+    # Ajoute un cooldown d'un mois
+    cooldown_end = datetime.utcnow() + timedelta(days=30)
+    collection58.update_one(
+        {"user_id": user.id},
+        {"$set": {"cooldown_end": cooldown_end}},
+        upsert=True
+    )
+
+    # Préparer l'embed avec l'image de Kaido
+    embed = discord.Embed(
+        title="🐉 La Puissance du Dragon !",
+        description=f"{user.mention} a été frappé par la **force du dragon** ! Leur total a été réduit à zéro par la colère divine de Kaido.\n"
+                    f"Un **mois** de cooldown est désormais imposé à {user.mention} avant de pouvoir réagir.",
+        color=discord.Color.orange()
+    )
+    embed.set_image(url="https://www.japanfm.fr/wp-content/uploads/2024/03/one-piece-kaido-scaled.jpg")
+    embed.set_footer(text="Le dragon règne sur la mer... et son pouvoir est irrésistible.", icon_url=user.display_avatar.url)
+    
+    # Envoi de l'embed
+    await ctx.send(embed=embed)
 
 # Token pour démarrer le bot (à partir des secrets)
 # Lancer le bot avec ton token depuis l'environnement  

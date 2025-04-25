@@ -26,6 +26,7 @@ import pytz
 import platform
 from discord import Interaction
 import logging
+from typing import Optional
 
 token = os.environ['ETHERYA']
 intents = discord.Intents.all()
@@ -37,6 +38,106 @@ bot = commands.Bot(command_prefix="!!", intents=intents, help_command=None)
 ISEY_ID = 792755123587645461
 # Définir GUILD_ID
 GUILD_ID = 1034007767050104892
+
+# --- ID Etherya Partenariats ---
+partnership_channel_id = 1355158081855688745
+ROLE_ID = 1355157749994098860
+
+# --- ID Etherya ---
+BOUNTY_CHANNEL_ID = 1355298449829920950
+ETHERYA_SERVER_ID = 1034007767050104892
+AUTORIZED_SERVER_ID = 1034007767050104892
+WELCOME_CHANNEL_ID = 1355198748296351854
+
+# --- ID Etherya Pouvoir ---
+# -- Oeil Démoniaque --
+OEIL_ID = 1363949082653098094
+ROLE_ID = 1364123507532890182
+# -- Float --
+FLOAT_ID = 1363946902730575953
+ROLE_FLOAT_ID = 1364121382908067890
+# -- Pokeball --
+POKEBALL_ID = 1363942048075481379
+# -- Infini --
+INFINI_ID = [1363939565336920084, 1363939567627145660, 1363939486844850388]
+ANTI_ROB_ROLE = 1363964754678513664
+# -- Armure du Berserker --
+ARMURE_ID = 1363821649002238142
+ANTI_ROB_ID = 1363964754678513664
+# -- Rage du Berserker --
+RAGE_ID = 1363821333624127618
+ECLIPSE_ROLE_ID = 1364115033197510656
+# -- Ultra Instinct --
+ULTRA_ID = 1363821033060307106
+# -- Haki des Rois --
+HAKI_ROI_ID = 1363817645249527879
+HAKI_SUBIS_ID = 1364109450197078026
+# -- Arme Démoniaque Impérial --
+ARME_DEMONIAQUE_ID = 1363817586466361514
+# -- Heal (Appel de l'exorciste) --
+HEAL_ID = 1363873859912335400
+MALUS_ROLE_ID = 1363969965572755537
+# -- Benediction --
+BENEDICTION_ROLE_ID = 1364294230343684137
+
+# --- ID Etherya Nen ---
+# Rôle autorisé à utiliser le Nen
+PERMISSION_ROLE_ID = 1363928528587984998
+# ID de l'item requis
+LICENSE_ITEM_ID = 7
+# Roles par type de Nen
+nen_roles = {
+    "renforcement": 1363306813688381681,
+    "emission": 1363817609916584057,
+    "manipulation": 1363817536348749875,
+    "materialisation": 1363817636793810966,
+    "transformation": 1363817619529924740,
+    "specialisation": 1363817593252876368,
+}
+
+# Chances de drop en %
+nen_drop_rates = [
+    ("renforcement", 24.5),
+    ("emission", 24.5),
+    ("manipulation", 16.5),
+    ("materialisation", 16.5),
+    ("transformation", 17.5),
+    ("specialisation", 0.5),
+]
+# -- Materialisation --
+MATERIALISATION_IDS = [1363817636793810966, 1363817593252876368]
+# IDs d'items interdits à la matérialisation
+ITEMS_INTERDITS = [202, 197, 425, 736, 872, 964, 987]
+# -- Manipulation --
+MANIPULATION_ROLE_ID = 1363974710739861676
+AUTHORIZED_MANI_IDS = [1363817593252876368, 1363817536348749875]
+# -- Emission --
+EMISSION_IDS = [1363817593252876368, 1363817609916584057]
+TARGET_ROLE_ID = 1363969965572755537 
+# -- Renforcement --
+RENFORCEMENT_IDS = [1363306813688381681, 1363817593252876368]
+RENFORCEMENT_ROLE_ID = 1363306813688381681 
+
+# --- ID Etherya Fruits du Démon ---
+ROLE_UTILISATEUR_GLACE = 1365033009312698509
+ROLE_GEL = 1365063792513515570
+
+# --- ID Etherya Pirates & Marines ---
+# Roles
+marine_roles = {
+    "Amiral en chef": 1364961952480104560,
+    "Commandant": 1364961949242228756,
+    "Lieutenant": 1364961999896707072,
+    "Matelot": 1364961988588994571,
+}
+
+pirate_roles = {
+    "Roi des Pirates": 1364962003579568228,
+    "Yonko": 1364961946234785792,
+    "Corsaire": 1364961997296242688,
+    "Pirate": 1364961860230578191,
+}
+
 
 # Connexion MongoDB
 mongo_uri = os.getenv("MONGO_DB")  # URI de connexion à MongoDB
@@ -673,6 +774,26 @@ async def on_message(message):
     guild_id = message.guild.id
     user_id = user.id
 
+    # 📦 3. Gestion des partenariats
+    if message.channel.id == partnership_channel_id:
+        rank, partnerships = get_user_partner_info(user_id)
+
+        await message.channel.send("<@&1355157749994098860>")
+
+        embed = discord.Embed(
+            title="Merci du partenariat 🤝",
+            description=f"{message.author.mention}\nTu es rank **{rank}**\nTu as effectué **{partnerships}** partenariats.",
+            color=discord.Color.green()
+        )
+        embed.set_footer(
+            text="Partenariat réalisé",
+            icon_url="https://github.com/Iseyg91/KNSKS-ET/blob/main/Images_GITHUB/Capture_decran_2024-09-28_211041.png?raw=true"
+        )
+        embed.set_image(
+            url="https://github.com/Iseyg91/KNSKS-ET/blob/main/Images_GITHUB/Capture_decran_2025-02-15_231405.png?raw=true"
+        )
+        await message.channel.send(embed=embed)
+
     # Générer un montant aléatoire entre 5 et 20 coins
     coins_to_add = random.randint(5, 20)
 
@@ -684,6 +805,290 @@ async def on_message(message):
     )
 
     # Appeler le traitement habituel des commandes
+    await bot.process_commands(message)
+
+#Bienvenue : Message de Bienvenue + Ghost Ping Join
+private_threads = {}  # Stocke les fils privés des nouveaux membres
+
+# Liste des salons à pinguer
+salon_ids = [
+    1355158116903419997
+]
+
+class GuideView(View):
+    def __init__(self, thread):
+        super().__init__()
+        self.thread = thread
+        self.message_sent = False  # Variable pour contrôler l'envoi du message
+
+    @discord.ui.button(label="📘 Guide", style=discord.ButtonStyle.success, custom_id="guide_button_unique")
+    async def guide(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not self.message_sent:  # Empêche l'envoi du message en doublon
+            await interaction.response.defer()
+            await start_tutorial(self.thread, interaction.user)
+            self.message_sent = True
+
+    @discord.ui.button(label="❌ Non merci", style=discord.ButtonStyle.danger, custom_id="no_guide_button_unique")
+    async def no_guide(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message("🔒 Fermeture du fil...", ephemeral=True)
+        await asyncio.sleep(2)
+        await self.thread.delete()
+
+class NextStepView(View):
+    def __init__(self, thread):
+        super().__init__()
+        self.thread = thread
+
+    @discord.ui.button(label="➡️ Passer à la suite", style=discord.ButtonStyle.primary, custom_id="next_button")
+    async def next_step(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        user = interaction.user
+
+        # Envoi du message privé
+        await send_economy_info(user)
+
+        # Envoi du message de confirmation dans le fil privé
+        await self.thread.send("📩 Les détails de cette étape ont été envoyés en message privé.")
+
+        # Attente de 2 secondes
+        await asyncio.sleep(2)
+
+        # Message d'avertissement avant suppression
+        await self.thread.send("🗑️ Ce fil sera supprimé dans quelques instants.")
+
+        # Suppression du fil privé
+        await asyncio.sleep(3)
+        await self.thread.delete()
+
+async def wait_for_command(thread, user, command):
+    def check(msg):
+        return msg.channel == thread and msg.author == user and msg.content.startswith(command)
+
+    await thread.send(f"🕒 En attente de `{command}`...")  # Envoi du message d'attente
+    await bot.wait_for("message", check=check)  # Attente du message de la commande
+    await thread.send("✅ Commande exécutée ! Passons à la suite. 🚀")  # Confirmation après la commande
+    await asyncio.sleep(2)  # Pause avant de passer à l'étape suivante
+
+async def start_tutorial(thread, user):
+    tutorial_steps = [
+        ("💼 **Commande Travail**", "Utilise `!!work` pour gagner un salaire régulièrement !", "!!work"),
+        ("📦 **Commande Quotidient**", "Utilise !!daily pour gagner un salaire quotidient !", "!!daily"),
+        ("💃 **Commande Slut**", "Avec `!!slut`, tente de gagner de l'argent... Mais attention aux risques !", "!!slut"),
+        ("🔫 **Commande Crime**", "Besoin de plus de frissons ? `!!crime` te plonge dans des activités illégales !", "!!crime"),
+        ("🌿 **Commande Collecte**", "Avec `!!collect`, tu peux ramasser des ressources utiles !", "!!collect"),
+        ("📊 **Classement**", "Découvre qui a le plus d'argent en cash avec `!!lb -cash` !", "!!lb -cash"),
+        ("🕵️ **Voler un joueur**", "Tente de dérober l'argent d'un autre avec `!!rob @user` !", "!!rob"),
+        ("🏦 **Dépôt Bancaire**", "Pense à sécuriser ton argent avec `!!dep all` !", "!!dep all"),
+        ("💰 **Solde Bancaire**", "Vérifie ton argent avec `!!bal` !", "!!bal"),
+    ]
+
+    for title, desc, cmd in tutorial_steps:
+        embed = discord.Embed(title=title, description=desc, color=discord.Color.blue())
+        await thread.send(embed=embed)
+        await wait_for_command(thread, user, cmd)  # Attente de la commande de l'utilisateur
+
+    # Embed final des jeux
+    games_embed = discord.Embed(
+        title="🎲 **Autres Commandes de Jeux**",
+        description="Découvre encore plus de moyens de t'amuser et gagner des Ezryn Coins !",
+        color=discord.Color.gold()
+    )
+    games_embed.add_field(name="🐔 Cock-Fight", value="`!!cf` - Combat de Poulet !", inline=False)
+    games_embed.add_field(name="🃏 Blackjack", value="`!!bj` - Jeux de Carte !", inline=False)
+    games_embed.add_field(name="🎰 Slot Machine", value="`!!sm` - Tente un jeu risqué !", inline=False)
+    games_embed.add_field(name="🔫 Roulette Russe", value="`!!rr` - Joue avec le destin !", inline=False)
+    games_embed.add_field(name="🎡 Roulette", value="`!!roulette` - Fais tourner la roue de la fortune !", inline=False)
+    games_embed.set_footer(text="Amuse-toi bien sur Etherya ! 🚀")
+
+    await thread.send(embed=games_embed)
+    await thread.send("Clique sur **Passer à la suite** pour découvrir les systèmes impressionnants de notre Economie !", view=NextStepView(thread))
+
+async def send_economy_info(user: discord.Member):
+    try:
+        economy_embed = discord.Embed(
+            title="📌 **Lis ces salons pour optimiser tes gains !**",
+            description=(
+                "Bienvenue dans l'économie du serveur ! Pour en tirer le meilleur profit, assure-toi de lire ces salons :\n\n"
+                "💰 **Comment accéder à l'economie ?**\n➜ <#1355190022047011117>\n\n"
+                "📖 **Informations générales**\n➜ <#1355158018517500086>\n\n"
+                "💰 **Comment gagner des Coins ?**\n➜ <#1355157853299675247>\n\n"
+                "🏦 **Banque de l'Éco 1**\n➜ <#1355158001606066267>\n\n"
+                "🏦 **Banque de l'Éco 2**\n➜ <#1355191522252951573>\n\n"
+                "🎟️ **Ticket Finances** *(Pose tes questions ici !)*\n➜ <#1355157942005006558>\n\n"
+                "📈 **Astuce :** Plus tu en sais, plus tu gagnes ! Alors prends quelques minutes pour lire ces infos. 🚀"
+            ),
+            color=discord.Color.gold()
+        )
+        economy_embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1168755764760559637.webp?size=96&quality=lossless")
+        economy_embed.set_footer(text="Bon jeu et bons profits ! 💰")
+
+        dm_channel = await user.create_dm()
+        await dm_channel.send(embed=economy_embed)
+    except discord.Forbidden:
+        print(f"Impossible d'envoyer un MP à {user.name} ({user.id})")
+@bot.event
+async def on_member_join(member):
+    guild_id = str(member.guild.id)
+
+    # Vérifie si c'est le serveur Etherya
+    if member.guild.id == ETHERYA_SERVER_ID:
+        # Envoi du message de bienvenue dans le salon de bienvenue
+        channel = bot.get_channel(WELCOME_CHANNEL_ID)
+        if channel:
+            embed = discord.Embed(
+                title="<a:fete:1172810362261880873> Bienvenue sur le serveur ! <a:fete:1172810362261880873>",
+                description=(
+                    "*<a:fire:1343873843730579478> Ici, l’économie règne en maître, les alliances se forment, les trahisons éclatent... et ta richesse ne tient qu’à un fil ! <a:fire:1343873843730579478>*\n\n"
+                    "<:better_scroll:1342376863909285930> **Avant de commencer, prends le temps de lire :**\n\n"
+                    "- <a:fleche3:1290077283100397672> **<#1355157955804139560>** pour éviter les problèmes dès le départ.\n"
+                    "- <a:fleche3:1290077283100397672> **<#1355158018517500086>** pour comprendre les bases de l’économie.\n"
+                    "- <a:fleche3:1290077283100397672> **<#1359949279808061591>** pour savoir ce que tu peux obtenir.\n\n"
+                    "💡 *Un doute ? Une question ? Ouvre un ticket et le staff t’aidera !*\n\n"
+                    "**Prépare-toi à bâtir ton empire... ou à tout perdre. Bonne chance ! 🍀**"
+                ),
+                color=discord.Color.gold()
+            )
+            embed.set_image(url="https://raw.githubusercontent.com/Cass64/EtheryaBot/main/images_etherya/etheryaBot_banniere.png")
+            await channel.send(f"{member.mention}", embed=embed)
+
+        # Envoi du ghost ping une seule fois par salon
+        for salon_id in salon_ids:
+            salon = bot.get_channel(salon_id)
+            if salon:
+                try:
+                    message = await salon.send(f"{member.mention}")
+                    await message.delete()
+                except discord.Forbidden:
+                    print(f"Le bot n'a pas la permission d'envoyer un message dans {salon.name}.")
+                except discord.HTTPException:
+                    print("Une erreur est survenue lors de l'envoi du message.")
+
+        # Création d'un fil privé pour le membre
+        channel_id = 1355158120095027220  # Remplace par l'ID du salon souhaité
+        channel = bot.get_channel(channel_id)
+
+        if channel and isinstance(channel, discord.TextChannel):
+            thread = await channel.create_thread(name=f"🎉 Bienvenue {member.name} !", type=discord.ChannelType.private_thread)
+            await thread.add_user(member)
+            private_threads[member.id] = thread
+
+            # Embed de bienvenue
+            welcome_embed = discord.Embed(
+                title="🌌 Bienvenue à Etherya !",
+                description=(
+                    "Une aventure unique t'attend, entre **économie dynamique**, **stratégies** et **opportunités**. "
+                    "Prêt à découvrir tout ce que le serveur a à offrir ?"
+                ),
+                color=discord.Color.blue()
+            )
+            welcome_embed.set_thumbnail(url=member.avatar.url if member.avatar else bot.user.avatar.url)
+            await thread.send(embed=welcome_embed)
+
+            # Embed du guide
+            guide_embed = discord.Embed(
+                title="📖 Besoin d'un Guide ?",
+                description=(
+                    "Nous avons préparé un **Guide de l'Économie** pour t'aider à comprendre notre système monétaire et "
+                    "les différentes façons d'évoluer. Veux-tu le suivre ?"
+                ),
+                color=discord.Color.gold()
+            )
+            guide_embed.set_footer(text="Tu peux toujours y accéder plus tard via la commande /guide ! 🚀")
+            await thread.send(embed=guide_embed, view=GuideView(thread))  # Envoie le guide immédiatement
+
+    # Gestion des threads privés
+    if member.guild.id == ETHERYA_SERVER_ID:
+        # Création du fil privé et envoi du guide
+        channel_id = 1355158120095027220
+        channel = bot.get_channel(channel_id)
+
+        if channel and isinstance(channel, discord.TextChannel):
+            thread = await channel.create_thread(name=f"🎉 Bienvenue {member.name} !", type=discord.ChannelType.private_thread)
+            await thread.add_user(member)
+            private_threads[member.id] = thread
+
+            # Embed de bienvenue
+            welcome_embed = discord.Embed(
+                title="🌌 Bienvenue à Etherya !",
+                description=(
+                    "Une aventure unique t'attend, entre **économie dynamique**, **stratégies** et **opportunités**. "
+                    "Prêt à découvrir tout ce que le serveur a à offrir ?"
+                ),
+                color=discord.Color.blue()
+            )
+            welcome_embed.set_thumbnail(url=member.avatar.url if member.avatar else bot.user.avatar.url)
+            await thread.send(embed=welcome_embed)
+
+            # Embed du guide
+            guide_embed = discord.Embed(
+                title="📖 Besoin d'un Guide ?",
+                description=(
+                    "Nous avons préparé un **Guide de l'Économie** pour t'aider à comprendre notre système monétaire et "
+                    "les différentes façons d'évoluer. Veux-tu le suivre ?"
+                ),
+                color=discord.Color.gold()
+            )
+            guide_embed.set_footer(text="Tu peux toujours y accéder plus tard via la commande /guide ! 🚀")
+            await thread.send(embed=guide_embed, view=GuideView(thread))  # Envoie le guide immédiatement
+
+@bot.tree.command(name="guide", description="Ouvre un guide personnalisé pour comprendre l'économie du serveur.")
+async def guide_command(interaction: discord.Interaction):
+    user = interaction.user
+
+    # Vérifie si le serveur est Etherya avant d'exécuter le reste du code
+    if interaction.guild.id != ETHERYA_SERVER_ID:
+        await interaction.response.send_message("❌ Cette commande est uniquement disponible sur le serveur Etherya.", ephemeral=True)
+        return
+
+    # Crée un nouveau thread privé à chaque commande
+    channel_id = 1355158120095027220
+    channel = bot.get_channel(channel_id)
+
+    if not channel:
+        await interaction.response.send_message("❌ Le canal est introuvable ou le bot n'a pas accès à ce salon.", ephemeral=True)
+        return
+
+    # Vérifie si le bot peut créer des threads dans ce canal
+    if not channel.permissions_for(channel.guild.me).send_messages or not channel.permissions_for(channel.guild.me).manage_threads:
+        await interaction.response.send_message("❌ Le bot n'a pas les permissions nécessaires pour créer des threads dans ce canal.", ephemeral=True)
+        return
+
+    try:
+        # Crée un nouveau thread à chaque fois que la commande est exécutée
+        thread = await channel.create_thread(
+            name=f"🎉 Bienvenue {user.name} !", 
+            type=discord.ChannelType.private_thread,
+            invitable=True
+        )
+        await thread.add_user(user)  # Ajoute l'utilisateur au thread
+
+        # Embed de bienvenue et guide pour un nouveau thread
+        welcome_embed = discord.Embed(
+            title="🌌 Bienvenue à Etherya !",
+            description="Une aventure unique t'attend, entre **économie dynamique**, **stratégies** et **opportunités**. "
+                        "Prêt à découvrir tout ce que le serveur a à offrir ?",
+            color=discord.Color.blue()
+        )
+        welcome_embed.set_thumbnail(url=user.avatar.url if user.avatar else bot.user.avatar.url)
+        await thread.send(embed=welcome_embed)
+
+    except discord.errors.Forbidden:
+        await interaction.response.send_message("❌ Le bot n'a pas les permissions nécessaires pour créer un thread privé dans ce canal.", ephemeral=True)
+        return
+
+    # Embed du guide
+    guide_embed = discord.Embed(
+        title="📖 Besoin d'un Guide ?",
+        description="Nous avons préparé un **Guide de l'Économie** pour t'aider à comprendre notre système monétaire et "
+                    "les différentes façons d'évoluer. Veux-tu le suivre ?",
+        color=discord.Color.gold()
+    )
+    guide_embed.set_footer(text="Tu peux toujours y accéder plus tard via cette commande ! 🚀")
+    await thread.send(embed=guide_embed, view=GuideView(thread))  # Envoie le guide avec les boutons
+
+    await interaction.response.send_message("📩 Ton guide personnalisé a été ouvert.", ephemeral=True)
+
+    # IMPORTANT : Permet au bot de continuer à traiter les commandes
     await bot.process_commands(message)
 
 @bot.hybrid_command(
@@ -2709,6 +3114,8 @@ async def roulette(ctx: commands.Context, bet: int, space: str):
     # Libération du joueur
     active_roulette_players.remove(user_id)
 
+#-------------------------------------------------------------- Daily
+
 @bot.hybrid_command(name="daily", aliases=["dy"], description="Réclame tes Coins quotidiens.")
 async def daily(ctx: commands.Context):
     if ctx.guild is None:
@@ -2781,12 +3188,8 @@ async def daily(ctx: commands.Context):
         balance_after=new_cash,
         note="Commande /daily"
     )
-
-from discord import app_commands
-from typing import Optional
-import discord
-from discord.ext import commands
-from discord.ui import Button, View
+    
+#----------------------------------------------------- Leaderbaord
 
 @bot.hybrid_command(
     name="leaderboard",
@@ -2898,13 +3301,7 @@ async def leaderboard(
     embed = get_page(0)
     await ctx.send(embed=embed, view=view)
 
-import discord
-from discord.ext import commands
-from discord import app_commands
-from pymongo import MongoClient
-import asyncio
-from datetime import datetime, timedelta
-
+#----------------------------------------------- ITEMS
 ITEMS = [
     {
         "id": 8,
@@ -4310,6 +4707,39 @@ async def item_leaderboard(interaction: discord.Interaction, item_id: int):
 
     await interaction.response.send_message(embed=embed)
 
+@bot.tree.command(name="restock", description="Restock un item dans la boutique")
+@app_commands.describe(item_id="ID de l'item à restock", quantity="Nouvelle quantité à définir")
+async def restock(interaction: discord.Interaction, item_id: int, quantity: int):
+    if interaction.user.id != ISEY_ID:
+        return await interaction.response.send_message("❌ Tu n'as pas la permission d'utiliser cette commande.", ephemeral=True)
+
+    item = collection16.find_one({"id": item_id})
+    if not item:
+        return await interaction.response.send_message(f"❌ Aucun item trouvé avec l'ID {item_id}.", ephemeral=True)
+
+    collection16.update_one({"id": item_id}, {"$set": {"quantity": quantity}})
+    return await interaction.response.send_message(
+        f"✅ L'item **{item['title']}** a bien été restocké à **{quantity}** unités.", ephemeral=True
+    )
+
+@bot.tree.command(name="reset-item", description="Réinitialise ou supprime les items dans la boutique")
+@app_commands.describe(item_id="ID de l'item à réinitialiser ou supprimer")
+async def reset_item(interaction: discord.Interaction, item_id: int):
+    if interaction.user.id != ISEY_ID:
+        return await interaction.response.send_message("❌ Tu n'as pas la permission d'utiliser cette commande.", ephemeral=True)
+
+    item = collection16.find_one({"id": item_id})
+    if not item:
+        return await interaction.response.send_message(f"❌ Aucun item trouvé avec l'ID {item_id}.", ephemeral=True)
+
+    # Suppression de l'item dans la base de données
+    collection16.delete_one({"id": item_id})
+
+    return await interaction.response.send_message(
+        f"✅ L'item **{item['title']}** a bien été supprimé de la boutique.", ephemeral=True
+    )
+
+#-------------------------------------------------------- Collect
 
 @bot.hybrid_command(name="collect-income", aliases=["collect"])
 async def collect_income(ctx: commands.Context):
@@ -4401,38 +4831,7 @@ async def collect_income(ctx: commands.Context):
     )
     await ctx.send(embed=embed)
 
-
-@bot.tree.command(name="restock", description="Restock un item dans la boutique")
-@app_commands.describe(item_id="ID de l'item à restock", quantity="Nouvelle quantité à définir")
-async def restock(interaction: discord.Interaction, item_id: int, quantity: int):
-    if interaction.user.id != ISEY_ID:
-        return await interaction.response.send_message("❌ Tu n'as pas la permission d'utiliser cette commande.", ephemeral=True)
-
-    item = collection16.find_one({"id": item_id})
-    if not item:
-        return await interaction.response.send_message(f"❌ Aucun item trouvé avec l'ID {item_id}.", ephemeral=True)
-
-    collection16.update_one({"id": item_id}, {"$set": {"quantity": quantity}})
-    return await interaction.response.send_message(
-        f"✅ L'item **{item['title']}** a bien été restocké à **{quantity}** unités.", ephemeral=True
-    )
-
-@bot.tree.command(name="reset-item", description="Réinitialise ou supprime les items dans la boutique")
-@app_commands.describe(item_id="ID de l'item à réinitialiser ou supprimer")
-async def reset_item(interaction: discord.Interaction, item_id: int):
-    if interaction.user.id != ISEY_ID:
-        return await interaction.response.send_message("❌ Tu n'as pas la permission d'utiliser cette commande.", ephemeral=True)
-
-    item = collection16.find_one({"id": item_id})
-    if not item:
-        return await interaction.response.send_message(f"❌ Aucun item trouvé avec l'ID {item_id}.", ephemeral=True)
-
-    # Suppression de l'item dans la base de données
-    collection16.delete_one({"id": item_id})
-
-    return await interaction.response.send_message(
-        f"✅ L'item **{item['title']}** a bien été supprimé de la boutique.", ephemeral=True
-    )
+#-------------------------------------------------------- Badges
 
 BADGES = [
     {
@@ -4720,6 +5119,8 @@ async def reset_badge(interaction: discord.Interaction, badge_id: int):
         f"✅ Le badge **{badge['title']}** {badge.get('emoji', '')} a été supprimé de la boutique.", ephemeral=True
     )
 
+#------------------------------------------------ Connexion Season
+
 @bot.tree.command(name="start-rewards", description="Définit la date de début des rewards (réservé à ISEY)")
 async def start_rewards(interaction: discord.Interaction):
     if interaction.user.id != ISEY_ID:
@@ -4874,32 +5275,6 @@ async def give_reward(interaction: discord.Interaction, day: int):
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
-# Rôle autorisé à utiliser le Nen
-PERMISSION_ROLE_ID = 1363928528587984998
-
-# ID de l'item requis
-LICENSE_ITEM_ID = 7
-
-# Roles par type de Nen
-nen_roles = {
-    "renforcement": 1363306813688381681,
-    "emission": 1363817609916584057,
-    "manipulation": 1363817536348749875,
-    "materialisation": 1363817636793810966,
-    "transformation": 1363817619529924740,
-    "specialisation": 1363817593252876368,
-}
-
-# Chances de drop en %
-nen_drop_rates = [
-    ("renforcement", 24.5),
-    ("emission", 24.5),
-    ("manipulation", 16.5),
-    ("materialisation", 16.5),
-    ("transformation", 17.5),
-    ("specialisation", 0.5),
-]
-
 # === Vérifie si le joueur a une licence Hunter (item 7)
 def has_license(user_id, guild_id):
     items_cursor = collection17.find({"guild_id": guild_id, "user_id": user_id})
@@ -4960,12 +5335,10 @@ async def nen(ctx):
 
     await ctx.send(embed=embed)
 
-# Liste des rôles autorisés à activer le renforcement
-RENFORCEMENT_IDS = [1363306813688381681, 1363817593252876368]
+#-------------------------------------- Renforcement
 
 COOLDOWN_DAYS = 7
 DURATION_HOURS = 24
-RENFORCEMENT_ROLE_ID = 1363306813688381681  # Le rôle qu'on donne pour 24h
 
 @bot.command(name="renforcement")
 async def renforcement(ctx):
@@ -5025,8 +5398,8 @@ async def renforcement(ctx):
         except discord.HTTPException:
             pass
 
-EMISSION_IDS = [1363817593252876368, 1363817609916584057]
-TARGET_ROLE_ID = 1363969965572755537 
+#-------------------------------------- Emission
+
 COOLDOWN_DAYS = 1 
 
 @bot.command(name="emission")
@@ -5069,8 +5442,8 @@ async def emission(ctx, member: discord.Member):
     await asyncio.sleep(86400)  # 24h en secondes
     await member.remove_roles(role)
 
-MANIPULATION_ROLE_ID = 1363974710739861676
-AUTHORIZED_MANI_IDS = [1363817593252876368, 1363817536348749875]
+#------------------------------------- Manipulation
+
 COOLDOWN_DAYS = 7
 
 @bot.command(name='manipulation')
@@ -5128,16 +5501,7 @@ async def manipulation(ctx):
     except discord.Forbidden:
         pass
 
-import random
-from datetime import datetime, timedelta
-import discord
-
-# ID d'objets matérialisables
-MATERIALISATION_IDS = [1363817636793810966, 1363817593252876368]
-
-# IDs d'items interdits à la matérialisation
-ITEMS_INTERDITS = [202, 197, 425, 736, 872, 964, 987]
-
+#----------------------------------------- Materialisation
 # Cooldown en heures
 MATERIALISATION_COOLDOWN_HOURS = 6
 
@@ -5220,6 +5584,8 @@ async def materialisation(ctx):
     )
     embed.set_image(url="https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20EMBED%20NEN/Materi.png?raw=true")
     await ctx.send(embed=embed)
+    
+#------------------------------------------ Transformation
 
 @bot.command(
     name="transformation",
@@ -5290,10 +5656,7 @@ async def transformation(ctx: commands.Context, target: discord.User):
 
     await ctx.send(embed=embed)
 
-# ID du rôle autorisé à utiliser la commande
-HEAL_ID = 1363873859912335400
-MALUS_ROLE_ID = 1363969965572755537
-
+#-------------------------------------------- Heal
 # Commande .heal
 @bot.command()
 async def heal(ctx):
@@ -5325,7 +5688,7 @@ async def heal(ctx):
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-ARME_DEMONIAQUE_ID = 1363817586466361514
+#----------------------------------------------- Imperial
 
 @bot.command(name="imperial")
 async def imperial(ctx, cible: discord.Member = None):
@@ -5420,10 +5783,6 @@ async def imperial(ctx, cible: discord.Member = None):
     
     await ctx.send(embed=embed)
 
-# ID des rôles
-HAKI_ROI_ID = 1363817645249527879
-HAKI_SUBIS_ID = 1364109450197078026  # Rôle attribué pendant 7 jours
-
 async def is_on_cooldown(user_id):
     print(f"[LOG] Recherche du cooldown MongoDB pour {user_id}")
     cooldown = collection30.find_one({"user_id": user_id})
@@ -5482,7 +5841,7 @@ async def apply_haki_role(ctx, user):
         print(f"[ERREUR] Exception dans apply_haki_role : {type(e).__name__} - {e}")
         await ctx.send(f"Une erreur est survenue pendant l'application du Haki : `{type(e).__name__} - {e}`")
 
-
+#-------------------------------------------- Haki des Rois
 # Commande .haki
 @bot.command()
 @commands.has_role(HAKI_ROI_ID)
@@ -5514,8 +5873,7 @@ async def haki_error(ctx, error):
         print(f"[ERREUR] Erreur dans haki : {type(error).__name__} - {error}")
         await ctx.send("Une erreur est survenue lors de l'exécution de la commande.")
 
-ULTRA_ID = 1363821033060307106
-
+#----------------------------------------------------- Ultra Instinct
 class MissingUltraRole(commands.CheckFailure):
     pass
 
@@ -5551,15 +5909,8 @@ async def ultra_error(ctx, error):
     else:
         await ctx.send("⚠️ Une erreur inconnue s'est produite.")
 
-import discord
-from discord.ext import commands
-from datetime import datetime
-import random
-import traceback  # pour logs d'erreurs détaillés
+#---------------------------------------- Rage du Berserker
 
-# Paramètres
-RAGE_ID = 1363821333624127618
-ECLIPSE_ROLE_ID = 1364115033197510656
 BerserkCooldown = {}
 
 @bot.command(name="berserk")
@@ -5638,8 +5989,7 @@ async def berserk_error(ctx, error):
     else:
         raise error
 
-ARMURE_ID = 1363821649002238142
-ANTI_ROB_ID = 1363964754678513664
+#--------------------------------------------------------------- Armure
 
 @bot.command()
 async def armure(ctx):
@@ -5673,10 +6023,7 @@ async def armure(ctx):
     else:
         await ctx.send("Vous n'avez pas le rôle nécessaire pour utiliser cette commande.")
 
-# Les IDs des rôles
-INFINI_ID = [1363939565336920084, 1363939567627145660, 1363939486844850388]
-ANTI_ROB_ROLE = 1363964754678513664
-
+#------------------------------------------------ Infini
 # Lien des images selon le niveau
 images = {
     1: "https://preview.redd.it/zovgpfd6g6od1.jpeg?auto=webp&s=59768167ffc7b8d39072709119686464e7cbddff",
@@ -5741,9 +6088,7 @@ async def infini(ctx):
     else:
         await ctx.send("Vous n'avez pas le rôle nécessaire pour utiliser cette commande.")
 
-# ID du Pokeball (rôle autorisé à utiliser la commande)
-POKEBALL_ID = 1363942048075481379  # Remplacez par l'ID réel du rôle autorisé
-
+#----------------------------------------- Pokeball
 # Limite d'utilisation par semaine
 last_used = {}
 
@@ -5819,10 +6164,7 @@ async def pokeball(ctx, target: discord.Member = None):
     
     await ctx.send(embed=embed)
 
-# Identifiants
-FLOAT_ID = 1363946902730575953
-ROLE_ID = 1364121382908067890
-
+#--------------------------------------------- Float
 # Maintenant, vous pouvez utiliser timedelta directement
 COOLDOWN_TIME = timedelta(days=1)
 
@@ -5848,7 +6190,7 @@ async def float(ctx):
         return
 
     # Ajoute le rôle nécessaire à l'utilisateur
-    role = ctx.guild.get_role(ROLE_ID)
+    role = ctx.guild.get_role(ROLE_FLOAT_ID)
     if role:
         await ctx.author.add_roles(role)
         await ctx.send(f"{ctx.author.mention}, tu as maintenant accès au salon pendant 15 minutes.")
@@ -5872,10 +6214,7 @@ async def float(ctx):
     else:
         await ctx.send("Le rôle nécessaire n'a pas pu être trouvé.")
 
-# Identifiants
-OEIL_ID = 1363949082653098094
-ROLE_ID = 1364123507532890182
-from datetime import timedelta
+#------------------------------------- Oeil Demoniaque
 
 COOLDOWN_TIME = timedelta(weeks=1)
 
@@ -6060,6 +6399,8 @@ async def help(ctx: commands.Context):
     
     await ctx.send(embed=embed, view=view)
 
+#------------------------------------- Quetes
+
 # Fonction pour insérer des quêtes de départ dans la base de données
 def insert_quetes_into_db():
     # Quêtes à insérer au démarrage
@@ -6179,8 +6520,7 @@ async def reset_quetes(interaction: discord.Interaction):
     result = collection32.delete_many({})
     await interaction.response.send_message(f"🧹 Collection `ether_quetes` reset avec succès. {result.deleted_count} quêtes supprimées.")
 
-
-BENEDICTION_ROLE_ID = 1364294230343684137  # Rôle autorisé à utiliser la commande
+#---------------------------------------------- Benediction
 
 @bot.command(name="benediction")
 async def benediction(ctx):
@@ -6258,6 +6598,7 @@ async def benediction(ctx):
     embed.set_image(url="https://imgsrv.crunchyroll.com/cdn-cgi/image/fit=contain,format=auto,quality=70,width=1200,height=675/catalog/crunchyroll/59554268b0e9e3e565547ab4e25453f4.jpg")
     await ctx.send(embed=embed)
 
+#------------------------------------------------- Gcreate
 @bot.command(name="gcreate")
 async def creer_guilde(ctx):
     guild_id = ctx.guild.id
@@ -6795,20 +7136,7 @@ async def with_guild_inventory(interaction: discord.Interaction, item_id: int, q
         ephemeral=True
     )
 
-# Roles
-marine_roles = {
-    "Amiral en chef": 1364961952480104560,
-    "Commandant": 1364961949242228756,
-    "Lieutenant": 1364961999896707072,
-    "Matelot": 1364961988588994571,
-}
-
-pirate_roles = {
-    "Roi des Pirates": 1364962003579568228,
-    "Yonko": 1364961946234785792,
-    "Corsaire": 1364961997296242688,
-    "Pirate": 1364961860230578191,
-}
+#---------------------------------------------------- Bounty & Honor
 
 # Fonction pour récupérer la prime
 async def get_bounty(user_id):
@@ -6819,8 +7147,6 @@ async def get_bounty(user_id):
 async def get_honor(user_id):
     honor = collection38.find_one({"user_id": user_id})
     return honor['honor'] if honor else 50
-
-from discord import Embed
 
 @bot.command()
 async def bounty(ctx):
@@ -6985,6 +7311,7 @@ async def reset_prime(ctx):
     collection38.delete_many({})  # Nettoyer la collection honor
     await ctx.send("La collection des honneurs a été réinitialisée avec succès.")
 
+#----------------------------------------- Baku baku no Mi
 @bot.command()
 async def bombe(ctx, target: discord.Member = None):
     author_id = ctx.author.id
@@ -7085,6 +7412,7 @@ async def bombe(ctx, target: discord.Member = None):
 # Configurer le logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+#------------------------------------------------- Gura Gura no Mi
 @bot.command(name="gura")
 @commands.guild_only()
 async def gura(ctx, target: discord.Member = None):
@@ -7138,10 +7466,7 @@ async def gura(ctx, target: discord.Member = None):
     await ctx.send(embed=embed)
     logging.info(f"{ctx.author} a utilisé le Gura Gura no Mi contre {target}.")
 
-# Identifiants de rôles
-ROLE_UTILISATEUR_GLACE = 1365033009312698509
-ROLE_GEL = 1365063792513515570
-
+#------------------------------------------------------------ Hie Hie no Mi (Fruit de la Glace)
 # Durées
 DUREE_COOLDOWN = timedelta(weeks=1)
 DUREE_GEL = timedelta(days=3)
@@ -7229,6 +7554,7 @@ async def glace(ctx, cible: discord.Member = None):
     # Log: Action réussie
     print(f"[LOG] {auteur.display_name} ({auteur.id}) a utilisé .glace sur {cible.display_name} ({cible.id}).")
 
+#----------------------------------------------- Yami Yami no Mi
 @bot.command(name="tenebre")
 @commands.has_role(1365035636351959153)
 async def tenebre(ctx):
@@ -7292,6 +7618,7 @@ async def tenebre(ctx):
     # Log de succès
     print(f"{now} - {ctx.author} a utilisé la commande tenebre avec succès. Rôle et protection activés.")
 
+#---------------------------------------------- Gomu Gomu no Mi
 @bot.command()
 async def gearsecond(ctx):
     # Vérifier si l'utilisateur a le rôle requis
@@ -7400,6 +7727,7 @@ async def gearfourth(ctx):
     # Log : Embed envoyé
     print(f"[LOG] {ctx.author} a reçu l'embed de confirmation Gear Fourth.")
 
+#------------------------------------------------------------ Nika Nika no Mi
 # Commande .nika
 @bot.command()
 async def nika(ctx):
@@ -7605,7 +7933,7 @@ async def eveil2_error(ctx, error):
         print(f"[{now}] Une erreur inconnue est survenue pour {ctx.author}.")
         await ctx.send("❌ Une erreur est survenue.")
         raise error
-
+#---------------------------------------------------- Uo Uo no Mi, Modèle : Seiryu (Dragon Céleste)
 @bot.command()
 @commands.guild_only()
 async def bourrasque(ctx, member: discord.Member = None):
@@ -7852,6 +8180,53 @@ async def dragon(ctx, user: discord.Member = None):
     embed.set_footer(text="Le dragon règne sur la mer... et son pouvoir est irrésistible.", icon_url=user.display_avatar.url)
     
     # Envoi de l'embed
+    await ctx.send(embed=embed)
+
+#--------------------------------------------------- COMMANDE ROLL
+# Définir la commande +roll
+@bot.command()
+async def roll(ctx, x: str = None):
+    # Vérifier si x est bien précisé
+    if x is None:
+        embed = discord.Embed(
+            title="Erreur",
+            description="Vous n'avez pas précisé de chiffre entre 1 et 500.",
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+        return
+    
+    try:
+        # Convertir x en entier
+        x = int(x)
+    except ValueError:
+        embed = discord.Embed(
+            title="Erreur",
+            description="Le chiffre doit être un nombre entier.",
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+        return
+    
+    # Vérifier si x est dans les bonnes limites
+    if x < 1 or x > 500:
+        embed = discord.Embed(
+            title="Erreur",
+            description="Le chiffre doit être compris entre 1 et 500.",
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+        return
+    
+    # Générer un nombre aléatoire entre 1 et x
+    result = random.randint(1, x)
+
+    # Créer l'embed de la réponse
+    embed = discord.Embed(
+        title="🎲 Résultat du tirage",
+        description=f"Le nombre tiré au hasard entre 1 et {x} est : **{result}**",
+        color=discord.Color.green()
+    )
     await ctx.send(embed=embed)
 
 # Token pour démarrer le bot (à partir des secrets)

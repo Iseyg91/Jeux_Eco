@@ -4104,9 +4104,21 @@ async def item_store(interaction: discord.Interaction):
 # Appel de la fonction pour insérer les items dans la base de données lors du démarrage du bot
 insert_items_into_db()
 
+# Fonction d'autocomplétion dynamique
+async def item_autocomplete(interaction: Interaction, current: str):
+    items_cursor = collection16.find({"title": {"$regex": current, "$options": "i"}}).limit(25)
+    choices = []
+
+    async for item in items_cursor:
+        choices.append(app_commands.Choice(name=item["title"], value=item["id"]))
+
+    return choices
+
+# Commande d'achat
 @bot.tree.command(name="item-buy", description="Achète un item de la boutique via son ID.")
 @app_commands.describe(item_id="ID de l'item à acheter", quantity="Quantité à acheter (défaut: 1)")
-async def item_buy(interaction: discord.Interaction, item_id: int, quantity: int = 1):
+@app_commands.autocomplete(item_id=item_autocomplete)  # Lier l'autocomplétion à l'argument item_id
+async def item_buy(interaction: discord.Interaction, item_id: str, quantity: int = 1):
     user_id = interaction.user.id
     guild_id = interaction.guild.id
 
@@ -4146,7 +4158,7 @@ async def item_buy(interaction: discord.Interaction, item_id: int, quantity: int
         return await interaction.response.send_message(embed=embed)
 
     user_data = collection.find_one({"user_id": user_id, "guild_id": guild_id}) or {"cash": 0}
-    total_price = int(item["price"] * quantity)  # Forcer le total_price en entier
+    total_price = int(item["price"] * quantity)
 
     if user_data["cash"] < total_price:
         embed = discord.Embed(
@@ -4199,23 +4211,20 @@ async def item_buy(interaction: discord.Interaction, item_id: int, quantity: int
 
     # Gestion de la suppression des rôles et items si nécessaire
     if item.get("remove_after_purchase"):
-        # Suppression des rôles si la configuration l'exige
         if item["remove_after_purchase"].get("roles", False):
             role = discord.utils.get(interaction.guild.roles, id=item["role_id"])
             if role:
                 await interaction.user.remove_roles(role)
                 print(f"Rôle {role.name} supprimé pour {interaction.user.name} après l'achat.")
 
-        # Suppression des items si la configuration l'exige
         if item["remove_after_purchase"].get("items", False):
-            # Logique pour supprimer un item de l'inventaire, si nécessaire
             inventory = collection7.find_one({"user_id": user_id, "guild_id": guild_id})
             if inventory:
                 user_items = inventory.get("items", {})
                 if str(item_id) in user_items:
                     user_items[str(item_id)] -= quantity
                     if user_items[str(item_id)] <= 0:
-                        del user_items[str(item_id)]  # Supprimer l'item si sa quantité atteint zéro
+                        del user_items[str(item_id)]
                     collection7.update_one(
                         {"user_id": user_id, "guild_id": guild_id},
                         {"$set": {"items": user_items}}

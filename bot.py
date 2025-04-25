@@ -4106,16 +4106,16 @@ insert_items_into_db()
 
 from discord import app_commands
 from discord.ext import commands
-from discord import Interaction
+import discord
 
 # Fonction d'autocomplétion pour la recherche par nom
-async def item_autocomplete(interaction: Interaction, current: str):
+async def item_autocomplete(interaction: discord.Interaction, current: str):
     # On cherche les items dont le titre contient le texte que l'utilisateur a tapé (insensible à la casse)
     items_cursor = collection16.find({"title": {"$regex": current, "$options": "i"}}).limit(25)
     choices = []
 
+    # Parcours des résultats de la recherche pour les afficher dans la liste d'autocomplétion
     async for item in items_cursor:
-        # Afficher le nom de l'item mais utiliser l'ID comme valeur sous-jacente
         choices.append(app_commands.Choice(name=item["title"], value=item["id"]))
 
     return choices

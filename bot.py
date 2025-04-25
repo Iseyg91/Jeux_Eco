@@ -316,13 +316,19 @@ def get_start_date(guild_id):
 
 # === CONFIGURATION DES RÉCOMPENSES PAR JOUR ===
 daily_rewards = {
-    1: {"coins": 1000, "badge": None, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.1.png?raw=true"},
-    2: {"coins": 2000, "badge": None, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.2.png?raw=true"},
-    3: {"coins": 3000, "badge": 2, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.3.png?raw=true"},
-    4: {"coins": 4000, "badge": None, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.4.png?raw=true"},
-    5: {"coins": 5000, "badge": None, "item": 1, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.5.png?raw=true"},
-    6: {"coins": 6000, "badge": None, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.6.png?raw=true"},
-    7: {"coins": 7000, "badge": 1, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.7.png?raw=true"}
+    1: {"coins": 1500, "badge": None, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.1.png?raw=true"},
+    2: {"coins": 2500, "badge": None, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.2.png?raw=true"},
+    3: {"coins": 3500, "badge": 4, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.3.png?raw=true"},
+    4: {"coins": 4500, "badge": None, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.4.png?raw=true"},
+5: {
+    "coins": 5500,
+    "badge": None,
+    "item": None, 
+    "random_items": [763, 203, 542, 352],  # Liste d'IDs d'items possibles
+    "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.5.png?raw=true"
+},
+    6: {"coins": 6500, "badge": None, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.6.png?raw=true"},
+    7: {"coins": 7500, "badge": 3, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.7.png?raw=true"}
 }
 
 TOP_ROLES = {
@@ -3017,6 +3023,25 @@ ITEMS = [
         "used": True
     },
     {
+        "id": 352,
+        "emoji": "<:golgolnomi:1365018965646114890>",
+        "title": "Gol Gol no Mi",
+        "description": "Offre un collect de 10% de sa banque chaque semaine",
+        "price": 100000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 2,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "Offre un collect de 10% de sa banque chaque semaine",
+        "requirements": {},
+        "role_id": 1365087320277127190,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
+    },
+    {
         "id": 81,
         "emoji": "<:armure:1363599057863311412>",
         "title": "Armure du Berserker",
@@ -4448,6 +4473,44 @@ BADGES = [
         },
         "used": False
     },
+    {
+        "id": 3,
+        "emoji": "<:onepiece:1364713455981957260>",
+        "title": "Badge One Piece",
+        "description": "Badge Collector.",
+        "price": 200,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 3,
+        "tradeable": True,
+        "usable": False,
+        "use_effect": "???",
+        "requirements": {},
+        "role_id": None,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": False
+    },
+    {
+        "id": 3,
+        "emoji": "<:luffy:1364713438768533585>",
+        "title": "Badge Luffy",
+        "description": "Badge Collector.",
+        "price": 250,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 2,
+        "tradeable": True,
+        "usable": False,
+        "use_effect": "???",
+        "requirements": {},
+        "role_id": None,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": False
+    },
 ]
 
 # Fonction pour obtenir les badges dans un format de page avec pagination
@@ -4688,6 +4751,42 @@ async def start_rewards(interaction: discord.Interaction):
         ephemeral=True
     )
 
+# === COMMANDE SLASH /rewards ===
+@bot.tree.command(name="rewards", description="Récupère ta récompense quotidienne")
+async def rewards(interaction: discord.Interaction):
+    guild_id = interaction.guild.id
+    user_id = interaction.user.id
+
+    # Vérifier la date de début des récompenses
+    start_date = get_start_date(guild_id)
+    if not start_date:
+        await interaction.response.send_message("Le système de récompenses n'est pas encore configuré.", ephemeral=True)
+        return
+
+    # Calculer le nombre de jours écoulés depuis le début
+    days_elapsed = (datetime.utcnow() - start_date).days + 1
+    if days_elapsed > 7:
+        await interaction.response.send_message("La période de récompenses est terminée.", ephemeral=True)
+        return
+
+    # Récupérer les données de l'utilisateur
+    user_data = collection23.find_one({"guild_id": guild_id, "user_id": user_id})
+    received = user_data.get("rewards_received", {}) if user_data else {}
+
+    # Vérifier si une récompense a été manquée
+    for i in range(1, days_elapsed):
+        if str(i) not in received:
+            await interaction.response.send_message("Tu as manqué un jour. Tu ne peux plus récupérer les récompenses.", ephemeral=True)
+            return
+
+    # Vérifier si la récompense d’aujourd’hui a déjà été récupérée
+    if str(days_elapsed) in received:
+        await interaction.response.send_message("Tu as déjà récupéré ta récompense aujourd'hui.", ephemeral=True)
+        return
+
+    await give_reward(interaction, days_elapsed)
+
+# === Fonction pour donner la récompense ===
 async def give_reward(interaction: discord.Interaction, day: int):
     reward = daily_rewards.get(day)
     if not reward:
@@ -4697,6 +4796,11 @@ async def give_reward(interaction: discord.Interaction, day: int):
     coins = reward.get("coins", 0)
     badge = reward.get("badge")
     item = reward.get("item")
+    random_items = reward.get("random_items")
+
+    # Si random_items est défini, choisir un item au hasard
+    if random_items and isinstance(random_items, list):
+        item = random.choice(random_items)
 
     # === Récompense enregistrée (collection23) ===
     user_data = collection23.find_one({"guild_id": interaction.guild.id, "user_id": interaction.user.id})
@@ -4737,8 +4841,9 @@ async def give_reward(interaction: discord.Interaction, day: int):
             )
 
     # === Item (collection17) ===
+    item_config = None
     if item:
-        item_config = collection18.find_one({"id": item})  # Tu peux adapter si l'item vient d'ailleurs
+        item_config = collection18.find_one({"id": item})
         if item_config:
             collection17.insert_one({
                 "guild_id": interaction.guild.id,
@@ -4759,7 +4864,7 @@ async def give_reward(interaction: discord.Interaction, day: int):
     embed.add_field(name="Coins", value=f"{coins} <:ecoEther:1341862366249357374>", inline=False)
     if badge:
         embed.add_field(name="Badge", value=f"Badge ID {badge}", inline=False)
-    if item:
+    if item and item_config:
         embed.add_field(name="Item", value=f"{item_config.get('title', 'Nom inconnu')} {item_config.get('emoji', '')} (ID: {item})", inline=False)
     embed.set_image(url=reward["image_url"])
 
@@ -4767,42 +4872,6 @@ async def give_reward(interaction: discord.Interaction, day: int):
     embed.add_field(name="Progression", value=f"{progress} ({days_received}/{total_days})", inline=False)
 
     await interaction.response.send_message(embed=embed, ephemeral=True)
-
-# === COMMANDE SLASH /rewards ===
-@bot.tree.command(name="rewards", description="Récupère ta récompense quotidienne")
-async def rewards(interaction: discord.Interaction):
-    guild_id = interaction.guild.id
-    user_id = interaction.user.id
-
-    # Vérifier la date de début des récompenses
-    start_date = get_start_date(guild_id)
-    if not start_date:
-        await interaction.response.send_message("Le système de récompenses n'est pas encore configuré.", ephemeral=True)
-        return
-
-    # Calculer le nombre de jours écoulés depuis le début
-    days_elapsed = (datetime.utcnow() - start_date).days + 1
-    if days_elapsed > 7:
-        await interaction.response.send_message("La période de récompenses est terminée.", ephemeral=True)
-        return
-
-    # Récupérer les données de l'utilisateur
-    user_data = collection23.find_one({"guild_id": guild_id, "user_id": user_id})
-    received = user_data.get("rewards_received", {}) if user_data else {}
-
-    # Vérifier si une récompense a été manquée
-    for i in range(1, days_elapsed):
-        if str(i) not in received:
-            await interaction.response.send_message("Tu as manqué un jour. Tu ne peux plus récupérer les récompenses.", ephemeral=True)
-            return
-
-    # Vérifier si la récompense d’aujourd’hui a déjà été récupérée
-    if str(days_elapsed) in received:
-        await interaction.response.send_message("Tu as déjà récupéré ta récompense aujourd'hui.", ephemeral=True)
-        return
-
-    # Donner la récompense pour le jour actuel
-    await give_reward(interaction, days_elapsed)
 
 
 # Rôle autorisé à utiliser le Nen

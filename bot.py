@@ -1764,7 +1764,7 @@ async def slut(ctx: commands.Context):
     balance_before = user_data.get("cash", 1500)
 
     # Vérifier si l'utilisateur a le rôle spécial
-    has_special_role = any(role.id == 1365037905633869914 for role in user.roles)
+    has_special_role = any(role.id == 1365313292477927464 for role in user.roles)
 
     if outcome == "gain" or has_special_role:
         messages = [
@@ -1857,7 +1857,7 @@ async def crime(ctx: commands.Context):
     balance_before = user_data.get("cash", 0)
 
     # Vérifier si l'utilisateur a le rôle spécial
-    has_special_role = any(role.id == 1365037905633869914 for role in user.roles)
+    has_special_role = any(role.id == 1365313292477927464 for role in user.roles)
 
     if outcome == "gain" or has_special_role:
         messages = [

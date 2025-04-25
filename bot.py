@@ -6917,10 +6917,30 @@ async def reset_prime(ctx):
     await ctx.send("La collection des honneurs a été réinitialisée avec succès.")
 
 @bot.command()
-async def bombe(ctx, target: discord.Member):
+async def bombe(ctx, target: discord.Member = None):
     author_id = ctx.author.id
+
+    # Vérification du rôle de l'auteur
     if author_id != 1365027878928126096:
-        return await ctx.send("❌ Tu n'es pas autorisé à utiliser cette commande.")
+        await ctx.send("❌ Tu n'es pas autorisé à utiliser cette commande.")
+        # Log : l'utilisateur n'a pas le rôle requis
+        await log_eco_channel(
+            bot, ctx.guild.id, ctx.author,
+            action="🔴 Tentative d'utilisation non autorisée de la commande Bombe",
+            note=f"Tenté par {ctx.author.name}, ID {author_id}"
+        )
+        return
+
+    # Vérification si un membre est ciblé
+    if target is None:
+        await ctx.send("❌ Tu dois spécifier un membre à cibler.")
+        # Log : Aucun membre ciblé
+        await log_eco_channel(
+            bot, ctx.guild.id, ctx.author,
+            action="🛑 Aucune cible spécifiée pour la Bombe",
+            note=f"Tenté par {ctx.author.name}, ID {author_id}"
+        )
+        return
 
     guild_id = ctx.guild.id
     user_id = target.id
@@ -6934,12 +6954,26 @@ async def bombe(ctx, target: discord.Member):
         remaining = next_use - now
         hours, remainder = divmod(int(remaining.total_seconds()), 3600)
         minutes = remainder // 60
-        return await ctx.send(f"🕒 Ce joueur a déjà été bombardé récemment. Réessaye dans {hours}h{minutes}m.")
+        await ctx.send(f"🕒 Ce joueur a déjà été bombardé récemment. Réessaye dans {hours}h{minutes}m.")
+        # Log : Tentative pendant cooldown
+        await log_eco_channel(
+            bot, guild_id, ctx.author,
+            action="🔁 Tentative de bombe pendant le cooldown",
+            note=f"Tenté par {ctx.author.name} sur {target.name}, cooldown jusqu'à {next_use.strftime('%Y-%m-%d %H:%M:%S')}"
+        )
+        return
 
     # Récupération des données du joueur ciblé
     target_data = collection.find_one({"guild_id": guild_id, "user_id": user_id})
     if not target_data:
-        return await ctx.send("❌ Ce joueur n'a pas de données économiques.")
+        await ctx.send("❌ Ce joueur n'a pas de données économiques.")
+        # Log : Aucune donnée économique pour la cible
+        await log_eco_channel(
+            bot, guild_id, ctx.author,
+            action="🚫 Aucune donnée économique pour la cible",
+            note=f"Aucune donnée trouvée pour {target.name} (ID {user_id})"
+        )
+        return
 
     bank_before = target_data.get("bank", 0)
     amount_to_remove = int(bank_before * 0.10)
@@ -6958,7 +6992,7 @@ async def bombe(ctx, target: discord.Member):
         upsert=True
     )
 
-    # Log
+    # Log : Action réussie
     await log_eco_channel(
         bot, guild_id, target,
         action="💣 Bombe économique",
@@ -6979,15 +7013,24 @@ async def bombe(ctx, target: discord.Member):
     embed.set_thumbnail(url="https://static.wikia.nocookie.net/onepiece/images/8/86/Bomu_Bomu_no_Mi_Anime_Infobox.png/revision/latest?cb=20181120231615&path-prefix=fr")
     await ctx.send(embed=embed)
 
+# Configurer le logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 @bot.command(name="gura")
 @commands.guild_only()
-async def gura(ctx, target: discord.Member):
+async def gura(ctx, target: discord.Member = None):
     role_required = 1365031927127478302
     cooldown_weeks = 3
 
     # Vérifie si l'auteur a le rôle requis
     if role_required not in [role.id for role in ctx.author.roles]:
+        logging.warning(f"{ctx.author} n'a pas le rôle requis pour invoquer un séisme.")
         return await ctx.send("🚫 Tu n'as pas la puissance nécessaire pour invoquer un séisme destructeur.")
+
+    # Vérifie si un utilisateur cible a été mentionné
+    if target is None:
+        logging.warning(f"{ctx.author} n'a pas ciblé de membre pour le séisme.")
+        return await ctx.send("🚫 Tu dois mentionner un utilisateur pour utiliser cette commande.")
 
     user_id = ctx.author.id
     guild_id = ctx.guild.id
@@ -7000,6 +7043,7 @@ async def gura(ctx, target: discord.Member):
         last_used = cd_data.get("last_used", now - timedelta(weeks=cooldown_weeks + 1))
         if now - last_used < timedelta(weeks=cooldown_weeks):
             remaining = timedelta(weeks=cooldown_weeks) - (now - last_used)
+            logging.info(f"{ctx.author} essaie d'utiliser le Gura Gura no Mi avant la fin du cooldown.")
             return await ctx.send(f"🕒 Tu dois encore attendre `{str(remaining).split('.')[0]}` avant de pouvoir utiliser à nouveau le **Gura Gura no Mi**.")
     
     # Mise à jour du cooldown
@@ -7023,7 +7067,7 @@ async def gura(ctx, target: discord.Member):
     embed.set_footer(text="Cooldown: 3 semaines")
 
     await ctx.send(embed=embed)
-
+    logging.info(f"{ctx.author} a utilisé le Gura Gura no Mi contre {target}.")
 
 # Identifiants de rôles
 ROLE_UTILISATEUR_GLACE = 1365033009312698509
@@ -7035,12 +7079,29 @@ DUREE_GEL = timedelta(days=3)
 
 @bot.command(name="glace")
 @commands.guild_only()
-async def glace(ctx, cible: discord.Member):
+async def glace(ctx, cible: discord.Member = None):
     auteur = ctx.author
 
     # Vérification du rôle autorisé
     if ROLE_UTILISATEUR_GLACE not in [r.id for r in auteur.roles]:
-        return await ctx.send("❌ Tu n'as pas le rôle requis pour utiliser cette commande.")
+        await ctx.send("❌ Tu n'as pas le rôle requis pour utiliser cette commande.")
+        # Log: Rôle non autorisé
+        print(f"[LOG] {auteur.display_name} ({auteur.id}) a tenté d'utiliser .glace sans le rôle requis.")
+        return
+
+    # Vérifier si l'utilisateur a ciblé quelqu'un
+    if not cible:
+        await ctx.send("❌ Tu dois mentionner un membre à geler.")
+        # Log: Pas de cible mentionnée
+        print(f"[LOG] {auteur.display_name} ({auteur.id}) a utilisé .glace sans spécifier de cible.")
+        return
+
+    # Vérifier si la cible est la même que l'auteur
+    if cible == auteur:
+        await ctx.send("❌ Tu ne peux pas te geler toi-même.")
+        # Log: Tentative de gel sur soi-même
+        print(f"[LOG] {auteur.display_name} ({auteur.id}) a tenté de se geler lui-même.")
+        return
 
     # Vérifier si l'utilisateur est en cooldown
     cooldown_data = collection42.find_one({"user_id": auteur.id})
@@ -7048,17 +7109,28 @@ async def glace(ctx, cible: discord.Member):
 
     if cooldown_data and cooldown_data["timestamp"] > now:
         remaining = cooldown_data["timestamp"] - now
-        return await ctx.send(f"⏳ Tu dois attendre encore {remaining.days}j {remaining.seconds//3600}h avant de pouvoir utiliser `.glace` à nouveau.")
+        await ctx.send(f"⏳ Tu dois attendre encore {remaining.days}j {remaining.seconds//3600}h avant de pouvoir utiliser `.glace` à nouveau.")
+        # Log: Utilisateur en cooldown
+        print(f"[LOG] {auteur.display_name} ({auteur.id}) a tenté d'utiliser .glace en cooldown.")
+        return
 
     # Appliquer le rôle de gel à la cible
     role = discord.utils.get(ctx.guild.roles, id=ROLE_GEL)
     if not role:
-        return await ctx.send("❌ Rôle de gel introuvable sur ce serveur.")
+        await ctx.send("❌ Rôle de gel introuvable sur ce serveur.")
+        # Log: Rôle de gel non trouvé
+        print("[LOG] Rôle de gel introuvable sur le serveur.")
+        return
     
     try:
         await cible.add_roles(role, reason="Gel économique via .glace")
+        # Log: Rôle de gel ajouté
+        print(f"[LOG] Rôle de gel ajouté à {cible.display_name} ({cible.id}) par {auteur.display_name} ({auteur.id}).")
     except discord.Forbidden:
-        return await ctx.send("❌ Impossible d'ajouter le rôle à cet utilisateur.")
+        await ctx.send("❌ Impossible d'ajouter le rôle à cet utilisateur.")
+        # Log: Erreur d'ajout de rôle
+        print(f"[LOG] {auteur.display_name} ({auteur.id}) n'a pas pu ajouter le rôle de gel à {cible.display_name} ({cible.id}) - Permission refusée.")
+        return
 
     # Enregistrer le cooldown dans Mongo
     collection42.update_one(
@@ -7085,18 +7157,30 @@ async def glace(ctx, cible: discord.Member):
     embed.set_footer(text=f"L'utilisateur {auteur.display_name} a utilisé le pouvoir de la Glace.")
     
     await ctx.send(embed=embed)
+    # Log: Action réussie
+    print(f"[LOG] {auteur.display_name} ({auteur.id}) a utilisé .glace sur {cible.display_name} ({cible.id}).")
 
 @bot.command(name="tenebre")
 @commands.has_role(1365035636351959153)
 async def tenebre(ctx):
     user_id = ctx.author.id
     now = datetime.utcnow()
-    cd_doc = collection44.find_one({"user_id": user_id})
+
+    # Vérifie si l'utilisateur a le rôle requis
+    if not any(role.id == 1365035636351959153 for role in ctx.author.roles):
+        await ctx.send("🚫 Tu n'as pas le rôle nécessaire pour utiliser cette capacité.")
+        # Log si l'utilisateur n'a pas le rôle
+        print(f"{now} - {ctx.author} n'a pas le rôle requis pour utiliser la commande tenebre.")
+        return
 
     # Vérifie le cooldown de 24h
+    cd_doc = collection44.find_one({"user_id": user_id})
     if cd_doc and (now - cd_doc["last_use"]).total_seconds() < 86400:
         remaining = timedelta(seconds=86400 - (now - cd_doc["last_use"]).total_seconds())
-        return await ctx.send(f"⏳ Tu dois encore attendre {remaining} avant de réutiliser cette capacité.")
+        await ctx.send(f"⏳ Tu dois encore attendre {remaining} avant de réutiliser cette capacité.")
+        # Log pour cooldown
+        print(f"{now} - {ctx.author} essaie d'utiliser la commande tenebre avant la fin du cooldown.")
+        return
 
     # Ajoute ou met à jour le cooldown
     collection44.update_one(
@@ -7130,6 +7214,9 @@ async def tenebre(ctx):
     embed.set_footer(text="Effets du fruit des ténèbres")
     await ctx.send(embed=embed)
 
+    # Log de succès
+    print(f"{now} - {ctx.author} a utilisé la commande tenebre avec succès. Rôle et protection activés.")
+
 @bot.command()
 async def gearsecond(ctx):
     # Vérifier si l'utilisateur a le rôle requis
@@ -7137,6 +7224,7 @@ async def gearsecond(ctx):
     role = discord.utils.get(ctx.author.roles, id=role_id)
     if not role:
         await ctx.send("Tu n'as pas le rôle requis pour utiliser cette commande.")
+        print(f"[LOG] {ctx.author} n'a pas le rôle requis pour utiliser Gear Second.")
         return
 
     # Vérifier si l'utilisateur a un cooldown
@@ -7146,6 +7234,7 @@ async def gearsecond(ctx):
         cooldown_end = last_used + timedelta(weeks=2)
         if datetime.utcnow() < cooldown_end:
             await ctx.send(f"Tu dois attendre encore {cooldown_end - datetime.utcnow()} avant de réutiliser cette commande.")
+            print(f"[LOG] {ctx.author} a essayé d'utiliser Gear Second avant la fin du cooldown.")
             return
 
     # Ajouter le cooldown de 2 semaines
@@ -7154,6 +7243,7 @@ async def gearsecond(ctx):
         {"$set": {"last_used": datetime.utcnow()}},
         upsert=True
     )
+    print(f"[LOG] Cooldown mis à jour pour {ctx.author} à {datetime.utcnow()}.")
 
     # Ajouter le rôle à l'utilisateur
     gear_second_role_id = 1365075014432587776
@@ -7162,10 +7252,12 @@ async def gearsecond(ctx):
     
     # Retirer le rôle après 1 semaine
     await ctx.send(f"Tu as activé le Gear Second, {ctx.author.mention} ! Ton rôle sera retiré dans 1 semaine.")
+    print(f"[LOG] {ctx.author} a activé Gear Second.")
 
     # Enlever le rôle après 1 semaine
     await discord.utils.sleep_until(datetime.utcnow() + timedelta(weeks=1))
     await ctx.author.remove_roles(gear_second_role)
+    print(f"[LOG] {ctx.author} a perdu le rôle Gear Second après 1 semaine.")
 
     # Envoyer un embed avec l'image
     embed = discord.Embed(
@@ -7182,8 +7274,10 @@ async def gearfourth(ctx):
     # Vérifier si l'utilisateur a le bon rôle
     if not any(role.id == 1365037444608819221 for role in ctx.author.roles):
         await ctx.send("Désolé, tu n'as pas le rôle nécessaire pour utiliser cette commande.")
+        # Log : L'utilisateur n'a pas le rôle requis
+        print(f"[LOG] {ctx.author} a tenté d'utiliser la commande gearfourth sans avoir le rôle nécessaire.")
         return
-    
+
     # Vérifier le cooldown
     cooldown_data = collection47.find_one({"user_id": ctx.author.id})
     if cooldown_data:
@@ -7191,23 +7285,32 @@ async def gearfourth(ctx):
         if last_used:
             cooldown_end = last_used + datetime.timedelta(days=7)
             if datetime.datetime.utcnow() < cooldown_end:
-                await ctx.send(f"Tu dois attendre encore {str(cooldown_end - datetime.datetime.utcnow()).split('.')[0]} avant de pouvoir réutiliser cette commande.")
+                time_remaining = str(cooldown_end - datetime.datetime.utcnow()).split('.')[0]
+                await ctx.send(f"Tu dois attendre encore {time_remaining} avant de pouvoir réutiliser cette commande.")
+                # Log : L'utilisateur est en cooldown
+                print(f"[LOG] {ctx.author} a tenté d'utiliser la commande gearfourth, mais est en cooldown jusqu'à {cooldown_end}.")
                 return
-
+    
     # Ajouter le rôle Gear Fourth
     gearfourth_role = discord.utils.get(ctx.guild.roles, id=1365076692410044467)
     await ctx.author.add_roles(gearfourth_role)
-    
+    # Log : Rôle ajouté
+    print(f"[LOG] {ctx.author} a reçu le rôle Gear Fourth.")
+
     # Mettre à jour le cooldown
     collection47.update_one({"user_id": ctx.author.id}, {"$set": {"last_used": datetime.datetime.utcnow()}}, upsert=True)
     
     # Retirer le rôle après 1 jour
     await ctx.send(f"Félicitations {ctx.author.mention}, tu as activé le Gear Fourth ! Le rôle sera retiré dans 24 heures.")
-    
+    # Log : Notification de succès
+    print(f"[LOG] {ctx.author} a activé Gear Fourth, rôle retiré dans 24 heures.")
+
     # Délai de 1 jour pour retirer le rôle
     await asyncio.sleep(86400)  # 86400 secondes = 1 jour
     await ctx.author.remove_roles(gearfourth_role)
-    
+    # Log : Rôle retiré après 24h
+    print(f"[LOG] {ctx.author} a perdu le rôle Gear Fourth après 24 heures.")
+
     await ctx.send(f"{ctx.author.mention}, ton rôle Gear Fourth a été retiré après 24 heures.")
 
     # Image de l'embed
@@ -7219,6 +7322,8 @@ async def gearfourth(ctx):
     )
     embed.set_image(url="https://pm1.aminoapps.com/7268/e216da33726458f8e0600f4affbd934465ea7c72r1-750-500v2_uhq.jpg")
     await ctx.send(embed=embed)
+    # Log : Embed envoyé
+    print(f"[LOG] {ctx.author} a reçu l'embed de confirmation Gear Fourth.")
 
 # Commande .nika
 @bot.command()
@@ -7229,6 +7334,7 @@ async def nika(ctx):
     # Vérification du rôle de l'utilisateur
     if not any(role.id == role_id for role in user.roles):
         await ctx.send("Désolé, vous n'avez pas le rôle requis pour utiliser cette commande.")
+        print(f"[LOG] {user} n'a pas le rôle requis pour utiliser la commande nika.")
         return
 
     # Vérification du cooldown
@@ -7238,6 +7344,7 @@ async def nika(ctx):
         cooldown_end = last_used + timedelta(weeks=2)
         if datetime.utcnow() < cooldown_end:
             await ctx.send(f"Vous devez attendre encore {cooldown_end - datetime.utcnow()} avant de réutiliser la commande.")
+            print(f"[LOG] {user} est en cooldown. Prochain usage autorisé à {cooldown_end}.")
             return
 
     # Appliquer le rôle
@@ -7245,11 +7352,13 @@ async def nika(ctx):
     if new_role:
         await user.add_roles(new_role)
         await ctx.send(f"{user.mention}, vous avez reçu le rôle {new_role.name} pendant 1 semaine.")
+        print(f"[LOG] {user} a reçu le rôle {new_role.name} pendant 1 semaine.")
 
         # Retirer le rôle après 1 semaine
         await asyncio.sleep(604800)  # Attendre 1 semaine (604800 secondes)
         await user.remove_roles(new_role)
         await ctx.send(f"{user.mention}, le rôle {new_role.name} a été retiré après 1 semaine.")
+        print(f"[LOG] {user} a perdu le rôle {new_role.name} après 1 semaine.")
 
     # Enregistrer le cooldown
     collection49.update_one(
@@ -7257,6 +7366,7 @@ async def nika(ctx):
         {"$set": {"last_used": datetime.utcnow()}},
         upsert=True
     )
+    print(f"[LOG] Cooldown enregistré pour {user}. Prochaine utilisation possible : {datetime.utcnow()}.")
 
     # Ajouter l'image à l'embed
     embed = discord.Embed(
@@ -7268,6 +7378,10 @@ async def nika(ctx):
     embed.set_image(url="https://onepiecetheorie.fr/wp-content/uploads/2022/03/Hito-Hito-no-Mi-modele-Nika.jpg")
     
     await ctx.send(embed=embed)
+    print(f"[LOG] L'embed pour le pouvoir Nika a été envoyé à {user}.")
+
+# Configuration des logs
+logging.basicConfig(level=logging.INFO)
 
 @bot.command()
 async def eveil(ctx):
@@ -7276,8 +7390,12 @@ async def eveil(ctx):
     role_temporaire = 1365083240544600094
     cooldown_duration = 30 * 24 * 60 * 60  # 1 mois
 
+    # Vérifier si l'utilisateur a le rôle nécessaire
     if role_required not in [role.id for role in ctx.author.roles]:
+        logging.warning(f"Utilisateur {ctx.author.name} ({ctx.author.id}) a tenté d'utiliser la commande /eveil sans avoir le rôle requis.")
         return await ctx.send("❌ Tu n'as pas le rôle nécessaire pour utiliser cette commande.")
+
+    logging.info(f"Utilisateur {ctx.author.name} ({ctx.author.id}) a le rôle nécessaire pour utiliser la commande /eveil.")
 
     now = datetime.datetime.utcnow()
     cooldown_data = cd_eveil.find_one({"_id": user_id})
@@ -7288,6 +7406,7 @@ async def eveil(ctx):
             remaining = cooldown_time - now
             hours, remainder = divmod(int(remaining.total_seconds()), 3600)
             minutes, seconds = divmod(remainder, 60)
+            logging.info(f"Utilisateur {ctx.author.name} ({ctx.author.id}) a essayé d'utiliser /eveil avant la fin du cooldown.")
             return await ctx.send(
                 f"⏳ Tu dois attendre encore **{hours}h {minutes}m {seconds}s** avant de pouvoir utiliser cette commande à nouveau."
             )
@@ -7295,6 +7414,8 @@ async def eveil(ctx):
     # Appliquer le rôle temporaire
     role = ctx.guild.get_role(role_temporaire)
     await ctx.author.add_roles(role)
+
+    logging.info(f"Rôle d'éveil attribué à {ctx.author.name} ({ctx.author.id}).")
 
     embed = discord.Embed(
         title="🌟 Éveil Activé !",
@@ -7312,9 +7433,13 @@ async def eveil(ctx):
         upsert=True
     )
 
+    logging.info(f"Cooldown mis à jour pour {ctx.author.name} ({ctx.author.id}).")
+
     # Attente et retrait du rôle
     await asyncio.sleep(20)
     await ctx.author.remove_roles(role)
+
+    logging.info(f"Rôle d'éveil retiré de {ctx.author.name} ({ctx.author.id}).")
 
     embed_fin = discord.Embed(
         title="🌌 Fin de l'Éveil",
@@ -7348,9 +7473,16 @@ async def eveil2(ctx, member: discord.Member):
             await ctx.send(embed=embed_cd)
             return
 
+    # Vérification du rôle
+    if not any(role.id == 1365082775845081148 for role in ctx.author.roles):
+        print(f"[{now}] {ctx.author} n'a pas le rôle requis pour utiliser `.eveil2`.")
+        await ctx.send("⛔ Tu n’as pas le rôle requis pour utiliser cette commande.")
+        return
+
     # Application du rôle
     role = ctx.guild.get_role(1365085598401953794)
     if not role:
+        print(f"[{now}] Le rôle {1365085598401953794} est introuvable.")
         return await ctx.send("❌ Le rôle à donner est introuvable.")
 
     await member.add_roles(role)
@@ -7387,11 +7519,15 @@ async def eveil2(ctx, member: discord.Member):
 # Gestion des erreurs d'accès
 @eveil2.error
 async def eveil2_error(ctx, error):
+    now = datetime.utcnow()
     if isinstance(error, commands.MissingRole):
+        print(f"[{now}] {ctx.author} n’a pas le rôle requis pour utiliser `.eveil2`.")
         await ctx.send("⛔ Tu n’as pas le rôle requis pour utiliser cette commande.")
     elif isinstance(error, commands.MissingRequiredArgument):
+        print(f"[{now}] Mauvaise utilisation de la commande `.eveil2` par {ctx.author}.")
         await ctx.send("❗ Utilisation : `.eveil2 @membre`")
     else:
+        print(f"[{now}] Une erreur inconnue est survenue pour {ctx.author}.")
         await ctx.send("❌ Une erreur est survenue.")
         raise error
 
@@ -7400,7 +7536,10 @@ async def eveil2_error(ctx, error):
 async def bourrasque(ctx, member: discord.Member):
     # Vérifie si l'utilisateur a le bon rôle
     if not any(role.id == 1365232827657879595 for role in ctx.author.roles):
-        return await ctx.send("❌ Tu n'as pas le pouvoir d'utiliser cette commande.")
+        await ctx.send("❌ Tu n'as pas le pouvoir d'utiliser cette commande.")
+        # Log de l'utilisateur sans le rôle
+        print(f"[LOG] {ctx.author.name} ({ctx.author.id}) a essayé d'utiliser la commande bourrasque sans avoir le rôle nécessaire.")
+        return
 
     user_id = ctx.author.id
     target_id = member.id
@@ -7421,12 +7560,17 @@ async def bourrasque(ctx, member: discord.Member):
                 color=discord.Color.red()
             )
             await ctx.send(embed=embed_cd)
+            # Log du cooldown actif
+            print(f"[LOG] {ctx.author.name} ({ctx.author.id}) a essayé d'utiliser bourrasque avant la fin du cooldown.")
             return
 
     # Donner le rôle à la cible
     role = ctx.guild.get_role(1365235019869847572)
     if not role:
-        return await ctx.send("❌ Le rôle cible est introuvable.")
+        await ctx.send("❌ Le rôle cible est introuvable.")
+        # Log de rôle introuvable
+        print(f"[LOG] Le rôle cible pour la commande bourrasque est introuvable dans le serveur.")
+        return
 
     await member.add_roles(role)
 
@@ -7460,18 +7604,24 @@ async def bourrasque(ctx, member: discord.Member):
         upsert=True
     )
 
+    # Log de la commande réussie
+    print(f"[LOG] {ctx.author.name} ({ctx.author.id}) a utilisé la commande bourrasque sur {member.name} ({member.id}).")
+
 @bot.command()
 async def tonnerre(ctx, member: discord.Member):
     role_required = 1365041330585337926
     role_to_give = 1365238838603288637
     cooldown_collection = collection56  # cd_tonnerre_attaque
 
+    # Vérification du rôle de l'utilisateur
     if role_required not in [r.id for r in ctx.author.roles]:
+        print(f"[LOG] {ctx.author} a tenté d'utiliser la commande tonnerre sans le rôle requis.")
         return await ctx.send("❌ Tu n'as pas la permission d'utiliser cette commande ⚡.")
 
     now = datetime.utcnow()
     user_cooldown = cooldown_collection.find_one({"user_id": ctx.author.id})
 
+    # Vérification du cooldown
     if user_cooldown and (now - user_cooldown["last_use"]).days < 30:
         remaining = 30 - (now - user_cooldown["last_use"]).days
         embed_cd = discord.Embed(
@@ -7479,15 +7629,19 @@ async def tonnerre(ctx, member: discord.Member):
             description=f"Tu dois encore attendre **{remaining} jours** avant de pouvoir invoquer la foudre à nouveau.",
             color=discord.Color.red()
         )
+        print(f"[LOG] {ctx.author} a tenté d'utiliser la commande tonnerre, mais est encore en cooldown de {remaining} jours.")
         await ctx.send(embed=embed_cd)
         return
 
-    # Appliquer le rôle
+    # Vérification du rôle à attribuer
     role = ctx.guild.get_role(role_to_give)
     if not role:
+        print(f"[LOG] Rôle introuvable: {role_to_give}")
         return await ctx.send("❌ Le rôle à attribuer est introuvable.")
 
+    # Appliquer le rôle
     await member.add_roles(role)
+    print(f"[LOG] {ctx.author} a donné le rôle à {member}.")
 
     embed = discord.Embed(
         title="⚡ Tonnerre Divin !",
@@ -7505,6 +7659,7 @@ async def tonnerre(ctx, member: discord.Member):
         {"$set": {"last_use": now}},
         upsert=True
     )
+    print(f"[LOG] {ctx.author} a mis à jour son cooldown.")
 
     # Planification du retrait après 2 semaines
     async def remove_role_later():
@@ -7512,6 +7667,7 @@ async def tonnerre(ctx, member: discord.Member):
         if role in member.roles:
             try:
                 await member.remove_roles(role)
+                print(f"[LOG] {role.name} retiré de {member}.")
                 end_embed = discord.Embed(
                     title="⚡ Fin du Jugement",
                     description=f"Le **tonnerre** s'est dissipé. {member.mention} est désormais libéré de son pouvoir électrique.",
@@ -7519,13 +7675,20 @@ async def tonnerre(ctx, member: discord.Member):
                 )
                 await ctx.send(embed=end_embed)
             except Exception as e:
-                print(f"Erreur lors du retrait du rôle : {e}")
+                print(f"[LOG] Erreur lors du retrait du rôle de {member}: {e}")
 
     bot.loop.create_task(remove_role_later())
 
 @bot.command()
 @commands.has_role(1365041330585337926)
 async def dragon(ctx, user: discord.Member):
+    # Vérifie si l'utilisateur a le rôle nécessaire
+    if not any(role.id == 1365041330585337926 for role in ctx.author.roles):
+        log_message = f"[{datetime.utcnow()}] {ctx.author} a tenté d'utiliser la commande dragon sans le rôle requis."
+        print(log_message)  # Log en console
+        await ctx.send("Désolé, tu n'as pas le rôle nécessaire pour utiliser cette commande.")
+        return
+
     # Vérifie si l'utilisateur a déjà utilisé la commande
     cd_data = collection58.find_one({"user_id": user.id})
     
@@ -7540,6 +7703,10 @@ async def dragon(ctx, user: discord.Member):
             )
             await ctx.send(embed=embed_cd)
             return
+
+    # Log lorsque l'utilisateur est ciblé
+    log_message = f"[{datetime.utcnow()}] {ctx.author} a invoqué la puissance du dragon sur {user}."
+    print(log_message)  # Log en console
 
     # Réduire le total de la personne ciblée à 0
     collection.update_one(

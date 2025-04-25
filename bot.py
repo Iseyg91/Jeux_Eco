@@ -2606,7 +2606,7 @@ async def rob(ctx, user: discord.User):
         ))
 
     # Vérifier si la cible a le rôle qui repousse les vols (300% banque)
-    has_anti_rob_reflect = discord.utils.get(target_member.roles, id=1365076692410044467)
+    has_anti_rob_reflect = discord.utils.get(target_member.roles, id=1365313284584116264)
     user_data = collection.find_one({"guild_id": guild_id, "user_id": user_id}) or {"cash": 1500, "bank": 0}
     if has_anti_rob_reflect:
         penalty = round(user_data["bank"] * 3.00, 2)
@@ -2633,7 +2633,7 @@ async def rob(ctx, user: discord.User):
         ))
 
     # Barrière bancaire
-    if discord.utils.get(target_member.roles, id=1365031085934903357):
+    if discord.utils.get(target_member.roles, id=1365311602290851880):
         now = datetime.utcnow()
         today_str = now.strftime("%Y-%m-%d")
         barrier_data = collection.find_one({"guild_id": guild_id, "user_id": target_id, "barriere_date": today_str})
@@ -2649,9 +2649,9 @@ async def rob(ctx, user: discord.User):
             ))
 
     # Rôles spéciaux
-    has_half_rob_protection = discord.utils.get(target_member.roles, id=1365029481206775878)
-    has_counter_role = discord.utils.get(target_member.roles, id=1365070571704156241)
-    has_30_percent_protection = discord.utils.get(target_member.roles, id=1365231259340505148)
+    has_half_rob_protection = discord.utils.get(target_member.roles, id=1365311588139274354)
+    has_counter_role = discord.utils.get(target_member.roles, id=1365313254108430396)
+    has_30_percent_protection = discord.utils.get(target_member.roles, id=1365312038716444672)
 
     # Calcul succès du vol
     robber_total = user_data["cash"] + user_data["bank"]
@@ -7327,7 +7327,7 @@ async def bombe(ctx, target: discord.Member = None):
     author_id = ctx.author.id
 
     # Vérification du rôle de l'auteur
-    if author_id != 1365027878928126096:
+    if author_id != 1365316070172393572:
         await ctx.send("❌ Tu n'es pas autorisé à utiliser cette commande.")
         # Log : l'utilisateur n'a pas le rôle requis
         await log_eco_channel(
@@ -7426,7 +7426,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 @bot.command(name="gura")
 @commands.guild_only()
 async def gura(ctx, target: discord.Member = None):
-    role_required = 1365031927127478302
+    role_required = 1365313248269828116
     cooldown_weeks = 3
 
     # Vérifie si l'auteur a le rôle requis
@@ -7566,13 +7566,13 @@ async def glace(ctx, cible: discord.Member = None):
 
 #----------------------------------------------- Yami Yami no Mi
 @bot.command(name="tenebre")
-@commands.has_role(1365035636351959153)
+@commands.has_role(1365313251201519697)
 async def tenebre(ctx):
     user_id = ctx.author.id
     now = datetime.utcnow()
 
     # Vérifie si l'utilisateur a le rôle requis
-    if not any(role.id == 1365035636351959153 for role in ctx.author.roles):
+    if not any(role.id == 1365313251201519697 for role in ctx.author.roles):
         await ctx.send("🚫 Tu n'as pas le rôle nécessaire pour utiliser cette capacité.")
         # Log si l'utilisateur n'a pas le rôle
         print(f"{now} - {ctx.author} n'a pas le rôle requis pour utiliser la commande tenebre.")
@@ -7606,7 +7606,7 @@ async def tenebre(ctx):
     print(f"{now} - {ctx.author} a activé la protection contre les robs pour 6h.")
 
     # Donne le rôle temporaire (3 jours)
-    role_id = 1365070571704156241
+    role_id = 1365313254108430396
     role = ctx.guild.get_role(role_id)
     if role:
         await ctx.author.add_roles(role)
@@ -7632,7 +7632,7 @@ async def tenebre(ctx):
 @bot.command()
 async def gearsecond(ctx):
     # Vérifier si l'utilisateur a le rôle requis
-    role_id = 1365037444608819221
+    role_id = 1365311611019202744
     role = discord.utils.get(ctx.author.roles, id=role_id)
     if not role:
         await ctx.send("Tu n'as pas le rôle requis pour utiliser cette commande.")
@@ -7658,7 +7658,7 @@ async def gearsecond(ctx):
     print(f"[LOG] Cooldown mis à jour pour {ctx.author} à {datetime.utcnow()}.")
 
     # Ajouter le rôle à l'utilisateur
-    gear_second_role_id = 1365075014432587776
+    gear_second_role_id = 1365313261129568297
     gear_second_role = discord.utils.get(ctx.guild.roles, id=gear_second_role_id)
     await ctx.author.add_roles(gear_second_role)
     
@@ -7684,7 +7684,7 @@ async def gearsecond(ctx):
 @bot.command()
 async def gearfourth(ctx):
     # Vérifier si l'utilisateur a le bon rôle
-    if not any(role.id == 1365037444608819221 for role in ctx.author.roles):
+    if not any(role.id == 1365311611019202744 for role in ctx.author.roles):
         await ctx.send("Désolé, tu n'as pas le rôle nécessaire pour utiliser cette commande.")
         # Log : L'utilisateur n'a pas le rôle requis
         print(f"[LOG] {ctx.author} a tenté d'utiliser la commande gearfourth sans avoir le rôle nécessaire.")
@@ -7704,7 +7704,7 @@ async def gearfourth(ctx):
                 return
     
     # Ajouter le rôle Gear Fourth
-    gearfourth_role = discord.utils.get(ctx.guild.roles, id=1365076692410044467)
+    gearfourth_role = discord.utils.get(ctx.guild.roles, id=1365313284584116264)
     await ctx.author.add_roles(gearfourth_role)
     # Log : Rôle ajouté
     print(f"[LOG] {ctx.author} a reçu le rôle Gear Fourth.")
@@ -7742,7 +7742,7 @@ async def gearfourth(ctx):
 @bot.command()
 async def nika(ctx):
     user = ctx.author
-    role_id = 1365037905633869914  # Le rôle nécessaire pour utiliser la commande
+    role_id = 1365313292477927464  # Le rôle nécessaire pour utiliser la commande
 
     # Vérification du rôle de l'utilisateur
     if not any(role.id == role_id for role in user.roles):
@@ -7761,7 +7761,7 @@ async def nika(ctx):
             return
 
     # Appliquer le rôle
-    new_role = discord.utils.get(ctx.guild.roles, id=1365080818543755324)  # Rôle à attribuer
+    new_role = discord.utils.get(ctx.guild.roles, id=1365313243580469359)  # Rôle à attribuer
     if new_role:
         await user.add_roles(new_role)
         await ctx.send(f"{user.mention}, vous avez reçu le rôle {new_role.name} pendant 1 semaine.")
@@ -7799,8 +7799,8 @@ logging.basicConfig(level=logging.INFO)
 @bot.command()
 async def eveil(ctx):
     user_id = ctx.author.id
-    role_required = 1365082775845081148
-    role_temporaire = 1365083240544600094
+    role_required = 1365311605457555506
+    role_temporaire = 1365312301900501063
     cooldown_duration = 30 * 24 * 60 * 60  # 1 mois
 
     # Vérifier si l'utilisateur a le rôle nécessaire
@@ -7862,7 +7862,7 @@ async def eveil(ctx):
     await ctx.send(embed=embed_fin)
 
 @bot.command(name="eveil2")
-@commands.has_role(1365082775845081148)
+@commands.has_role(1365311605457555506)
 async def eveil2(ctx, member: discord.Member):
     author_id = ctx.author.id
     now = datetime.utcnow()
@@ -7887,15 +7887,15 @@ async def eveil2(ctx, member: discord.Member):
             return
 
     # Vérification du rôle
-    if not any(role.id == 1365082775845081148 for role in ctx.author.roles):
+    if not any(role.id == 1365311605457555506 for role in ctx.author.roles):
         print(f"[{now}] {ctx.author} n'a pas le rôle requis pour utiliser `.eveil2`.")
         await ctx.send("⛔ Tu n’as pas le rôle requis pour utiliser cette commande.")
         return
 
     # Application du rôle
-    role = ctx.guild.get_role(1365085598401953794)
+    role = ctx.guild.get_role(1365313255471579297)
     if not role:
-        print(f"[{now}] Le rôle {1365085598401953794} est introuvable.")
+        print(f"[{now}] Le rôle {1365313255471579297} est introuvable.")
         return await ctx.send("❌ Le rôle à donner est introuvable.")
 
     await member.add_roles(role)
@@ -7948,7 +7948,7 @@ async def eveil2_error(ctx, error):
 @commands.guild_only()
 async def bourrasque(ctx, member: discord.Member = None):
     # Vérifie si l'utilisateur a le bon rôle
-    if not any(role.id == 1365232827657879595 for role in ctx.author.roles):
+    if not any(role.id == 1365312299090313216 for role in ctx.author.roles):
         await ctx.send("❌ Tu n'as pas le pouvoir d'utiliser cette commande.")
         # Log de l'utilisateur sans le rôle
         print(f"[LOG] {ctx.author.name} ({ctx.author.id}) a essayé d'utiliser la commande bourrasque sans avoir le rôle nécessaire.")
@@ -8035,8 +8035,8 @@ async def bourrasque(ctx, member: discord.Member = None):
 
 @bot.command()
 async def tonnerre(ctx, member: discord.Member = None):
-    role_required = 1365041330585337926
-    role_to_give = 1365238838603288637
+    role_required = 1365311614332571739
+    role_to_give = 1365312292069048443
     cooldown_collection = collection56  # cd_tonnerre_attaque
 
     # Vérification de la présence de la cible
@@ -8119,10 +8119,10 @@ async def tonnerre(ctx, member: discord.Member = None):
     bot.loop.create_task(remove_role_later())
 
 @bot.command()
-@commands.has_role(1365041330585337926)
+@commands.has_role(1365311614332571739)
 async def dragon(ctx, user: discord.Member = None):
     # Vérifie si l'utilisateur a le rôle nécessaire
-    if not any(role.id == 1365041330585337926 for role in ctx.author.roles):
+    if not any(role.id == 1365311614332571739 for role in ctx.author.roles):
         log_message = f"[{datetime.utcnow()}] {ctx.author} a tenté d'utiliser la commande dragon sans le rôle requis."
         print(log_message)  # Log en console
         await ctx.send("Désolé, tu n'as pas le rôle nécessaire pour utiliser cette commande.")

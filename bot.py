@@ -7539,7 +7539,7 @@ async def eveil2_error(ctx, error):
 
 @bot.command()
 @commands.guild_only()
-async def bourrasque(ctx, member: discord.Member):
+async def bourrasque(ctx, member: discord.Member = None):
     # Vérifie si l'utilisateur a le bon rôle
     if not any(role.id == 1365232827657879595 for role in ctx.author.roles):
         await ctx.send("❌ Tu n'as pas le pouvoir d'utiliser cette commande.")
@@ -7585,7 +7585,13 @@ async def bourrasque(ctx, member: discord.Member):
         print(f"[LOG] Le rôle cible pour la commande bourrasque est introuvable dans le serveur.")
         return
 
-    await member.add_roles(role)
+    try:
+        await member.add_roles(role)
+    except discord.DiscordException as e:
+        await ctx.send(f"❌ Une erreur est survenue en attribuant le rôle à {member.mention}.")
+        # Log d'erreur lors de l'ajout de rôle
+        print(f"[LOG] Erreur en attribuant le rôle bourrasque à {member.name} ({member.id}): {str(e)}")
+        return
 
     embed = discord.Embed(
         title="🌪️ Bourrasque Déchaînée !",
@@ -7660,7 +7666,7 @@ async def tonnerre(ctx, member: discord.Member = None):
     # Appliquer le rôle
     try:
         await member.add_roles(role)
-        print(f"[LOG] {ctx.author} a donné le rôle à {member}.")
+        print(f"[LOG] {ctx.author} a donné le rôle {role.name} à {member}.")
     except Exception as e:
         print(f"[LOG] Erreur lors de l'ajout du rôle à {member}: {e}")
         return await ctx.send(f"❌ Une erreur s'est produite en essayant d'ajouter le rôle à {member.mention}.")
@@ -7707,7 +7713,7 @@ async def tonnerre(ctx, member: discord.Member = None):
 
 @bot.command()
 @commands.has_role(1365041330585337926)
-async def dragon(ctx, user: discord.Member):
+async def dragon(ctx, user: discord.Member = None):
     # Vérifie si l'utilisateur a le rôle nécessaire
     if not any(role.id == 1365041330585337926 for role in ctx.author.roles):
         log_message = f"[{datetime.utcnow()}] {ctx.author} a tenté d'utiliser la commande dragon sans le rôle requis."
@@ -7734,6 +7740,8 @@ async def dragon(ctx, user: discord.Member):
                 description=f"Tu dois attendre encore **{remaining_time}** avant de pouvoir invoquer la puissance du dragon à nouveau.",
                 color=discord.Color.red()
             )
+            log_message = f"[{datetime.utcnow()}] {ctx.author} a tenté d'utiliser la commande dragon sur {user}, mais un cooldown est actif."
+            print(log_message)  # Log en console
             await ctx.send(embed=embed_cd)
             return
 
@@ -7747,6 +7755,10 @@ async def dragon(ctx, user: discord.Member):
         {"$set": {"balance": 0, "bank": 0}},
         upsert=True
     )
+    
+    # Log de la réduction des coins
+    log_message = f"[{datetime.utcnow()}] {user} a vu son total réduit à zéro par la puissance du dragon."
+    print(log_message)  # Log en console
 
     # Ajoute un cooldown d'un mois
     cooldown_end = datetime.utcnow() + timedelta(days=30)
@@ -7755,6 +7767,10 @@ async def dragon(ctx, user: discord.Member):
         {"$set": {"cooldown_end": cooldown_end}},
         upsert=True
     )
+    
+    # Log de l'ajout du cooldown
+    log_message = f"[{datetime.utcnow()}] Un cooldown d'un mois a été ajouté pour {user}."
+    print(log_message)  # Log en console
 
     # Préparer l'embed avec l'image de Kaido
     embed = discord.Embed(

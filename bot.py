@@ -4108,13 +4108,18 @@ from discord import app_commands
 from discord.ext import commands
 import discord
 
-# Fonction d'autocomplétion pour la recherche par nom
+# Fonction d'autocomplétion pour afficher les 25 premiers items et mettre à jour dynamiquement
 async def item_autocomplete(interaction: discord.Interaction, current: str):
-    # On cherche les items dont le titre contient le texte que l'utilisateur a tapé (insensible à la casse)
-    items_cursor = collection16.find({"title": {"$regex": current, "$options": "i"}}).limit(25)
+    # Si l'utilisateur a tapé quelque chose, filtrer les résultats par le nom de l'item
+    if current:
+        items_cursor = collection16.find({"title": {"$regex": current, "$options": "i"}}).limit(25)
+    else:
+        # Sinon, afficher les 25 premiers items
+        items_cursor = collection16.find().limit(25)
+
     choices = []
 
-    # Parcours des résultats de la recherche pour les afficher dans la liste d'autocomplétion
+    # Ajouter les éléments de l'autocomplétion (nom de l'item) dans la liste des choix
     async for item in items_cursor:
         choices.append(app_commands.Choice(name=item["title"], value=item["title"]))
 

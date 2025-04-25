@@ -4104,24 +4104,31 @@ async def item_store(interaction: discord.Interaction):
 # Appel de la fonction pour insérer les items dans la base de données lors du démarrage du bot
 insert_items_into_db()
 
-# Fonction d'autocomplétion dynamique
+from discord import app_commands
+from discord.ext import commands
+from discord import Interaction
+
+# Fonction d'autocomplétion pour la recherche par nom
 async def item_autocomplete(interaction: Interaction, current: str):
+    # On cherche les items dont le titre contient le texte que l'utilisateur a tapé (insensible à la casse)
     items_cursor = collection16.find({"title": {"$regex": current, "$options": "i"}}).limit(25)
     choices = []
 
     async for item in items_cursor:
+        # Afficher le nom de l'item mais utiliser l'ID comme valeur sous-jacente
         choices.append(app_commands.Choice(name=item["title"], value=item["id"]))
 
     return choices
 
-# Commande d'achat
-@bot.tree.command(name="item-buy", description="Achète un item de la boutique via son ID.")
-@app_commands.describe(item_id="ID de l'item à acheter", quantity="Quantité à acheter (défaut: 1)")
+# Commande d'achat avec recherche par nom d'item, en utilisant l'ID en interne
+@bot.tree.command(name="item-buy", description="Achète un item de la boutique via son nom.")
+@app_commands.describe(item_id="Nom de l'item à acheter", quantity="Quantité à acheter (défaut: 1)")
 @app_commands.autocomplete(item_id=item_autocomplete)  # Lier l'autocomplétion à l'argument item_id
 async def item_buy(interaction: discord.Interaction, item_id: str, quantity: int = 1):
     user_id = interaction.user.id
     guild_id = interaction.guild.id
 
+    # Chercher l'item en utilisant l'ID récupéré via l'autocomplétion (mais le nom est utilisé pour la recherche)
     item = collection16.find_one({"id": item_id})
     if not item:
         embed = discord.Embed(

@@ -812,7 +812,7 @@ private_threads = {}  # Stocke les fils privés des nouveaux membres
 
 # Liste des salons à pinguer
 salon_ids = [
-    1355158116903419997
+    1355198748296351854
 ]
 
 class GuideView(View):
@@ -941,8 +941,8 @@ async def on_member_join(member):
                     "*<a:fire:1343873843730579478> Ici, l’économie règne en maître, les alliances se forment, les trahisons éclatent... et ta richesse ne tient qu’à un fil ! <a:fire:1343873843730579478>*\n\n"
                     "<:better_scroll:1342376863909285930> **Avant de commencer, prends le temps de lire :**\n\n"
                     "- <a:fleche3:1290077283100397672> **<#1355157955804139560>** pour éviter les problèmes dès le départ.\n"
-                    "- <a:fleche3:1290077283100397672> **<#1355158018517500086>** pour comprendre les bases de l’économie.\n"
-                    "- <a:fleche3:1290077283100397672> **<#1359949279808061591>** pour savoir ce que tu peux obtenir.\n\n"
+                    "- <a:fleche3:1290077283100397672> **<#1364473395982630945>** pour comprendre les bases de l’économie.\n"
+                    "- <a:fleche3:1290077283100397672> **<#1364477906096623746>** pour savoir ce que tu peux obtenir.\n\n"
                     "💡 *Un doute ? Une question ? Ouvre un ticket et le staff t’aidera !*\n\n"
                     "**Prépare-toi à bâtir ton empire... ou à tout perdre. Bonne chance ! 🍀**"
                 ),

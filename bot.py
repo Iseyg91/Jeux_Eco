@@ -4888,7 +4888,7 @@ async def collect_income(ctx: commands.Context):
 BADGES = [
     {
         "id": 1,
-        "emoji": "<:gon:1363923253134889082>",
+        "emoji": "<:hxh:1363923320256463088>",
         "title": "Badge Hunter X Hunter",
         "description": "Badge Collector.",
         "price": 100,
@@ -4907,7 +4907,7 @@ BADGES = [
     },
     {
         "id": 2,
-        "emoji": "<:hxh:1363923320256463088>",
+        "emoji": "<:gon:1363923253134889082>",
         "title": "Badge Gon",
         "description": "Badge Collector",
         "price": 150,

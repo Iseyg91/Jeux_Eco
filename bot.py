@@ -1241,15 +1241,16 @@ async def deposit(ctx: commands.Context, amount: str):
         deposit_amount = int(cash)
 
     else:
-        if not amount.isdigit():
+        try:
+            # Gère à la fois les entiers classiques et la notation scientifique
+            deposit_amount = int(float(amount))
+        except ValueError:
             embed = discord.Embed(
-                description=f"<:classic_x_mark:1362711858829725729> {user.mention}, montant invalide. Utilise un nombre ou `all`.",
+                description=f"<:classic_x_mark:1362711858829725729> {user.mention}, montant invalide. Utilise un nombre valide ou `all`.",
                 color=discord.Color.red()
             )
             embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
             return await ctx.send(embed=embed)
-
-        deposit_amount = int(amount)
 
         if deposit_amount <= 0:
             embed = discord.Embed(
@@ -1308,16 +1309,16 @@ async def withdraw(ctx: commands.Context, amount: str):
             return await ctx.send(embed=embed)
         withdrawn_amount = int(bank)
     else:
-        # Vérifie que c'est un nombre valide
-        if not amount.isdigit():
+        try:
+            # Gère à la fois les entiers classiques et la notation scientifique
+            withdrawn_amount = int(float(amount))
+        except ValueError:
             embed = discord.Embed(
-                description="❌ Montant invalide. Utilise un nombre ou `all`.",
+                description="❌ Montant invalide. Utilise un nombre valide ou `all`.",
                 color=discord.Color.red()
             )
             embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
             return await ctx.send(embed=embed)
-
-        withdrawn_amount = int(amount)
 
         if withdrawn_amount <= 0:
             embed = discord.Embed(
@@ -1431,26 +1432,20 @@ async def remove_money(ctx: commands.Context, user: discord.User, amount: int, l
     user_id = user.id
     field = location.value
 
-    # Vérifie le solde actuel
+    # Récupération du solde actuel
     data = collection.find_one({"guild_id": guild_id, "user_id": user_id}) or {"cash": 0, "bank": 0}
     current_balance = int(data.get(field, 0))
-
-    if current_balance < amount:
-        return await ctx.send(
-            f"❌ {user.display_name} n'a pas assez de fonds dans son `{field}` pour retirer {int(amount):,} <:ecoEther:1341862366249357374>."
-        )
-
     balance_before = current_balance
     balance_after = balance_before - amount
 
-    # Mise à jour dans la base de données
+    # Mise à jour du solde (peut devenir négatif)
     collection.update_one(
         {"guild_id": guild_id, "user_id": user_id},
         {"$inc": {field: -amount}},
         upsert=True
     )
 
-    # Log dans le salon de logs économique
+    # Log dans le salon éco
     await log_eco_channel(
         bot,
         guild_id,
@@ -1462,17 +1457,17 @@ async def remove_money(ctx: commands.Context, user: discord.User, amount: int, l
         f"Retrait de {int(amount):,} <:ecoEther:1341862366249357374> dans le compte {field} de {user.mention} par {ctx.author.mention}."
     )
 
-    # Embed de confirmation
+    # Embed confirmation
     embed = discord.Embed(
         title="✅ Retrait effectué avec succès !",
-        description=f"**{int(amount):,} <:ecoEther:1341862366249357374>** a été retiré de la **{field}** de {user.mention}.",
+        description=f"**{int(amount):,} <:ecoEther:1341862366249357374>** a été retiré de la **{field}** de {user.mention}.\nNouveau solde : **{balance_after:,}** <:ecoEther:1341862366249357374>",
         color=discord.Color.green()
     )
     embed.set_footer(text=f"Action réalisée par {ctx.author}", icon_url=ctx.author.display_avatar.url)
 
     await ctx.send(embed=embed)
 
-# Gestion des erreurs de permissions
+# Gestion des erreurs
 @remove_money.error
 async def remove_money_error(ctx, error):
     if isinstance(error, commands.MissingPermissions):
@@ -1566,7 +1561,7 @@ async def pay(ctx: commands.Context, user: discord.User, amount: str):
         amount = sender_cash
     else:
         try:
-            amount = int(amount)
+            amount = int(float(amount))  # accepte 1e3, 2.5e2, etc.
             if amount <= 0:
                 raise ValueError
         except ValueError:
@@ -2056,7 +2051,7 @@ async def cock_fight(ctx, amount: str):
 
     else:
         try:
-            amount = int(amount)
+            amount = int(float(amount))  # Accepte la notation scientifique
         except ValueError:
             embed = discord.Embed(
                 description=f"<:classic_x_mark:1362711858829725729> {user.mention}, entre un montant valide, ou utilise `all` ou `half`.",
@@ -2088,31 +2083,43 @@ async def cock_fight(ctx, amount: str):
         await ctx.send(embed=embed)
         return
 
-    # Calcul de la chance de victoire
+    # Chance de victoire et série de défaites
     win_data = collection6.find_one({"guild_id": guild_id, "user_id": user_id})
-    win_chance = win_data.get("win_chance") if win_data and "win_chance" in win_data else start_chance
+    win_chance = win_data.get("win_chance", start_chance)
+    lose_streak = win_data.get("lose_streak", 0)
 
-    # Résultat du combat
-    if random.randint(1, 100) <= win_chance:
+    # Si 3 défaites d'affilée, victoire garantie
+    force_win = lose_streak >= 3
+    did_win = force_win or random.randint(1, 100) <= win_chance
+
+    if did_win:
         win_amount = amount
+        new_chance = min(win_chance + 1, max_chance)
+
+        # Mise à jour de la base
         collection.update_one(
             {"guild_id": guild_id, "user_id": user_id},
             {"$inc": {"cash": win_amount}},
             upsert=True
         )
-        new_chance = min(win_chance + 1, max_chance)
         collection6.update_one(
             {"guild_id": guild_id, "user_id": user_id},
-            {"$set": {"win_chance": new_chance}},
+            {"$set": {"win_chance": new_chance, "lose_streak": 0}},
             upsert=True
         )
 
+        # Embed victoire
         embed = discord.Embed(
             description=f"<:Check:1362710665663615147> {user.mention}, ton poulet a **gagné** le combat et t’a rapporté <:ecoEther:1341862366249357374> **{win_amount}** ! 🐓",
             color=discord.Color.green()
         )
         embed.set_author(name=str(user), icon_url=user.avatar.url if user.avatar else user.default_avatar.url)
-        embed.set_footer(text=f"Chicken strength (chance of winning): {new_chance}%")
+
+        if force_win:
+            embed.set_footer(text=f"Victoire garantie après 3 défaites consécutives (Pity system)")
+        else:
+            embed.set_footer(text=f"Chicken strength (chance of winning): {new_chance}%")
+
         await ctx.send(embed=embed)
 
         balance_after = balance + win_amount
@@ -2122,6 +2129,7 @@ async def cock_fight(ctx, amount: str):
         )
 
     else:
+        # Défaite : poulet meurt
         collection7.update_one(
             {"guild_id": guild_id, "user_id": user_id},
             {"$set": {"chicken": False}}
@@ -2133,7 +2141,10 @@ async def cock_fight(ctx, amount: str):
         )
         collection6.update_one(
             {"guild_id": guild_id, "user_id": user_id},
-            {"$set": {"win_chance": start_chance}},
+            {
+                "$set": {"win_chance": start_chance},
+                "$inc": {"lose_streak": 1}
+            },
             upsert=True
         )
 
@@ -2455,7 +2466,6 @@ class BlackjackView(discord.ui.View):
 
         await interaction.response.edit_message(embed=embed, view=None)
 
-# Lorsqu'un joueur joue au blackjack
 @bot.hybrid_command(name="blackjack", aliases=["bj"], description="Joue au blackjack et tente de gagner !")
 async def blackjack(ctx: commands.Context, mise: str = None):
     if ctx.guild is None:
@@ -2481,7 +2491,12 @@ async def blackjack(ctx: commands.Context, mise: str = None):
             mise = half_cash
 
     elif mise:
-        mise = int(mise)
+        try:
+            # Tentative de conversion de la mise, incluant les notations scientifiques
+            mise = int(float(mise))  # Convertit le chiffre en float puis en int
+        except ValueError:
+            return await ctx.send(embed=discord.Embed(description="La mise doit être un nombre valide, incluant les notations scientifiques (par exemple `5e2` pour 500).", color=discord.Color.red()))
+
         user_data = get_or_create_user_data(ctx.guild.id, ctx.author.id)
         max_bet = 15000  # La mise maximale
 
@@ -2837,13 +2852,29 @@ async def russianroulette(ctx, arg: str):
             collection.insert_one(data)
         return data
 
+    # Fonction pour parser le montant avec notation exponentielle (ex: 5e2 -> 500)
+    def parse_mise(mise):
+        match = re.match(r"(\d+)e(\d+)", mise)
+        if match:
+            base = int(match.group(1))
+            exponent = int(match.group(2))
+            return base * (10 ** exponent)
+        else:
+            return int(mise)
+
     if arg.isdigit() or arg.lower() == "all" or arg.lower() == "half":
         if arg.lower() == "all":
             bet = get_user_cash(guild_id, user.id)
         elif arg.lower() == "half":
             bet = get_user_cash(guild_id, user.id) // 2
         else:
-            bet = int(arg)
+            try:
+                bet = parse_mise(arg)  # Utilisation de la fonction parse_mise
+            except ValueError:
+                return await ctx.send(embed=discord.Embed(
+                    description=f"<:classic_x_mark:1362711858829725729> La mise spécifiée est invalide.",
+                    color=discord.Color.from_rgb(255, 92, 92)
+                ))
 
         if bet < 1:
             return await ctx.send(embed=discord.Embed(
@@ -2999,7 +3030,7 @@ COLUMN_2 = [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35]
 COLUMN_3 = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36]
 
 @bot.command(name="roulette", description="Parie sur la roulette avec un montant spécifique")
-async def roulette(ctx: commands.Context, bet: int, space: str):
+async def roulette(ctx: commands.Context, bet: str, space: str):
     guild_id = ctx.guild.id
     user_id = ctx.author.id
 
@@ -3018,24 +3049,36 @@ async def roulette(ctx: commands.Context, bet: int, space: str):
     data = get_or_create_user_data(guild_id, user_id)
     cash = data.get("cash", 0)
 
-    if bet > cash:
+    # Vérifier si le format du pari est valide
+    bet_match = re.match(r"(\d+)e(\d+)", bet)
+    if bet_match:
+        base = int(bet_match.group(1))  # la base du chiffre (ex : 5)
+        exponent = int(bet_match.group(2))  # l'exposant (ex : 2)
+        bet_value = base * (10 ** exponent)  # Calcul du pari en valeur absolue (ex : 5e2 -> 500)
+    else:
+        try:
+            bet_value = int(bet)  # Si ce n'est pas au format exponentiel, essayer comme un entier normal
+        except ValueError:
+            return await ctx.send("⛔ Format de pari invalide. Utilisez par exemple 5e2 pour 500.")
+
+    if bet_value > cash:
         active_roulette_players.remove(user_id)
         return await ctx.send(f"Tu n'as pas assez d'argent ! Tu as {cash} en cash.")
 
-    if bet < 1:
+    if bet_value < 1:
         active_roulette_players.remove(user_id)
         return await ctx.send("⛔ La mise minimale est de 1 coin !")
 
-    if bet > 5000:
+    if bet_value > 5000:
         active_roulette_players.remove(user_id)
         return await ctx.send("⛔ La mise maximale est de 5000 !")
 
     # Déduction du montant parié
-    collection.update_one({"guild_id": guild_id, "user_id": user_id}, {"$inc": {"cash": -bet}})
+    collection.update_one({"guild_id": guild_id, "user_id": user_id}, {"$inc": {"cash": -bet_value}})
 
     embed = discord.Embed(
-        title=ctx.author.name,  # ou interaction.user.name selon ton contexte
-        description=f"You have placed a bet of <:ecoEther:1341862366249357374>{int(bet)} on **{space}**.",
+        title=ctx.author.name,
+        description=f"You have placed a bet of <:ecoEther:1341862366249357374>{bet_value} on **{space}**.",
         color=discord.Color.blue()
     )
     embed.set_footer(text="Time remaining: 10 seconds")
@@ -3103,9 +3146,9 @@ async def roulette(ctx: commands.Context, bet: int, space: str):
     if win:
         collection.update_one(
             {"guild_id": guild_id, "user_id": user_id},
-            {"$inc": {"cash": int(bet * multiplier)}},
+            {"$inc": {"cash": int(bet_value * multiplier)}},
         )
-        result_str = f"The ball landed on: **{spin_result}**!\n\n**Winners:**\n{ctx.author.mention} won <:ecoEther:1341862366249357374> {int(bet * multiplier)}"
+        result_str = f"The ball landed on: **{spin_result}**!\n\n**Winners:**\n{ctx.author.mention} won <:ecoEther:1341862366249357374> {int(bet_value * multiplier)}"
     else:
         result_str = f"The ball landed on: {spin_result}!\n\nNo Winners  :("
 
@@ -3113,7 +3156,6 @@ async def roulette(ctx: commands.Context, bet: int, space: str):
 
     # Libération du joueur
     active_roulette_players.remove(user_id)
-
 #-------------------------------------------------------------- Daily
 
 @bot.hybrid_command(name="daily", aliases=["dy"], description="Réclame tes Coins quotidiens.")
@@ -5000,9 +5042,11 @@ async def badge_inventory(interaction: discord.Interaction):
         start = page * per_page
         end = start + per_page
         for badge in badge_list[start:end]:
+            badge_name = badge.get('name', 'Nom introuvable')  # Utilisation de .get() pour éviter KeyError
+            badge_emoji = badge.get('emoji', '❓')  # Valeur par défaut pour l'emoji si non défini
             embed.add_field(
-                name=f"ID: {badge['id']} | {badge['name']} {badge['emoji']}",
-                value=badge["description"],
+                name=f"ID: {badge['id']} | {badge_name} {badge_emoji}",
+                value=badge.get("description", "Aucune description disponible."),
                 inline=False
             )
         total_pages = (len(badge_list) - 1) // per_page + 1

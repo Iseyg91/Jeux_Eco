@@ -8438,16 +8438,17 @@ async def slot_machine(ctx, bet):
         color = discord.Color.red()
         description = f"**You lost** <:ecoEther:1341862366249357374> {bet:,}!"
 
-    new_cash = await update_balance(ctx.guild.id, ctx.author.id, win_amount)
+    await update_balance(ctx.guild.id, ctx.author.id, win_amount)
 
     embed = discord.Embed(color=color)
     embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar.url)
     embed.description = description
 
-    # ✅ Correction ici : fermeture correcte de l’emoji
-    embed.add_field(name="Jetons", value=f"{lines[0]}\n{lines[1]} <:emoji_14:1365415542466281593>\n{lines[2]}")
+    embed.add_field(
+        name="Jetons",
+        value=f"{lines[0]}\n{lines[1]} <:emoji_14:1365415542466281593>\n{lines[2]}"
+    )
 
-    embed.add_field(name="Solde actuel", value=f"Cash: {new_cash:,} <:ecoEther:1341862366249357374>")
     await ctx.send(embed=embed)
 
 # Commande pour jouer à la machine à sous

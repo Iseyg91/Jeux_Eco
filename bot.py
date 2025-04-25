@@ -4116,24 +4116,24 @@ async def item_autocomplete(interaction: discord.Interaction, current: str):
 
     # Parcours des résultats de la recherche pour les afficher dans la liste d'autocomplétion
     async for item in items_cursor:
-        choices.append(app_commands.Choice(name=item["title"], value=item["id"]))
+        choices.append(app_commands.Choice(name=item["title"], value=item["title"]))
 
     return choices
 
-# Commande d'achat avec recherche par nom d'item, en utilisant l'ID en interne
+# Commande d'achat avec recherche par nom d'item
 @bot.tree.command(name="item-buy", description="Achète un item de la boutique via son nom.")
-@app_commands.describe(item_id="Nom de l'item à acheter", quantity="Quantité à acheter (défaut: 1)")
-@app_commands.autocomplete(item_id=item_autocomplete)  # Lier l'autocomplétion à l'argument item_id
-async def item_buy(interaction: discord.Interaction, item_id: str, quantity: int = 1):
+@app_commands.describe(item_name="Nom de l'item à acheter", quantity="Quantité à acheter (défaut: 1)")
+@app_commands.autocomplete(item_name=item_autocomplete)  # Lier l'autocomplétion à l'argument item_name
+async def item_buy(interaction: discord.Interaction, item_name: str, quantity: int = 1):
     user_id = interaction.user.id
     guild_id = interaction.guild.id
 
-    # Chercher l'item en utilisant l'ID récupéré via l'autocomplétion (mais le nom est utilisé pour la recherche)
-    item = collection16.find_one({"id": item_id})
+    # Chercher l'item en utilisant le nom récupéré via l'autocomplétion
+    item = collection16.find_one({"title": item_name})
     if not item:
         embed = discord.Embed(
             title="<:classic_x_mark:1362711858829725729> Item introuvable",
-            description="Aucun item avec cet ID n'a été trouvé dans la boutique.",
+            description="Aucun item avec ce nom n'a été trouvé dans la boutique.",
             color=discord.Color.red()
         )
         return await interaction.response.send_message(embed=embed)
@@ -4186,7 +4186,7 @@ async def item_buy(interaction: discord.Interaction, item_id: str, quantity: int
     existing = collection7.find_one({"user_id": user_id, "guild_id": guild_id})
     if existing:
         inventory = existing.get("items", {})
-        inventory[str(item_id)] = inventory.get(str(item_id), 0) + quantity
+        inventory[str(item["id"])] = inventory.get(str(item["id"]), 0) + quantity
         collection7.update_one(
             {"user_id": user_id, "guild_id": guild_id},
             {"$set": {"items": inventory}}
@@ -4195,7 +4195,7 @@ async def item_buy(interaction: discord.Interaction, item_id: str, quantity: int
         collection7.insert_one({
             "user_id": user_id,
             "guild_id": guild_id,
-            "items": {str(item_id): quantity}
+            "items": {str(item["id"]): quantity}
         })
 
     # Mise à jour de l'inventaire structuré (collection17)
@@ -4203,7 +4203,7 @@ async def item_buy(interaction: discord.Interaction, item_id: str, quantity: int
         collection17.insert_one({
             "guild_id": guild_id,
             "user_id": user_id,
-            "item_id": item_id,
+            "item_id": item["id"],
             "item_name": item["title"],
             "emoji": item.get("emoji"),
             "price": item["price"],
@@ -4212,7 +4212,7 @@ async def item_buy(interaction: discord.Interaction, item_id: str, quantity: int
 
     # Mise à jour du stock boutique
     collection16.update_one(
-        {"id": item_id},
+        {"id": item["id"]},
         {"$inc": {"quantity": -quantity}}
     )
 
@@ -4228,10 +4228,10 @@ async def item_buy(interaction: discord.Interaction, item_id: str, quantity: int
             inventory = collection7.find_one({"user_id": user_id, "guild_id": guild_id})
             if inventory:
                 user_items = inventory.get("items", {})
-                if str(item_id) in user_items:
-                    user_items[str(item_id)] -= quantity
-                    if user_items[str(item_id)] <= 0:
-                        del user_items[str(item_id)]
+                if str(item["id"]) in user_items:
+                    user_items[str(item["id"])] -= quantity
+                    if user_items[str(item["id"])] <= 0:
+                        del user_items[str(item["id"])]
                     collection7.update_one(
                         {"user_id": user_id, "guild_id": guild_id},
                         {"$set": {"items": user_items}}

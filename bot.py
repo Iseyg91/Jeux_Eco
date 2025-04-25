@@ -7547,6 +7547,13 @@ async def bourrasque(ctx, member: discord.Member):
         print(f"[LOG] {ctx.author.name} ({ctx.author.id}) a essayé d'utiliser la commande bourrasque sans avoir le rôle nécessaire.")
         return
 
+    # Vérifie si la cible est spécifiée
+    if not member:
+        await ctx.send("❌ Aucune cible spécifiée.")
+        # Log de l'absence de cible
+        print(f"[LOG] {ctx.author.name} ({ctx.author.id}) a essayé d'utiliser la commande bourrasque sans spécifier de cible.")
+        return
+
     user_id = ctx.author.id
     target_id = member.id
     now = datetime.utcnow()
@@ -7614,10 +7621,15 @@ async def bourrasque(ctx, member: discord.Member):
     print(f"[LOG] {ctx.author.name} ({ctx.author.id}) a utilisé la commande bourrasque sur {member.name} ({member.id}).")
 
 @bot.command()
-async def tonnerre(ctx, member: discord.Member):
+async def tonnerre(ctx, member: discord.Member = None):
     role_required = 1365041330585337926
     role_to_give = 1365238838603288637
     cooldown_collection = collection56  # cd_tonnerre_attaque
+
+    # Vérification de la présence de la cible
+    if member is None:
+        print(f"[LOG] {ctx.author} n'a pas mentionné de membre pour la commande tonnerre.")
+        return await ctx.send("❌ Tu dois mentionner un membre pour utiliser la commande.")
 
     # Vérification du rôle de l'utilisateur
     if role_required not in [r.id for r in ctx.author.roles]:
@@ -7646,8 +7658,12 @@ async def tonnerre(ctx, member: discord.Member):
         return await ctx.send("❌ Le rôle à attribuer est introuvable.")
 
     # Appliquer le rôle
-    await member.add_roles(role)
-    print(f"[LOG] {ctx.author} a donné le rôle à {member}.")
+    try:
+        await member.add_roles(role)
+        print(f"[LOG] {ctx.author} a donné le rôle à {member}.")
+    except Exception as e:
+        print(f"[LOG] Erreur lors de l'ajout du rôle à {member}: {e}")
+        return await ctx.send(f"❌ Une erreur s'est produite en essayant d'ajouter le rôle à {member.mention}.")
 
     embed = discord.Embed(
         title="⚡ Tonnerre Divin !",
@@ -7660,12 +7676,16 @@ async def tonnerre(ctx, member: discord.Member):
     await ctx.send(embed=embed)
 
     # Mise à jour du cooldown
-    cooldown_collection.update_one(
-        {"user_id": ctx.author.id},
-        {"$set": {"last_use": now}},
-        upsert=True
-    )
-    print(f"[LOG] {ctx.author} a mis à jour son cooldown.")
+    try:
+        cooldown_collection.update_one(
+            {"user_id": ctx.author.id},
+            {"$set": {"last_use": now}},
+            upsert=True
+        )
+        print(f"[LOG] {ctx.author} a mis à jour son cooldown.")
+    except Exception as e:
+        print(f"[LOG] Erreur lors de la mise à jour du cooldown de {ctx.author}: {e}")
+        return await ctx.send("❌ Une erreur s'est produite en essayant de mettre à jour le cooldown.")
 
     # Planification du retrait après 2 semaines
     async def remove_role_later():
@@ -7693,6 +7713,13 @@ async def dragon(ctx, user: discord.Member):
         log_message = f"[{datetime.utcnow()}] {ctx.author} a tenté d'utiliser la commande dragon sans le rôle requis."
         print(log_message)  # Log en console
         await ctx.send("Désolé, tu n'as pas le rôle nécessaire pour utiliser cette commande.")
+        return
+
+    # Vérifie si une cible est spécifiée
+    if not user:
+        log_message = f"[{datetime.utcnow()}] {ctx.author} a tenté d'utiliser la commande dragon sans cible."
+        print(log_message)  # Log en console
+        await ctx.send("Tu dois spécifier un utilisateur à cibler.")
         return
 
     # Vérifie si l'utilisateur a déjà utilisé la commande

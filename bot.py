@@ -4293,10 +4293,23 @@ async def item_inventory(interaction: discord.Interaction, user: discord.User = 
 
     await interaction.response.send_message(embed=embed)
 
+async def item_autocomplete(interaction: discord.Interaction, current: str) -> List[app_commands.Choice[int]]:
+    items = collection16.find().limit(100)  # On prend plus pour filtrer correctement après
+    choices = []
+
+    for item in items:
+        title = item.get("title", "Sans nom")
+        item_id = item.get("id")
+
+        if current == "" or str(item_id).startswith(current) or current.lower() in title.lower():
+            choices.append(app_commands.Choice(name=f"{title} (ID: {item_id})", value=item_id))
+
+    return choices[:25]  # Discord limite à 25 max
+
 # Commande avec autocomplétion
-@bot.tree.command(name="item-info", description="Affiche toutes les informations d'un item de la boutique.")
+@bot.tree.command(name="item-info", description="Affiche toutes les informations d'un item de la boutique")
 @app_commands.describe(id="ID de l'item à consulter")
-@app_commands.autocomplete(id=item_autocomplete)
+@app_commands.autocomplete(id=item_autocomplete)  # <-- N'oublie pas ça !
 async def item_info(interaction: discord.Interaction, id: int):
     item = collection16.find_one({"id": id})
 

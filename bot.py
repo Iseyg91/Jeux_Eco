@@ -728,7 +728,7 @@ async def update_top_roles():
 async def on_ready():
     print(f"{bot.user.name} est connecté.")
     bot.loop.create_task(start_background_tasks())
-
+    bot.uptime = time.time()
     activity = discord.Activity(
         type=discord.ActivityType.streaming,
         name="Etherya",

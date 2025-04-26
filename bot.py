@@ -3213,29 +3213,6 @@ async def rob(ctx, user: discord.User):
             ).set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url))
 
         await log_eco_channel(bot, guild_id, ctx.author, "Vol", stolen, user_data["cash"], user_data["cash"] + stolen, f"Volé à {user.display_name}")
-# Récupérer les rôles de l'utilisateur
-user_roles = [role.id for role in ctx.author.roles]
-
-if pirate_role_id in user_roles:
-    # Si c'est un pirate
-    bounty_change_percent = random.uniform(1, 10)
-    if success:
-        # Augmente la prime
-        current_bounty = await get_bounty(user_id)
-        new_bounty = round(current_bounty * (1 + bounty_change_percent / 100), 2)
-        await update_bounty(user_id, new_bounty)
-    else:
-        # Diminue la prime
-        current_bounty = await get_bounty(user_id)
-        new_bounty = round(current_bounty * (1 - bounty_change_percent / 100), 2)
-        await update_bounty(user_id, new_bounty)
-
-elif marine_role_id in user_roles:
-    # Si c'est un marine
-    honor_change_percent = random.uniform(1, 10)
-    current_honor = await get_honor(user_id)
-    new_honor = round(current_honor * (1 - honor_change_percent / 100), 2)
-    await update_honor(user_id, new_honor)
 
         return await ctx.send(embed=discord.Embed(
             description=f"💰 Tu as volé **{int(stolen)}** à **{user.display_name}** !",
@@ -3251,29 +3228,6 @@ elif marine_role_id in user_roles:
         collection.update_one({"guild_id": guild_id, "user_id": user_id}, {"$inc": {"cash": -loss}})
 
         await log_eco_channel(bot, guild_id, ctx.author, "Échec vol", -loss, user_data["cash"], user_data["cash"] - loss, f"Échec de vol sur {user.display_name}")
-# Récupérer les rôles de l'utilisateur
-user_roles = [role.id for role in ctx.author.roles]
-
-if pirate_role_id in user_roles:
-    # Si c'est un pirate
-    bounty_change_percent = random.uniform(1, 10)
-    if success:
-        # Augmente la prime
-        current_bounty = await get_bounty(user_id)
-        new_bounty = round(current_bounty * (1 + bounty_change_percent / 100), 2)
-        await update_bounty(user_id, new_bounty)
-    else:
-        # Diminue la prime
-        current_bounty = await get_bounty(user_id)
-        new_bounty = round(current_bounty * (1 - bounty_change_percent / 100), 2)
-        await update_bounty(user_id, new_bounty)
-
-elif marine_role_id in user_roles:
-    # Si c'est un marine
-    honor_change_percent = random.uniform(1, 10)
-    current_honor = await get_honor(user_id)
-    new_honor = round(current_honor * (1 - honor_change_percent / 100), 2)
-    await update_honor(user_id, new_honor)
 
         return await ctx.send(embed=discord.Embed(
             description=f"🚨 Tu as échoué et perdu **{int(loss)}** !",

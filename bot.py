@@ -4600,6 +4600,19 @@ async def item_give(interaction: discord.Interaction, member: discord.Member, it
 
     await interaction.response.send_message(embed=embed)
 
+# Fonction d'autocomplétion pour l'ID des items
+async def item_autocomplete(interaction: discord.Interaction, current: str):
+    results = []
+    # Recherche parmi les items dans la collection
+    items = collection16.find()
+    
+    # Ajoute les items dont le nom correspond à ce que l'utilisateur tape
+    for item in items:
+        if current.lower() in item["title"].lower():
+            results.append(Choice(name=f"{item['title']} (ID: {item['id']})", value=item['id']))
+    
+    return results[:25]  # Limite à 25 résultats maximum
+
 @bot.tree.command(name="item-take", description="(Admin) Retire un item d'un utilisateur.")
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
@@ -4607,6 +4620,7 @@ async def item_give(interaction: discord.Interaction, member: discord.Member, it
     item_id="ID de l'item à retirer",
     quantity="Quantité d'items à retirer"
 )
+@app_commands.autocomplete(item_id=item_autocomplete)  # Ajout de l'autocomplétion pour item_id
 async def item_take(interaction: discord.Interaction, member: discord.Member, item_id: int, quantity: int = 1):
     guild_id = interaction.guild.id
     user_id = member.id

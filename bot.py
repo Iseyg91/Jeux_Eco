@@ -2424,10 +2424,9 @@ class BlackjackView(discord.ui.View):
         if player_total > 21:
             await self.end_game(interaction, "lose")
         else:
-            embed = discord.Embed(title="🃏 Blackjack", color=discord.Color.blue())
-            embed.add_field(name="🧑 Ta main", value=" ".join([card_emojis[c][0] for c in self.player_hand]) + f"\n**Total : {calculate_hand_value(self.player_hand)}**", inline=False)
-            embed.add_field(name="🤖 Main du croupier", value=f"{card_emojis[self.dealer_hand[0]][0]} 🂠", inline=False)
-            embed.add_field(name="💰 Mise", value=f"{int(self.bet)} <:ecoEther:1341862366249357374>", inline=False)
+            embed = discord.Embed(title=" Blackjack", color=discord.Color.blue())
+            embed.add_field(name="Ta main", value=" ".join([card_emojis[c][0] for c in self.player_hand]) + f"\n**Total : {calculate_hand_value(self.player_hand)}**", inline=False)
+            embed.add_field(name="Main du croupier", value=f"{card_emojis[self.dealer_hand[0]][0]} 🂠", inline=False)
             await interaction.response.edit_message(embed=embed, view=self)
 
     @discord.ui.button(label="Stand", style=discord.ButtonStyle.blurple, emoji="🛑")
@@ -2492,6 +2491,11 @@ async def blackjack(ctx: commands.Context, mise: str = None):
     if ctx.guild is None:
         return await ctx.send(embed=discord.Embed(description="Cette commande ne peut être utilisée qu'en serveur.", color=discord.Color.red()))
 
+    # S'assurer qu'une mise est spécifiée
+    if mise is None:
+        return await ctx.send(embed=discord.Embed(description="Tu dois spécifier une mise, ou utiliser 'all' ou 'half' pour miser tout ou la moitié de ton solde.", color=discord.Color.red()))
+
+    # Traitement du cas où la mise est 'all'
     if mise == "all":
         user_data = get_or_create_user_data(ctx.guild.id, ctx.author.id)
         max_bet = 5000  # La mise maximale
@@ -2501,6 +2505,7 @@ async def blackjack(ctx: commands.Context, mise: str = None):
         else:
             return await ctx.send(embed=discord.Embed(description=f"Ton solde est trop élevé pour miser tout, la mise maximale est de {max_bet} <:ecoEther:1341862366249357374>.", color=discord.Color.red()))
 
+    # Traitement du cas où la mise est 'half'
     elif mise == "half":
         user_data = get_or_create_user_data(ctx.guild.id, ctx.author.id)
         max_bet = 15000  # La mise maximale
@@ -2511,8 +2516,13 @@ async def blackjack(ctx: commands.Context, mise: str = None):
         else:
             mise = half_cash
 
+    # Traitement du cas où la mise est un nombre
     elif mise:
-        mise = int(mise)
+        try:
+            mise = int(mise)
+        except ValueError:
+            return await ctx.send(embed=discord.Embed(description="La mise doit être un nombre valide.", color=discord.Color.red()))
+
         user_data = get_or_create_user_data(ctx.guild.id, ctx.author.id)
         max_bet = 15000  # La mise maximale
 
@@ -2524,10 +2534,8 @@ async def blackjack(ctx: commands.Context, mise: str = None):
             return await ctx.send(embed=discord.Embed(description=f"La mise maximale est de {max_bet} <:ecoEther:1341862366249357374>.", color=discord.Color.red()))
         if user_data["cash"] < mise:
             return await ctx.send(embed=discord.Embed(description="Tu n'as pas assez d'argent pour miser cette somme.", color=discord.Color.red()))
-    
-    if mise is None:
-        return await ctx.send(embed=discord.Embed(description="Tu dois spécifier une mise, ou utiliser all ou half pour miser tout ou la moitié de ton solde.", color=discord.Color.red()))
 
+    # Mise à jour de la balance après la mise
     user_data["cash"] -= mise
     collection.update_one(
         {"guild_id": ctx.guild.id, "user_id": ctx.author.id},
@@ -2540,8 +2548,8 @@ async def blackjack(ctx: commands.Context, mise: str = None):
     embed = discord.Embed(
         color=discord.Color.blue(),
         description=(
-            "`hit` - take another card\n"
-            "`stand` - end the game\n\n"
+            "`hit` - prendre une carte\n"
+            "`stand` - finir la partie\n\n"
         )
     )
 
@@ -2551,25 +2559,18 @@ async def blackjack(ctx: commands.Context, mise: str = None):
     )
 
     embed.add_field(
-        name="Your Hand",
-        value=" ".join([card_emojis[c][0] for c in player_hand]) + f"\nValue: **{calculate_hand_value(player_hand)}**",
+        name="Ta main",
+        value=" ".join([card_emojis[c][0] for c in player_hand]) + f"\nValeur: **{calculate_hand_value(player_hand)}**",
         inline=True
     )
 
     embed.add_field(
-        name="Dealer Hand",
-        value=f"{card_emojis[dealer_hand[0]][0]} 🂠\nValue: **?**",
+        name="Main du croupier",
+        value=f"{card_emojis[dealer_hand[0]][0]} 🂠\nValeur: **?**",
         inline=True
-    )
-
-    embed.add_field(
-        name="💰 Mise",
-        value=f"{int(mise)} <:ecoEther:1341862366249357374>",
-        inline=False
     )
 
     await ctx.send(embed=embed, view=BlackjackView(ctx, player_hand, dealer_hand, mise, user_data, max_bet))
-
 
 @bot.command(name="bj-max-mise", aliases=["set-max-bj"])
 @commands.has_permissions(administrator=True)  # La commande est réservée aux admins

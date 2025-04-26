@@ -5167,58 +5167,62 @@ def insert_badge_into_db():
 # Appel de la fonction pour insérer les badges dans la base de données lors du démarrage du bot
 insert_badge_into_db()
 
-@bot.tree.command(name="badge-inventory", description="Affiche ton inventaire de badges")
-async def badge_inventory(interaction: discord.Interaction):
-    data = collection20.find_one({"user_id": interaction.user.id})
-    if not data or not data.get("badges"):
-        return await interaction.response.send_message("Tu ne possèdes aucun badge pour l’instant.", ephemeral=True)
+from discord import app_commands
 
-    user_badges = data["badges"]
-    badge_list = list(collection19.find({"id": {"$in": user_badges}}))
+@app_commands.autocomplete(badge_id=True)
+async def badge_autocomplete_by_name(interaction: discord.Interaction, current: str):
+    results = collection19.find(
+        {"title": {"$regex": f"^{current}", "$options": "i"}}
+    ).limit(20)
 
-    def get_inventory_embed(page=0, per_page=10):
-        embed = discord.Embed(title=f"🎖️ Badges de {interaction.user.display_name}", color=discord.Color.orange())
-        start = page * per_page
-        end = start + per_page
-        for badge in badge_list[start:end]:
-            badge_name = badge.get('name', 'Nom introuvable')  # Utilisation de .get() pour éviter KeyError
-            badge_emoji = badge.get('emoji', '❓')  # Valeur par défaut pour l'emoji si non défini
-            embed.add_field(
-                name=f"ID: {badge['id']} | {badge_name} {badge_emoji}",
-                value=badge.get("description", "Aucune description disponible."),
-                inline=False
-            )
-        total_pages = (len(badge_list) - 1) // per_page + 1
-        embed.set_footer(text=f"Page {page + 1}/{total_pages}")
-        return embed
+    choices = []
+    for badge in results:
+        title = badge.get("title", "Sans titre")
+        emoji = badge.get("emoji", "")
+        badge_id = badge["id"]
+        # Le name est affiché, le value est ce qui sera envoyé à la commande
+        choices.append(app_commands.Choice(name=f"{title} {emoji} (ID: {badge_id})", value=badge_id))
 
-    class InventoryPaginator(discord.ui.View):
-        def __init__(self, user):
-            super().__init__(timeout=60)
-            self.page = 0
-            self.user = user
+    return choices
 
-        async def update(self, interaction):
-            await interaction.response.edit_message(embed=get_inventory_embed(self.page), view=self)
+@bot.tree.command(name="badge-give", description="(Admin) Donne un badge à un utilisateur.")
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.describe(
+    member="Utilisateur à qui donner le badge",
+    badge_id="Badge à donner (autocomplete par nom)"
+)
+@app_commands.autocomplete(badge_id=badge_autocomplete_by_name)
+async def badge_give(interaction: discord.Interaction, member: discord.Member, badge_id: int):
+    badge = collection19.find_one({"id": badge_id})
+    if not badge:
+        embed = discord.Embed(
+            title="❌ Badge introuvable",
+            description="Ce badge n'existe pas.",
+            color=discord.Color.red()
+        )
+        return await interaction.response.send_message(embed=embed)
 
-        @discord.ui.button(label="◀️", style=discord.ButtonStyle.secondary)
-        async def prev(self, interaction, button):
-            if interaction.user.id != self.user.id:
-                return await interaction.response.send_message("❌ Tu ne peux pas utiliser ces boutons.", ephemeral=True)
-            if self.page > 0:
-                self.page -= 1
-                await self.update(interaction)
+    user_data = collection20.find_one({"user_id": member.id})
+    if user_data and badge_id in user_data.get("badges", []):
+        embed = discord.Embed(
+            title="❌ Badge déjà possédé",
+            description=f"{member.mention} possède déjà ce badge.",
+            color=discord.Color.red()
+        )
+        return await interaction.response.send_message(embed=embed)
 
-        @discord.ui.button(label="▶️", style=discord.ButtonStyle.secondary)
-        async def next(self, interaction, button):
-            if interaction.user.id != self.user.id:
-                return await interaction.response.send_message("❌ Tu ne peux pas utiliser ces boutons.", ephemeral=True)
-            if (self.page + 1) * 10 < len(badge_list):
-                self.page += 1
-                await self.update(interaction)
+    collection20.update_one(
+        {"user_id": member.id},
+        {"$addToSet": {"badges": badge_id}},
+        upsert=True
+    )
 
-    view = InventoryPaginator(interaction.user)
-    await interaction.response.send_message(embed=get_inventory_embed(), view=view, ephemeral=True)
+    embed = discord.Embed(
+        title="🎖️ Badge donné",
+        description=f"Le badge **{badge['title']}** {badge['emoji']} a été donné à {member.mention}.",
+        color=discord.Color.green()
+    )
+    await interaction.response.send_message(embed=embed)
 
 @bot.tree.command(name="badge-give", description="(Admin) Donne un badge à un utilisateur.")
 @app_commands.checks.has_permissions(administrator=True)

@@ -138,6 +138,32 @@ pirate_roles = {
     "Pirate": 1364961860230578191,
 }
 
+log_channels = {
+    "sanctions": 1365674258591912018,
+    "messages": 1365674387700977684,
+    "utilisateurs": 1365674425394921602,
+    "nicknames": 1365674498791051394,
+    "roles": 1365674530793586758,
+    "vocal": 1365674563458826271,
+    "serveur": 1365674597692997662,
+    "permissions": 1365674740915765278,
+    "channels": 1365674773107052644,
+    "webhooks": 1365674805143146506,
+    "bots": 1365674841344049162,
+    "boosts": 1365674914740441158
+}
+
+def get_log_channel(guild, key):
+    log_channel_id = log_channels.get(key)
+    if log_channel_id:
+        return guild.get_channel(log_channel_id)
+    return None
+
+# Fonction pour créer des embeds formatés
+def create_embed(title, description, color=discord.Color.blue(), footer_text=""):
+    embed = discord.Embed(title=title, description=description, color=color)
+    embed.set_footer(text=footer_text)
+    return embed
 
 # Connexion MongoDB
 mongo_uri = os.getenv("MONGO_DB")  # URI de connexion à MongoDB
@@ -1002,6 +1028,7 @@ async def send_economy_info(user: discord.Member):
         await dm_channel.send(embed=economy_embed)
     except discord.Forbidden:
         print(f"Impossible d'envoyer un MP à {user.name} ({user.id})")
+        
 @bot.event
 async def on_member_join(member):
     guild_id = str(member.guild.id)
@@ -1072,40 +1099,20 @@ async def on_member_join(member):
             guide_embed.set_footer(text="Tu peux toujours y accéder plus tard via la commande /guide ! 🚀")
             await thread.send(embed=guide_embed, view=GuideView(thread))  # Envoie le guide immédiatement
 
-    # Gestion des threads privés
-    if member.guild.id == ETHERYA_SERVER_ID:
-        # Création du fil privé et envoi du guide
-        channel_id = 1355158120095027220
-        channel = bot.get_channel(channel_id)
+        # Envoi d'une notification de log dans le salon spécifique du serveur
+        if member.guild.id == ETHERYA_SERVER_ID:
+            channel = get_log_channel(member.guild, "utilisateurs")
+            if channel:
+                embed = discord.Embed(
+                    title="✅ Nouveau Membre",
+                    description=f"{member.mention} a rejoint le serveur.",
+                    color=discord.Color.green()
+                )
+                embed.set_thumbnail(url=member.display_avatar.url)
+                embed.set_footer(text=f"ID de l'utilisateur : {member.id}")
+                embed.timestamp = member.joined_at or discord.utils.utcnow()
 
-        if channel and isinstance(channel, discord.TextChannel):
-            thread = await channel.create_thread(name=f"🎉 Bienvenue {member.name} !", type=discord.ChannelType.private_thread)
-            await thread.add_user(member)
-            private_threads[member.id] = thread
-
-            # Embed de bienvenue
-            welcome_embed = discord.Embed(
-                title="🌌 Bienvenue à Etherya !",
-                description=(
-                    "Une aventure unique t'attend, entre **économie dynamique**, **stratégies** et **opportunités**. "
-                    "Prêt à découvrir tout ce que le serveur a à offrir ?"
-                ),
-                color=discord.Color.blue()
-            )
-            welcome_embed.set_thumbnail(url=member.avatar.url if member.avatar else bot.user.avatar.url)
-            await thread.send(embed=welcome_embed)
-
-            # Embed du guide
-            guide_embed = discord.Embed(
-                title="📖 Besoin d'un Guide ?",
-                description=(
-                    "Nous avons préparé un **Guide de l'Économie** pour t'aider à comprendre notre système monétaire et "
-                    "les différentes façons d'évoluer. Veux-tu le suivre ?"
-                ),
-                color=discord.Color.gold()
-            )
-            guide_embed.set_footer(text="Tu peux toujours y accéder plus tard via la commande /guide ! 🚀")
-            await thread.send(embed=guide_embed, view=GuideView(thread))  # Envoie le guide immédiatement
+                await channel.send(embed=embed)
 
 @bot.tree.command(name="guide", description="Ouvre un guide personnalisé pour comprendre l'économie du serveur.")
 async def guide_command(interaction: discord.Interaction):
@@ -1167,6 +1174,395 @@ async def guide_command(interaction: discord.Interaction):
     # IMPORTANT : Permet au bot de continuer à traiter les commandes
     await bot.process_commands(message)
 
+#---------------------------------------------------------------------------------------- LOGGER LOG:
+
+@bot.event
+async def on_message_delete(message):
+    if message.author.bot:
+        return  # Ignore les messages de bots
+    # Log du message supprimé (si sur le serveur ETHERYA)
+    if message.guild and message.guild.id == ETHERYA_SERVER_ID:
+        log_channel = get_log_channel(message.guild, "messages")
+        if log_channel:
+            embed = discord.Embed(
+                title="🗑️ Message Supprimé",
+                description=f"**Auteur :** {message.author.mention}\n**Salon :** {message.channel.mention}",
+                color=discord.Color.red()
+            )
+            if message.content:
+                embed.add_field(name="Contenu", value=message.content, inline=False)
+            else:
+                embed.add_field(name="Contenu", value="*Aucun texte (peut-être un embed ou une pièce jointe)*", inline=False)
+
+            embed.set_footer(text=f"ID de l'utilisateur : {message.author.id}")
+            embed.timestamp = message.created_at
+
+            await log_channel.send(embed=embed)
+
+@bot.event
+async def on_message_edit(before, after):
+    if before.guild and before.guild.id == ETHERYA_SERVER_ID and before.content != after.content:
+        channel = get_log_channel(before.guild, "messages")
+        if channel:
+            embed = discord.Embed(
+                title="✏️ Message Édité",
+                description=f"**Auteur :** {before.author.mention}\n**Salon :** {before.channel.mention}",
+                color=discord.Color.orange()
+            )
+            embed.add_field(name="Avant", value=before.content or "*Vide*", inline=False)
+            embed.add_field(name="Après", value=after.content or "*Vide*", inline=False)
+            embed.set_footer(text=f"ID de l'utilisateur : {before.author.id}")
+            embed.timestamp = after.edited_at or discord.utils.utcnow()
+
+            await channel.send(embed=embed)
+
+@bot.event
+async def on_member_remove(member: discord.Member):
+    guild_id = str(member.guild.id)
+
+    # Traitement du départ de membre pour un serveur spécifique (PROJECT_DELTA)
+    if member.guild.id == ETHERYA_SERVER_ID:
+        channel = get_log_channel(member.guild, "utilisateurs")
+        if channel:
+            embed = discord.Embed(
+                title="❌ Départ d'un Membre",
+                description=f"{member.mention} a quitté le serveur.",
+                color=discord.Color.red()
+            )
+            embed.set_thumbnail(url=member.display_avatar.url)
+            embed.set_footer(text=f"ID de l'utilisateur : {member.id}")
+            embed.timestamp = discord.utils.utcnow()
+
+            # Ajouter la durée de présence si disponible
+            if member.joined_at:
+                duration = discord.utils.utcnow() - member.joined_at
+                days = duration.days
+                hours = duration.seconds // 3600
+                minutes = (duration.seconds % 3600) // 60
+
+                formatted_duration = f"{days}j {hours}h {minutes}min"
+                embed.add_field(name="Durée sur le serveur", value=formatted_duration, inline=False)
+
+            await channel.send(embed=embed)
+
+# --- Nickname update ---
+@bot.event
+async def on_user_update(before, after):
+    # Check for username changes (this affects all mutual servers)
+    for guild in bot.guilds:
+        if guild.id == ETHERYA_SERVER_Id:
+            if before.name != after.name:
+                channel = get_log_channel(guild, "nicknames")
+                if channel:
+                    embed = discord.Embed(
+                        title="📝 Changement de Pseudo Global",
+                        description=f"{after.mention} a changé son pseudo global.",
+                        color=discord.Color.blurple()
+                    )
+                    embed.add_field(name="Avant", value=f"`{before.name}`", inline=True)
+                    embed.add_field(name="Après", value=f"`{after.name}`", inline=True)
+                    embed.set_footer(text=f"ID de l'utilisateur : {after.id}")
+                    embed.timestamp = discord.utils.utcnow()
+
+                    await channel.send(embed=embed)
+
+@bot.event
+async def on_member_update(before, after):
+    if before.guild.id != ETHERYA_SERVER_ID:  # Vérifier si c'est le bon serveur
+        return
+
+    # --- Nickname logs ---
+    if before.nick != after.nick:
+        channel = get_log_channel(before.guild, "nicknames")
+        if channel:
+            embed = discord.Embed(
+                title="📝 Changement de Surnom",
+                description=f"{before.mention} a modifié son surnom sur le serveur.",
+                color=discord.Color.blue()
+            )
+            embed.add_field(name="Avant", value=f"`{before.nick}`" if before.nick else "*Aucun*", inline=True)
+            embed.add_field(name="Après", value=f"`{after.nick}`" if after.nick else "*Aucun*", inline=True)
+            embed.set_footer(text=f"ID de l'utilisateur : {after.id}")
+            embed.timestamp = discord.utils.utcnow()
+
+            await channel.send(embed=embed)
+
+    # --- Boost du serveur ---
+    if before.premium_since is None and after.premium_since is not None:
+        channel = get_log_channel(before.guild, "boosts")
+        if channel:
+            embed = discord.Embed(
+                title="💎 Nouveau Boost",
+                description=f"{after.mention} a boosté le serveur !",
+                color=discord.Color.green()
+            )
+            embed.set_thumbnail(url=after.display_avatar.url)
+            embed.set_footer(text=f"ID de l'utilisateur : {after.id}")
+            embed.timestamp = discord.utils.utcnow()
+
+            await channel.send(embed=embed)
+@bot.event
+async def on_guild_role_create(role):
+    guild_id = str(role.guild.id)
+    # Log classique si protection désactivée
+    if role.guild.id == ETHERYA_SERVER_ID:
+        log_channel = get_log_channel(role.guild, "roles")
+        if log_channel:
+            embed = discord.Embed(
+                title="🎭 Nouveau Rôle Créé",
+                description=f"Un nouveau rôle a été créé : **{role.name}**",
+                color=discord.Color.purple()
+            )
+            embed.add_field(name="ID du Rôle", value=str(role.id), inline=False)
+            embed.set_footer(text="Rôle créé sur le serveur PROJECT_DELTA")
+            embed.timestamp = discord.utils.utcnow()
+            try:
+                await log_channel.send(embed=embed)
+                print(f"Log de création de rôle envoyé pour {role.name}.")
+            except Exception as e:
+                print(f"Erreur lors de l'envoi du log pour le rôle {role.name} : {e}")
+
+@bot.event
+async def on_guild_role_delete(role):
+    guild_id = str(role.guild.id)
+
+    # Log classique si suppression sans protection ou whitelistée
+    if role.guild.id == ETHERYA_SERVER_ID:
+        channel = get_log_channel(role.guild, "roles")
+        if channel:
+            embed = discord.Embed(
+                title="🎭 Rôle Supprimé",
+                description=f"Le rôle **{role.name}** a été supprimé.",
+                color=discord.Color.red()
+            )
+            embed.add_field(name="ID du Rôle", value=str(role.id), inline=False)
+            embed.set_footer(text="Rôle supprimé sur PROJECT_DELTA")
+            embed.timestamp = discord.utils.utcnow()
+
+            try:
+                await channel.send(embed=embed)
+                print(f"Log de suppression de rôle envoyé pour {role.name}.")
+            except Exception as e:
+                print(f"Erreur lors de l'envoi du log pour le rôle {role.name} : {e}")
+
+# Logs pour les mises à jour de rôle
+@bot.event
+async def on_guild_role_update(before, after):
+    if before.guild.id == ETHERYA_SERVER_ID:
+        channel = get_log_channel(before.guild, "roles")
+        if channel:
+            embed = discord.Embed(
+                title="🎭 Mise à Jour de Rôle",
+                description=f"Le rôle **{before.name}** a été mis à jour :",
+                color=discord.Color.orange()
+            )
+            embed.add_field(name="Avant", value=f"`{before.name}`", inline=False)
+            embed.add_field(name="Après", value=f"`{after.name}`", inline=False)
+            embed.add_field(name="ID du Rôle", value=str(after.id), inline=False)
+
+            # Ajouter des informations supplémentaires, si nécessaire
+            if before.permissions != after.permissions:
+                embed.add_field(name="Permissions", value="Permissions modifiées", inline=False)
+            
+            embed.set_footer(text="Mise à jour du rôle")
+            embed.timestamp = discord.utils.utcnow()
+
+            await channel.send(embed=embed)
+
+@bot.event
+async def on_guild_channel_create(channel):
+    guild_id = str(channel.guild.id)
+    # Log de création si la protection n’est pas activée
+    if channel.guild.id == ETHERYA_SERVER_ID:
+        channel_log = get_log_channel(channel.guild, "channels")
+        if channel_log:
+            embed = discord.Embed(
+                title="🗂️ Nouveau Salon Créé",
+                description=f"Le salon **{channel.name}** a été créé.",
+                color=discord.Color.blue()
+            )
+            embed.add_field(name="ID du Salon", value=str(channel.id), inline=False)
+            embed.set_footer(text="Salon créé sur le serveur PROJECT_DELTA")
+            embed.timestamp = discord.utils.utcnow()
+
+            try:
+                await channel_log.send(embed=embed)
+            except Exception as e:
+                print(f"Erreur lors du log de création de salon : {e}")
+
+@bot.event
+async def on_guild_channel_delete(channel):
+    guild_id = str(channel.guild.id)
+    # Log normal de suppression si protection non activée
+    if channel.guild.id == ETHERYA_SERVER_ID:
+        channel_log = get_log_channel(channel.guild, "channels")
+        if channel_log:
+            embed = discord.Embed(
+                title="🗂️ Salon Supprimé",
+                description=f"Le salon **{channel.name}** a été supprimé.",
+                color=discord.Color.red()
+            )
+            embed.add_field(name="ID du Salon", value=str(channel.id), inline=False)
+            embed.set_footer(text="Salon supprimé sur le serveur PROJECT_DELTA")
+            embed.timestamp = discord.utils.utcnow()
+
+            try:
+                await channel_log.send(embed=embed)
+                print(f"Log de suppression envoyé pour {channel.name}.")
+            except Exception as e:
+                print(f"Erreur lors de l'envoi du log pour la suppression : {e}")
+
+# Log de la mise à jour de salon dans le serveur PROJECT_DELTA
+@bot.event
+async def on_guild_channel_update(before, after):
+    if before.guild.id == ETHERYA_SERVER_ID:
+        # Ignorer si c'est l'admin (toi) qui modifie le salon
+        if before.guild.me.id == after.guild.me.id:
+            return
+        
+        # Récupérer le salon de log pour les channels
+        channel_log = get_log_channel(before.guild, "channels")
+        if channel_log:
+            embed = discord.Embed(
+                title="🗂️ Mise à Jour de Salon",
+                description=f"Le salon **{before.name}** a été mis à jour.",
+                color=discord.Color.orange()
+            )
+            embed.add_field(name="Avant", value=f"`{before.name}`", inline=False)
+            embed.add_field(name="Après", value=f"`{after.name}`", inline=False)
+
+            # Log de modifications supplémentaires (comme les permissions, la description, etc.)
+            if before.topic != after.topic:
+                embed.add_field(name="Description", value=f"Avant : {before.topic if before.topic else 'Aucune'}\nAprès : {after.topic if after.topic else 'Aucune'}", inline=False)
+            if before.position != after.position:
+                embed.add_field(name="Position", value=f"Avant : {before.position}\nAprès : {after.position}", inline=False)
+
+            embed.set_footer(text="Mise à jour du salon sur PROJECT_DELTA")
+            embed.timestamp = discord.utils.utcnow()
+
+            await channel_log.send(embed=embed)
+
+
+# --- Voice state update ---
+@bot.event
+async def on_voice_state_update(member, before, after):
+    if member.guild.id == ETHERYA_SERVER_ID:
+        channel = get_log_channel(member.guild, "vocal")
+        if channel:
+            embed = discord.Embed(
+                title="🎙️ Changement d'État Vocal",
+                description=f"Changement d'état vocal pour {member.mention}",
+                color=discord.Color.blue()
+            )
+            embed.set_footer(text="Logs des salons vocaux")
+            embed.timestamp = discord.utils.utcnow()
+
+            if after.channel:
+                embed.add_field(name="Rejoint le salon vocal", value=f"{after.channel.name}", inline=False)
+            if before.channel:
+                embed.add_field(name="Quitte le salon vocal", value=f"{before.channel.name}", inline=False)
+
+            await channel.send(embed=embed)
+
+# --- Guild update ---
+@bot.event
+async def on_guild_update(before, after):
+    if before.id == ETHERYA_SERVER_ID:
+        channel = get_log_channel(after, "serveur")  # Assurez-vous que 'after' est le bon paramètre pour obtenir le canal
+        if channel:
+            embed = discord.Embed(
+                title="⚙️ Mise à Jour du Serveur",
+                description="Des modifications ont été apportées au serveur.",
+                color=discord.Color.green()
+            )
+            embed.add_field(name="Nom du Serveur", value=f"{before.name} → {after.name}", inline=False)
+
+            # Ajouter d'autres modifications si nécessaires (par exemple, les icônes ou les paramètres de vérification)
+            if before.icon != after.icon:
+                embed.add_field(name="Icône du Serveur", value="L'icône a été changée.", inline=False)
+
+            if before.verification_level != after.verification_level:
+                embed.add_field(name="Niveau de vérification", value=f"Avant : {before.verification_level}\nAprès : {after.verification_level}", inline=False)
+
+            embed.set_footer(text="Mise à jour du serveur PROJECT_DELTA")
+            embed.timestamp = discord.utils.utcnow()
+
+            await channel.send(embed=embed)
+
+# --- Webhooks update ---
+@bot.event
+async def on_webhooks_update(guild, channel):
+    if guild.id == ETHERYA_SERVER_ID:
+        webhook_channel = get_log_channel(guild, "webhooks")
+        if webhook_channel:
+            embed = discord.Embed(
+                title="🛰️ Mise à Jour des Webhooks",
+                description=f"Les webhooks ont été mis à jour dans le salon **{channel.name}**.",
+                color=discord.Color.purple()
+            )
+            embed.add_field(name="Nom du Salon", value=channel.name, inline=False)
+            embed.add_field(name="ID du Salon", value=str(channel.id), inline=False)
+            embed.set_footer(text="Mise à jour des webhooks")
+            embed.timestamp = discord.utils.utcnow()
+
+            await webhook_channel.send(embed=embed)
+
+@bot.event
+async def on_member_ban(guild, user):
+    guild_id = str(guild.id)
+    # --- Logs de ban pour PROJECT_DELTA ---
+    if guild.id == ETHERYA_SERVER_ID:
+        channel = get_log_channel(guild, "sanctions")
+        if channel:
+            embed = discord.Embed(
+                title="🔨 Membre Banni",
+                description=f"Le membre **{user.mention}** a été banni du serveur.",
+                color=discord.Color.red()
+            )
+            embed.add_field(name="ID du Membre", value=str(user.id), inline=False)
+            embed.set_footer(text="Ban sur PROJECT_DELTA")
+            embed.timestamp = discord.utils.utcnow()
+
+            await channel.send(embed=embed)
+
+# --- Logs de débannissement ---
+@bot.event
+async def on_member_unban(guild, user):
+    if guild.id == ETHERYA_SERVER_ID:
+        channel = get_log_channel(guild, "sanctions")
+        if channel:
+            embed = discord.Embed(
+                title="🔓 Membre Débanni",
+                description=f"Le membre **{user.mention}** a été débanni du serveur.",
+                color=discord.Color.green()
+            )
+            embed.add_field(name="ID du Membre", value=str(user.id), inline=False)
+            embed.set_footer(text="Débannissement sur PROJECT_DELTA")
+            embed.timestamp = discord.utils.utcnow()
+
+            await channel.send(embed=embed)
+
+# --- Bot logs ---
+@bot.event
+async def on_guild_update(before, after):
+    if before.id == ETHERYA_SERVER_ID:
+        bot_channel = get_log_channel(after, "bots")
+        if bot_channel:
+            embed = discord.Embed(
+                title="🤖 Mise à Jour du Serveur",
+                description=f"Le serveur **{before.name}** a été mis à jour.",
+                color=discord.Color.blue()
+            )
+            embed.add_field(name="Nom du Serveur", value=f"{before.name} → {after.name}", inline=False)
+
+            # Ajouter d'autres informations si nécessaire
+            if before.icon != after.icon:
+                embed.add_field(name="Icône du Serveur", value="L'icône a été changée.", inline=False)
+
+            embed.set_footer(text="Mise à jour du serveur sur PROJECT_DELTA")
+            embed.timestamp = discord.utils.utcnow()
+
+            await bot_channel.send(embed=embed)
 @bot.hybrid_command(
     name="uptime",
     description="Affiche l'uptime du bot."

@@ -4309,7 +4309,7 @@ async def item_autocomplete(interaction: discord.Interaction, current: str) -> L
     return results[:25]  # On limite à 25 résultats
 
 @bot.tree.command(name="item-info", description="Affiche toutes les informations d'un item de la boutique")
-@app_commands.describe(id="Nom de l'item à consulter")
+@app_commands.describe(name="Nom de l'item à consulter")
 @app_commands.autocomplete(id=item_autocomplete)  # <-- On associe l'autocomplétion ici
 async def item_info(interaction: discord.Interaction, id: str):
     # On cherche l'item par le nom
@@ -4385,8 +4385,30 @@ async def item_info(interaction: discord.Interaction, id: str):
 
     await interaction.response.send_message(embed=embed)
 
+from typing import List
+
+async def item_autocomplete(interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
+    user = interaction.user
+    user_id = user.id
+    guild_id = interaction.guild.id
+
+    # Chercher les items dans l'inventaire de l'utilisateur
+    owned_items = collection17.find({"user_id": user_id, "guild_id": guild_id})
+    
+    results = []
+    
+    for owned_item in owned_items:
+        item_id = owned_item["item_id"]
+        item_data = collection16.find_one({"id": item_id})
+        
+        if item_data and current.lower() in item_data["title"].lower():
+            results.append(app_commands.Choice(name=item_data["title"], value=str(item_id)))
+    
+    return results[:25]  # Limiter à 25 résultats
+
 @bot.tree.command(name="item-use", description="Utilise un item de ton inventaire.")
-@app_commands.describe(item_id="ID de l'item à utiliser")
+@app_commands.describe(item_id="Nom de l'item à utiliser")
+@app_commands.autocomplete(item_id=item_autocomplete)  # <-- On ajoute l'autocomplétion ici
 async def item_use(interaction: discord.Interaction, item_id: int):
     user = interaction.user
     user_id = user.id
@@ -4416,7 +4438,6 @@ async def item_use(interaction: discord.Interaction, item_id: int):
     # Vérifier si l'utilisateur a le rôle spécifique qui permet d'utiliser des items malgré les rôles bloquants
     special_role_id = 1365310665417556011
     if special_role_id in [role.id for role in user.roles]:
-        # L'utilisateur a ce rôle, on l'autorise à utiliser l'item
         embed = discord.Embed(
             title=f"<:Check:1362710665663615147> Utilisation de l'item",
             description=f"Tu as utilisé **{item_data['title']}** {item_data.get('emoji', '')}, malgré les restrictions de rôle.",
@@ -4493,18 +4514,14 @@ async def item_use(interaction: discord.Interaction, item_id: int):
 
     # Gestion de la suppression après utilisation
     if item_data.get("remove_after_use"):
-        # Suppression des rôles après utilisation
         if item_data["remove_after_use"].get("roles", False):
-            # Vérifie si le rôle a été attribué avant de le retirer
             role = discord.utils.get(interaction.guild.roles, id=item_data["role_id"])
             if role and role in user.roles:
                 await user.remove_roles(role)
                 embed.add_field(name="⚠️ Rôle supprimé", value=f"Le rôle **{role.name}** a été supprimé après l'utilisation de l'item.", inline=False)
                 print(f"Rôle {role.name} supprimé pour {interaction.user.name} après l'utilisation de l'item.")
-
-        # Suppression des items après utilisation
+        
         if item_data["remove_after_use"].get("items", False):
-            # Suppression de l'item de l'inventaire
             collection17.delete_one({
                 "user_id": user_id,
                 "guild_id": guild_id,
@@ -4513,6 +4530,7 @@ async def item_use(interaction: discord.Interaction, item_id: int):
             print(f"Item ID {item_id} supprimé de l'inventaire de {interaction.user.name}.")
 
     await interaction.response.send_message(embed=embed)
+
 
 @bot.tree.command(name="item-give", description="(Admin) Donne un item à un utilisateur.")
 @app_commands.checks.has_permissions(administrator=True)

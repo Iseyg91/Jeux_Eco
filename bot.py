@@ -9433,8 +9433,16 @@ PIRATE_ROLE_ID = 1365682636957421741
 MARINE_ROLE_ID = 1365631932964012142
 
 class ChooseCamp(discord.ui.View):
-    def __init__(self):
+    def __init__(self, author_id):
         super().__init__(timeout=None)
+        self.author_id = author_id
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        # Bloque les autres utilisateurs
+        if interaction.user.id != self.author_id:
+            await interaction.response.send_message("Tu ne peux pas utiliser ce menu.", ephemeral=True)
+            return False
+        return True
 
     @discord.ui.button(label="Pirate", style=ButtonStyle.danger)
     async def pirate_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -9448,6 +9456,8 @@ class ChooseCamp(discord.ui.View):
 
         await member.add_roles(pirate_role)
         await member.remove_roles(neutral_role)
+
+        await interaction.message.delete()  # <- Supprime le message avec les boutons
         await interaction.response.send_message("Tu as choisi le camp **Pirate** ! 🏴‍☠️", ephemeral=True)
 
     @discord.ui.button(label="Marine", style=ButtonStyle.primary)
@@ -9462,6 +9472,8 @@ class ChooseCamp(discord.ui.View):
 
         await member.add_roles(marine_role)
         await member.remove_roles(neutral_role)
+
+        await interaction.message.delete()  # <- Supprime le message avec les boutons
         await interaction.response.send_message("Tu as choisi le camp **Marine** ! ⚓", ephemeral=True)
 
 @bot.command()
@@ -9482,8 +9494,7 @@ async def neutre(ctx):
     )
     embed.set_image(url="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTdJ8fqMr7UyPIQ5K2lnTKaEcdVktMal6pxaQ&s")
 
-    await ctx.send(embed=embed, view=ChooseCamp())
-
+    await ctx.send(embed=embed, view=ChooseCamp(ctx.author.id))
 # Token pour démarrer le bot (à partir des secrets)
 # Lancer le bot avec ton token depuis l'environnement  
 keep_alive()

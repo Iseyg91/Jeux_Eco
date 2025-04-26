@@ -2415,27 +2415,36 @@ class BlackjackView(discord.ui.View):
     async def interaction_check(self, interaction: discord.Interaction):
         return interaction.user.id == self.ctx.author.id
 
-    @discord.ui.button(label="Hit", style=discord.ButtonStyle.green, emoji="➕")
-    async def hit(self, interaction: discord.Interaction, button: discord.ui.Button):
-        value, _ = draw_card()
-        self.player_hand.append(value)
-        player_total = calculate_hand_value(self.player_hand)
+@discord.ui.button(label="Hit", style=discord.ButtonStyle.green, emoji="➕")
+async def hit(self, interaction: discord.Interaction, button: discord.ui.Button):
+    value, _ = draw_card()
+    self.player_hand.append(value)
+    player_total = calculate_hand_value(self.player_hand)
 
-        if player_total > 21:
-            await self.end_game(interaction, "lose")
-        else:
-            # Affichage de la main du joueur et du croupier
-            embed.add_field(
-                name="Ta main",
-                value=" ".join([card_emojis[c][0] for c in player_hand]) + f"\nValeur: **{calculate_hand_value(player_hand)}**",
-                inline=False  # Modifier ici pour que cela s'affiche à gauche
-            )
-
-            embed.add_field(
-                name="Main du croupier",
-                value=f"{card_emojis[dealer_hand[0]][0]} 🂠\nValeur: **?**",
-                inline=False  # Modifier ici pour que cela s'affiche à droite
+    if player_total > 21:
+        await self.end_game(interaction, "lose")
+    else:
+        # Créez une instance d'embed avant de l'utiliser
+        embed = discord.Embed(
+            title="Blackjack - Ta main",
+            color=discord.Color.blue()  # Vous pouvez changer la couleur si vous le souhaitez
         )
+
+        # Affichage de la main du joueur et du croupier
+        embed.add_field(
+            name="Ta main",
+            value=" ".join([card_emojis[c][0] for c in self.player_hand]) + f"\nValeur: **{calculate_hand_value(self.player_hand)}**",
+            inline=False  # Modifier ici pour que cela s'affiche à gauche
+        )
+
+        embed.add_field(
+            name="Main du croupier",
+            value=f"{card_emojis[self.dealer_hand[0]][0]} 🂠\nValeur: **?**",
+            inline=False  # Modifier ici pour que cela s'affiche à droite
+        )
+
+        # Mettez à jour le message avec le nouvel embed
+        await interaction.response.edit_message(embed=embed)
 
     @discord.ui.button(label="Stand", style=discord.ButtonStyle.blurple, emoji="🛑")
     async def stand(self, interaction: discord.Interaction, button: discord.ui.Button):

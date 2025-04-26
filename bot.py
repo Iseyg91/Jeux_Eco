@@ -2424,10 +2424,18 @@ class BlackjackView(discord.ui.View):
         if player_total > 21:
             await self.end_game(interaction, "lose")
         else:
-            embed = discord.Embed(title=" Blackjack", color=discord.Color.blue())
-            embed.add_field(name="Ta main", value=" ".join([card_emojis[c][0] for c in self.player_hand]) + f"\n**Total : {calculate_hand_value(self.player_hand)}**", inline=False)
-            embed.add_field(name="Main du croupier", value=f"{card_emojis[self.dealer_hand[0]][0]} 🂠", inline=False)
-            await interaction.response.edit_message(embed=embed, view=self)
+            # Affichage de la main du joueur et du croupier
+            embed.add_field(
+                name="Ta main",
+                value=" ".join([card_emojis[c][0] for c in player_hand]) + f"\nValeur: **{calculate_hand_value(player_hand)}**",
+                inline=False  # Modifier ici pour que cela s'affiche à gauche
+            )
+
+            embed.add_field(
+                name="Main du croupier",
+                value=f"{card_emojis[dealer_hand[0]][0]} 🂠\nValeur: **?**",
+                inline=False  # Modifier ici pour que cela s'affiche à droite
+        )
 
     @discord.ui.button(label="Stand", style=discord.ButtonStyle.blurple, emoji="🛑")
     async def stand(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -2485,9 +2493,9 @@ class BlackjackView(discord.ui.View):
         # Maintenant vous pouvez utiliser await correctement
         await interaction.response.edit_message(embed=embed, view=None)
 
-# Lorsqu'un joueur joue au blackjack
 @bot.hybrid_command(name="blackjack", aliases=["bj"], description="Joue au blackjack et tente de gagner !")
-async def blackjack(ctx: commands.Context, mise: str = None):
+@app_commands.describe(mise="La somme à miser")
+async def blackjack(ctx: commands.Context, mise: str):
     if ctx.guild is None:
         return await ctx.send(embed=discord.Embed(description="Cette commande ne peut être utilisée qu'en serveur.", color=discord.Color.red()))
 

@@ -881,54 +881,47 @@ async def enregistrer_message_jour(user_id, message):
     date_aujourdhui = datetime.utcnow().strftime('%Y-%m-%d')
     collection.update_one(
         {"user_id": user_id, "date": date_aujourdhui},
-        {"$set": {"message": message}},
+        {"$push": {"messages": message}},  # <- On utilise $push pour accumuler les messages
         upsert=True
     )
 
 # Fonction pour envoyer un message à 00h00
 async def annoncer_message_du_jour():
-    date_aujourdhui = datetime.utcnow().strftime('%Y-%m-%d')
-    messages = collection.find({"date": date_aujourdhui})
+    await bot.wait_until_ready()  # On s'assure que le bot est prêt
+    while not bot.is_closed():
+        now = datetime.utcnow()
+        # Calculer combien de secondes jusqu'à minuit
+        next_run = (datetime.combine(now + timedelta(days=1), datetime.min.time()) - now).total_seconds()
+        await asyncio.sleep(next_run)
 
-    for msg in messages:
-        user_id = msg["user_id"]
-        message = msg["message"]
-        # Annonce dans le salon spécifique
-        channel = bot.get_channel(1355158101447147551)  # ID du salon
-        user = bot.get_user(user_id)
-        if user:
-            content = f"Le <@&1355903910635770098> est ||<@{user.id}>||, félicitations à lui."
-            msg = await channel.send(content)
-            await msg.add_reaction("<:chat:1362467870348410900>")
+        date_aujourdhui = datetime.utcnow().strftime('%Y-%m-%d')
+        messages = collection.find({"date": date_aujourdhui})
 
-            # Retirer le rôle à 23h59
-            await retirer_role(user)
+        channel = bot.get_channel(1365746881048612876)  # ID du salon
 
-# Fonction pour retirer le rôle à 23h59
+        for msg in messages:
+            user_id = msg["user_id"]
+            user = bot.get_user(user_id)
+            if user:
+                content = f"Le <@&1355903910635770098> est ||<@{user.id}>||, félicitations à lui."
+                message_annonce = await channel.send(content)
+                await message_annonce.add_reaction("<:chat:1362467870348410900>")
+                await retirer_role(user)
+
+# Fonction pour retirer le rôle à 23h59 (peut être aussi améliorée avec une tâche programmée si besoin)
 async def retirer_role(user):
     role = discord.utils.get(user.guild.roles, id=1355903910635770098)  # ID du rôle à retirer
     if role:
         await user.remove_roles(role)
         print(f"Rôle retiré de {user.name} à 23h59.")
 
-# Fonction pour obtenir les informations de partenariat
-def get_user_partner_info(user_id):
-    # Logique fictive pour récupérer le rang et le nombre de partenariats de l'utilisateur
-    # Remplace par la logique de ton application
-    rank = "Gold"  # Exemple
-    partnerships = 5  # Exemple
-    return rank, partnerships
-
-# Événement sur la réception d'un message
+# Ton on_message reste pratiquement pareil
 @bot.event
 async def on_message(message):
-    # Empêche le bot de répondre à ses propres messages pour éviter une boucle infinie
     if message.author == bot.user:
         return
 
-    # Enregistrer le message du jour pour chaque utilisateur
     await enregistrer_message_jour(message.author.id, message.content)
-
     # Gestion des partenariats dans un salon spécifique
     if message.channel.id == partnership_channel_id:
         rank, partnerships = get_user_partner_info(message.author.id)

@@ -3023,19 +3023,28 @@ async def russianroulette(ctx, arg: str):
             color=discord.Color.from_rgb(255, 92, 92)
         ))
 
-# Set pour suivre les joueurs ayant une roulette en cours
-active_roulette_players = set()
+from discord.ext import commands
+from discord import app_commands
 
-# Numéros corrigés
-RED_NUMBERS = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
-BLACK_NUMBERS = [2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35]
-EVEN_NUMBERS = [i for i in range(2, 37, 2)]
-ODD_NUMBERS = [i for i in range(1, 37, 2)]
-COLUMN_1 = [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34]
-COLUMN_2 = [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35]
-COLUMN_3 = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36]
+# Options possibles pour space
+SPACES = (
+    ["red", "black", "even", "odd", "1-18", "19-36", "1st", "2nd", "3rd"] +
+    [str(num) for num in range(0, 37)]
+)
 
-@bot.command(name="roulette", description="Parie sur la roulette avec un montant spécifique")
+async def roulette_space_autocomplete(interaction: discord.Interaction, current: str):
+    # Filtrer selon ce que le joueur écrit
+    filtered = [space for space in SPACES if space.startswith(current.lower())]
+    return [
+        app_commands.Choice(name=space, value=space)
+        for space in filtered[:25]  # Discord limite à 25 choix maximum
+    ]
+@bot.hybrid_command(name="roulette", description="Parie sur la roulette avec un montant spécifique")
+@app_commands.describe(
+    bet="Montant à miser (1-5000)",
+    space="Espace sur lequel tu mises (couleur, pair/impair, colonne ou numéro)"
+)
+@app_commands.autocomplete(space=roulette_space_autocomplete)
 async def roulette(ctx: commands.Context, bet: int, space: str):
     guild_id = ctx.guild.id
     user_id = ctx.author.id
@@ -3058,26 +3067,24 @@ async def roulette(ctx: commands.Context, bet: int, space: str):
     if bet > cash:
         active_roulette_players.remove(user_id)
         return await ctx.send(f"Tu n'as pas assez d'argent ! Tu as {cash} en cash.")
-
     if bet < 1:
         active_roulette_players.remove(user_id)
         return await ctx.send("⛔ La mise minimale est de 1 coin !")
-
     if bet > 5000:
         active_roulette_players.remove(user_id)
         return await ctx.send("⛔ La mise maximale est de 5000 !")
 
-    # Déduction du montant parié
+    # Déduction du pari
     collection.update_one({"guild_id": guild_id, "user_id": user_id}, {"$inc": {"cash": -bet}})
 
     embed = discord.Embed(
-        title=ctx.author.name,  # ou interaction.user.name selon ton contexte
-        description=f"You have placed a bet of <:ecoEther:1341862366249357374>{int(bet)} on **{space}**.",
+        title=ctx.author.name,
+        description=f"Tu as parié <:ecoEther:1341862366249357374> {int(bet)} sur **{space}**.",
         color=discord.Color.blue()
     )
-    embed.set_footer(text="Time remaining: 10 seconds")
-
-    # Bouton Help
+    embed.set_footer(text="Résultat dans 10 secondes...")
+    
+    # Vue avec bouton Help
     view = View()
     help_button = Button(label="Help", style=discord.ButtonStyle.primary)
 
@@ -3086,22 +3093,14 @@ async def roulette(ctx: commands.Context, bet: int, space: str):
             title="📘 Comment jouer à la Roulette",
             description=(
                 "**🎯 Parier**\n"
-                "Choisis l'espace sur lequel tu penses que la balle va atterrir.\n"
-                "Tu peux parier sur plusieurs espaces en exécutant la commande à nouveau.\n"
-                "Les espaces avec une chance plus faible de gagner ont un multiplicateur de gains plus élevé.\n\n"
-                "**⏱️ Temps restant**\n"
-                "Chaque fois qu'un pari est placé, le temps restant est réinitialisé à 10 secondes, jusqu'à un maximum de 1 minute.\n\n"
-                "**💸 Multiplicateurs de gains**\n"
+                "Choisis où la balle va atterrir. Plus c'est précis, plus ça paye.\n\n"
+                "**💸 Multiplicateurs**\n"
                 "[x36] Numéro seul\n"
-                "[x3] Douzaines (1-12, 13-24, 25-36)\n"
-                "[x3] Colonnes (1st, 2nd, 3rd)\n"
-                "[x2] Moitiés (1-18, 19-36)\n"
-                "[x2] Pair/Impair\n"
-                "[x2] Couleurs (red, black)"
+                "[x3] Douzaines et Colonnes\n"
+                "[x2] Pair/Impair, Rouge/Noir, Moitiés"
             ),
             color=discord.Color.gold()
         )
-        help_embed.set_image(url="https://github.com/Iseyg91/Isey_aime_Cass/blob/main/unknown.png?raw=true")
         await interaction.response.send_message(embed=help_embed, ephemeral=True)
 
     help_button.callback = help_callback
@@ -3110,11 +3109,11 @@ async def roulette(ctx: commands.Context, bet: int, space: str):
     await ctx.send(embed=embed, view=view)
     await asyncio.sleep(10)
 
+    # Résultat
     spin_result = random.randint(0, 36)
     win = False
     multiplier = 0
 
-    # Vérification du pari
     if space == "red" and spin_result in RED_NUMBERS:
         win, multiplier = True, 2
     elif space == "black" and spin_result in BLACK_NUMBERS:
@@ -3136,20 +3135,19 @@ async def roulette(ctx: commands.Context, bet: int, space: str):
     elif space == str(spin_result):
         win, multiplier = True, 36
 
-    # Message de gain ou de perte
     if win:
         collection.update_one(
             {"guild_id": guild_id, "user_id": user_id},
-            {"$inc": {"cash": int(bet * multiplier)}},
+            {"$inc": {"cash": int(bet * multiplier)}}
         )
-        result_str = f"The ball landed on: **{spin_result}**!\n\n**Winners:**\n{ctx.author.mention} won <:ecoEther:1341862366249357374> {int(bet * multiplier)}"
+        result_str = f"🎯 La balle est tombée sur **{spin_result}**!\n\n🥳 {ctx.author.mention} gagne <:ecoEther:1341862366249357374> {int(bet * multiplier)} !"
     else:
-        result_str = f"The ball landed on: {spin_result}!\n\nNo Winners  :("
+        result_str = f"🎯 La balle est tombée sur {spin_result}!\n\n😭 Pas de gagnant cette fois..."
 
     await ctx.send(result_str)
 
-    # Libération du joueur
     active_roulette_players.remove(user_id)
+
 #-------------------------------------------------------------- Daily
 
 @bot.hybrid_command(name="daily", aliases=["dy"], description="Réclame tes Coins quotidiens.")

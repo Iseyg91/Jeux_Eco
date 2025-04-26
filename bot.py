@@ -125,17 +125,17 @@ ROLE_GEL = 1365313259280007168
 # --- ID Etherya Pirates & Marines ---
 # Roles
 marine_roles = {
-    "Amiral en chef": 1364961952480104560,
-    "Commandant": 1364961949242228756,
-    "Lieutenant": 1364961999896707072,
-    "Matelot": 1364961988588994571,
+    "Amiral en chef": 1365683477868970204,
+    "Commandant": 1365683407023243304,
+    "Lieutenant": 1365683324831531049,
+    "Matelot": 1365683175019516054,
 }
 
 pirate_roles = {
-    "Roi des Pirates": 1364962003579568228,
-    "Yonko": 1364961946234785792,
-    "Corsaire": 1364961997296242688,
-    "Pirate": 1364961860230578191,
+    "Roi des Pirates": 1365682989996052520,
+    "Yonko": 1365682989996052520,
+    "Corsaire": 1365682918243958826,
+    "Pirate": 1365682795501977610,
 }
 
 log_channels = {
@@ -4008,6 +4008,86 @@ ITEMS = [
         "used": True
     },
     {
+        "id": 555,
+        "emoji": "<:haki_v1:1365669380083679252>",
+        "title": "Haki de l’Armement | 𝕀𝕟𝕗𝕖𝕣𝕚𝕖𝕦𝕣",
+        "description": "Offre un collect de 5,000, cooldown de 2 heures.",
+        "price": 100000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 3,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "Peut évoluer grâce à !!rayleigh. Vous devrez donner 100,000 à Rayleigh pour pouvoir débloquer la possibilité d'acheter le Haki de l'Armement avancé !",
+        "requirements": {},
+        "role_id": 1365698043684327424,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
+    },
+    {
+        "id": 652,
+        "emoji": "<:haki_v2:1365669343685378160>",
+        "title": "Haki de l’Armement | 𝔸𝕧𝕒𝕟𝕔𝕖",
+        "description": "Offre un collect de 10,000, cooldown de 2 heures.",
+        "price": 100000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 3,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "???",
+        "requirements": {
+            "role_id": 1365699319163785246
+        },
+        "role_id": 1365389381246124084,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
+    },
+    {
+        "id": 555,
+        "emoji": "<:haki_v1:1365669380083679252>",
+        "title": "Haki de l’Armement | 𝕀𝕟𝕗𝕖𝕣𝕚𝕖𝕦𝕣",
+        "description": "Permet de connaître l'heure du prochain restock grâce à !!observation. (Cooldown : 1 semaine)",
+        "price": 100000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 3,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "Peut évoluer grâce à !!rayleigh. Vous devrez donner 100k à Rayleigh pour débloquer la possibilité d'acheter le Haki de l'Observation avancé !",
+        "requirements": {},
+        "role_id": 1365698043684327424,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
+    },
+    {
+        "id": 652,
+        "emoji": "<:haki_v2:1365669343685378160>",
+        "title": "Haki de l’Observation | 𝔸𝕧𝕒𝕟𝕔𝕖",
+        "description": "Permet de connaître l'heure et le contenu du prochain restock grâce à !!Wobservation. (Cooldown : 2 semaines)",
+        "price": 100000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 3,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "???",
+        "requirements": {
+            "role_id": 1365699245377847448
+        },
+        "role_id": 1365389687618928885,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
+    },
+    {
         "id": 888,
         "emoji": "<:infini:1363615948090638490>",
         "title": "Infini | ℕ𝕀𝕍𝔼𝔸𝕌 𝟛",
@@ -4236,6 +4316,25 @@ ITEMS = [
         "blocked_roles": [1365316070172393572, 1365311588139274354, 1365313257279062067, 1365311602290851880, 1365313248269828116, 1365311608259346462, 1365313251201519697, 1365311611019202744, 1365311614332571739, 1365313292477927464],
         "requirements": {},
         "role_id": 1365313248269828116,
+        "remove_after_purchase": {
+            "roles": False,
+            "items": False
+        },
+        "used": True
+    },
+    {
+        "id": 666,
+        "emoji": "<:MarshallDTeach:1365695681028821093>",
+        "title": "Marshall D. Teach",
+        "description": "Permet de posséder 2 Fruits du Démon a la fois.",
+        "price": 1000000,
+        "emoji_price": "<:ecoEther:1341862366249357374>",
+        "quantity": 1,
+        "tradeable": True,
+        "usable": True,
+        "use_effect": "Permet de posséder 2 Fruits du Démon a la fois.",
+        "requirements": {},
+        "role_id": 1365310665417556011,
         "remove_after_purchase": {
             "roles": False,
             "items": False
@@ -7806,7 +7905,7 @@ async def get_honor(user_id):
 
 @bot.command()
 async def bounty(ctx):
-    pirate_role_id = 1364973120624001055
+    pirate_role_id = 1365682636957421741
 
     # Vérifier si l'utilisateur a le rôle Pirate
     if pirate_role_id not in [role.id for role in ctx.author.roles]:
@@ -7840,7 +7939,7 @@ async def bounty(ctx):
 
 @bot.command()
 async def honor(ctx):
-    marine_role_id = 1364973130807906436
+    marine_role_id = 1365631932964012142
 
     # Vérifie si l'utilisateur a le rôle requis
     if any(role.id == marine_role_id for role in ctx.author.roles):
@@ -9057,6 +9156,76 @@ async def slot_machine(ctx, bet):
 @bot.hybrid_command(name="slot-machine", aliases=["sm"], description="Jouer à la machine à sous.")
 async def slot(ctx, bet: int):
     await slot_machine(ctx, bet)
+
+@bot.command(name="suicide")
+async def suicide(ctx: commands.Context):
+    if ctx.guild is None:
+        return await ctx.send("Cette commande ne peut être utilisée qu'en serveur.")
+
+    authorized_roles = [
+        1365316070172393572, 1365311588139274354, 1365313257279062067,
+        1365311602290851880, 1365313248269828116, 1365311608259346462,
+        1365313251201519697, 1365311611019202744, 1365311614332571739,
+        1365313292477927464
+    ]
+
+    # Vérifie si l'utilisateur a un des rôles autorisés
+    if not any(role.id in authorized_roles for role in ctx.author.roles):
+        return await ctx.send("❌ Tu n'as pas le droit d'utiliser cette commande.")
+
+    guild_id = ctx.guild.id
+    user_id = ctx.author.id
+
+    # Récupération ou création de la data utilisateur
+    def get_or_create_user_data(guild_id: int, user_id: int):
+        data = collection.find_one({"guild_id": guild_id, "user_id": user_id})
+        if not data:
+            data = {"guild_id": guild_id, "user_id": user_id, "cash": 1500, "bank": 0}
+            collection.insert_one(data)
+        return data
+
+    data = get_or_create_user_data(guild_id, user_id)
+    cash = data.get("cash", 0)
+    bank = data.get("bank", 0)
+    total = cash + bank
+
+    # Calcul de 5% du total
+    five_percent = int(total * 0.05)
+
+    # Retrait de 5% en priorité du cash, puis de la banque
+    if cash >= five_percent:
+        new_cash = cash - five_percent
+        new_bank = bank
+    else:
+        remaining = five_percent - cash
+        new_cash = 0
+        new_bank = max(bank - remaining, 0)
+
+    # Mise à jour de la base de données
+    collection.update_one(
+        {"guild_id": guild_id, "user_id": user_id},
+        {"$set": {"cash": new_cash, "bank": new_bank}}
+    )
+
+    # Suppression des rôles
+    roles_to_remove = [ctx.guild.get_role(role_id) for role_id in authorized_roles]
+    await ctx.author.remove_roles(*filter(None, roles_to_remove), reason="Suicide RP - Retrait de fruit")
+
+    # Création de l'embed
+    embed = discord.Embed(
+        title="☠️ Suicide ☠️",
+        description=(
+            "Dans un dernier souffle, tu abandonnes ton pouvoir... ton fruit est désormais perdu, "
+            "et ton âme erre sans force sur les mers de ce monde cruel.\n\n"
+            "En te libérant, tu as également sacrifié **5%** de ta richesse."
+        ),
+        color=discord.Color.dark_purple()
+    )
+    embed.set_image(url="https://www.melty.fr/wp-content/uploads/meltyfr/2022/01/media-2796-736x414.jpg")
+    embed.set_footer(text="Ton sacrifice sera peut-être honoré... ou vite oublié.")
+
+    await ctx.send(embed=embed)
+
 
 # Token pour démarrer le bot (à partir des secrets)
 # Lancer le bot avec ton token depuis l'environnement  

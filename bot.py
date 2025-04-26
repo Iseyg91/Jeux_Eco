@@ -4669,16 +4669,20 @@ async def item_take(interaction: discord.Interaction, member: discord.Member, it
 
     await interaction.response.send_message(embed=embed)
 
-# Fonction d'autocomplétion pour l'ID des items
+# Fonction d'autocomplétion pour l'ID des items, filtrée par l'inventaire de l'utilisateur
 async def item_autocomplete(interaction: discord.Interaction, current: str):
     results = []
-    # Recherche parmi les items dans la collection
-    items = collection16.find()
-    
+    guild_id = interaction.guild.id
+    user_id = interaction.user.id
+
+    # Recherche des items que le joueur possède dans son inventaire
+    owned_items = collection17.find({"user_id": user_id, "guild_id": guild_id})
+
     # Ajoute les items dont le nom correspond à ce que l'utilisateur tape
-    for item in items:
-        if current.lower() in item["title"].lower():
-            results.append(Choice(name=f"{item['title']} (ID: {item['id']})", value=item['id']))
+    for item in owned_items:
+        item_data = collection16.find_one({"id": item["item_id"]})
+        if item_data and current.lower() in item_data["title"].lower():
+            results.append(Choice(name=f"{item_data['title']} (ID: {item_data['id']})", value=item_data['id']))
     
     return results[:25]  # Limite à 25 résultats maximum
 
@@ -4802,10 +4806,22 @@ async def item_sell(interaction: discord.Interaction, member: discord.User, item
 
     await interaction.response.send_message(embed=offer_embed, content=member.mention, view=view)
 
+# Fonction d'autocomplétion pour les items disponibles en boutique
+async def item_shop_autocomplete(interaction: discord.Interaction, current: str):
+    results = []
+    # Cherche tous les items de la boutique qui correspondent à ce que tape l'utilisateur
+    items = collection16.find({"title": {"$regex": current, "$options": "i"}}).limit(25)
+
+    for item in items:
+        results.append(Choice(name=f"{item['title']} (ID: {item['id']})", value=item['id']))
+
+    return results
+
 @bot.tree.command(name="item-leaderboard", description="Affiche le leaderboard des utilisateurs possédant un item spécifique.")
 @app_commands.describe(
     item_id="ID de l'item dont vous voulez voir le leaderboard"
 )
+@app_commands.autocomplete(item_id=item_shop_autocomplete)  # <<<<<< ajoute ici l'autocomplete
 async def item_leaderboard(interaction: discord.Interaction, item_id: int):
     guild = interaction.guild
     guild_id = guild.id
@@ -4856,8 +4872,22 @@ async def item_leaderboard(interaction: discord.Interaction, item_id: int):
 
     await interaction.response.send_message(embed=embed)
 
+# Fonction d'autocomplétion pour les items de la boutique (déjà faite, donc on réutilise !)
+async def item_shop_autocomplete(interaction: discord.Interaction, current: str):
+    results = []
+    items = collection16.find({"title": {"$regex": current, "$options": "i"}}).limit(25)
+
+    for item in items:
+        results.append(Choice(name=f"{item['title']} (ID: {item['id']})", value=item['id']))
+
+    return results
+
 @bot.tree.command(name="restock", description="Restock un item dans la boutique")
-@app_commands.describe(item_id="ID de l'item à restock", quantity="Nouvelle quantité à définir")
+@app_commands.describe(
+    item_id="ID de l'item à restock",
+    quantity="Nouvelle quantité à définir"
+)
+@app_commands.autocomplete(item_id=item_shop_autocomplete)  # <<<< ajoute ici l'autocomplete
 async def restock(interaction: discord.Interaction, item_id: int, quantity: int):
     if interaction.user.id != ISEY_ID:
         return await interaction.response.send_message("❌ Tu n'as pas la permission d'utiliser cette commande.", ephemeral=True)
@@ -4871,8 +4901,20 @@ async def restock(interaction: discord.Interaction, item_id: int, quantity: int)
         f"✅ L'item **{item['title']}** a bien été restocké à **{quantity}** unités.", ephemeral=True
     )
 
+
+# Même autocomplétion que pour /restock (items de la boutique)
+async def item_shop_autocomplete(interaction: discord.Interaction, current: str):
+    results = []
+    items = collection16.find({"title": {"$regex": current, "$options": "i"}}).limit(25)
+
+    for item in items:
+        results.append(app_commands.Choice(name=f"{item['title']} (ID: {item['id']})", value=item['id']))
+
+    return results
+
 @bot.tree.command(name="reset-item", description="Réinitialise ou supprime les items dans la boutique")
 @app_commands.describe(item_id="ID de l'item à réinitialiser ou supprimer")
+@app_commands.autocomplete(item_id=item_shop_autocomplete)  # <<<<< autocomplétion ici
 async def reset_item(interaction: discord.Interaction, item_id: int):
     if interaction.user.id != ISEY_ID:
         return await interaction.response.send_message("❌ Tu n'as pas la permission d'utiliser cette commande.", ephemeral=True)

@@ -5224,44 +5224,6 @@ async def badge_give(interaction: discord.Interaction, member: discord.Member, b
     )
     await interaction.response.send_message(embed=embed)
 
-@bot.tree.command(name="badge-give", description="(Admin) Donne un badge à un utilisateur.")
-@app_commands.checks.has_permissions(administrator=True)
-@app_commands.describe(
-    member="Utilisateur à qui donner le badge",
-    badge_id="ID du badge à donner"
-)
-async def badge_give(interaction: discord.Interaction, member: discord.Member, badge_id: int):
-    badge = collection19.find_one({"id": badge_id})
-    if not badge:
-        embed = discord.Embed(
-            title="❌ Badge introuvable",
-            description="Ce badge n'existe pas.",
-            color=discord.Color.red()
-        )
-        return await interaction.response.send_message(embed=embed)
-
-    user_data = collection20.find_one({"user_id": member.id})
-    if user_data and badge_id in user_data.get("badges", []):
-        embed = discord.Embed(
-            title="❌ Badge déjà possédé",
-            description=f"{member.mention} possède déjà ce badge.",
-            color=discord.Color.red()
-        )
-        return await interaction.response.send_message(embed=embed)
-
-    collection20.update_one(
-        {"user_id": member.id},
-        {"$addToSet": {"badges": badge_id}},
-        upsert=True
-    )
-
-    embed = discord.Embed(
-        title="🎖️ Badge donné",
-        description=f"Le badge **{badge['title']}** {badge['emoji']} a été donné à {member.mention}.",
-        color=discord.Color.green()
-    )
-    await interaction.response.send_message(embed=embed)
-
 @bot.tree.command(name="badge-take", description="(Admin) Retire un badge d'un utilisateur.")
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(

@@ -4309,7 +4309,7 @@ async def item_autocomplete(interaction: discord.Interaction, current: str) -> L
     return results[:25]  # On limite à 25 résultats
 
 @bot.tree.command(name="item-info", description="Affiche toutes les informations d'un item de la boutique")
-@app_commands.describe(name="Nom de l'item à consulter")
+@app_commands.describe(id="Nom de l'item à consulter")
 @app_commands.autocomplete(id=item_autocomplete)  # <-- On associe l'autocomplétion ici
 async def item_info(interaction: discord.Interaction, id: str):
     # On cherche l'item par le nom

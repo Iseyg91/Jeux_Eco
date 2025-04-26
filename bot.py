@@ -4532,6 +4532,21 @@ async def item_use(interaction: discord.Interaction, item_id: int):
     await interaction.response.send_message(embed=embed)
 
 
+from discord.app_commands import Choice, autocomplete
+
+# Fonction d'autocomplétion pour l'ID des items
+async def item_autocomplete(interaction: discord.Interaction, current: str):
+    results = []
+    # Recherche parmi les items dans la collection
+    items = collection16.find()
+    
+    # Ajoute les items dont le nom correspond à ce que l'utilisateur tape
+    for item in items:
+        if current.lower() in item["title"].lower():
+            results.append(Choice(name=f"{item['title']} (ID: {item['id']})", value=item['id']))
+    
+    return results[:25]  # Limite à 25 résultats maximum
+
 @bot.tree.command(name="item-give", description="(Admin) Donne un item à un utilisateur.")
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
@@ -4539,6 +4554,7 @@ async def item_use(interaction: discord.Interaction, item_id: int):
     item_id="ID de l'item à donner",
     quantity="Quantité d'items à donner"
 )
+@app_commands.autocomplete(item_id=item_autocomplete)  # Ajout de l'autocomplétion pour item_id
 async def item_give(interaction: discord.Interaction, member: discord.Member, item_id: int, quantity: int = 1):
     guild_id = interaction.guild.id
     user_id = member.id

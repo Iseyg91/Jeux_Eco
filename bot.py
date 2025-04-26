@@ -4669,6 +4669,19 @@ async def item_take(interaction: discord.Interaction, member: discord.Member, it
 
     await interaction.response.send_message(embed=embed)
 
+# Fonction d'autocomplétion pour l'ID des items
+async def item_autocomplete(interaction: discord.Interaction, current: str):
+    results = []
+    # Recherche parmi les items dans la collection
+    items = collection16.find()
+    
+    # Ajoute les items dont le nom correspond à ce que l'utilisateur tape
+    for item in items:
+        if current.lower() in item["title"].lower():
+            results.append(Choice(name=f"{item['title']} (ID: {item['id']})", value=item['id']))
+    
+    return results[:25]  # Limite à 25 résultats maximum
+
 @bot.tree.command(name="item-sell", description="Vends un item à un autre utilisateur pour un prix donné.")
 @app_commands.describe(
     member="L'utilisateur à qui vendre l'item",
@@ -4676,6 +4689,7 @@ async def item_take(interaction: discord.Interaction, member: discord.Member, it
     price="Prix de vente de l'item",
     quantity="Quantité d'items à vendre (par défaut 1)"
 )
+@app_commands.autocomplete(item_id=item_autocomplete)  # Ajout de l'autocomplétion pour item_id
 async def item_sell(interaction: discord.Interaction, member: discord.User, item_id: int, price: int, quantity: int = 1):
     guild_id = interaction.guild.id
     seller_id = interaction.user.id

@@ -8072,7 +8072,7 @@ async def capture(ctx, target: discord.Member):
     target_id = target.id
 
     # Vérifier si l'auteur a l'un des rôles autorisés
-    allowed_roles = [1364973120624001055, 1364973130807906436]
+    allowed_roles = [1365682636957421741, 1365631932964012142]
     if not any(role.id in allowed_roles for role in ctx.author.roles):
         await ctx.send("Vous devez avoir un rôle autorisé pour capturer des cibles.")
         return

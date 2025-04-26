@@ -4293,27 +4293,32 @@ async def item_inventory(interaction: discord.Interaction, user: discord.User = 
 
     await interaction.response.send_message(embed=embed)
 
-async def item_autocomplete(interaction: discord.Interaction, current: str):
-    # On filtre les items qui contiennent ce que l'utilisateur est en train d'écrire
+from typing import List
+
+async def item_autocomplete(interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
     results = []
-    for item in ITEMS:
-        if current.lower() in item["title"].lower():
-            results.append(app_commands.Choice(name=item["title"], value=item["title"]))
+    items = list(collection16.find().limit(100))  # Charger les 100 premiers items de la collection
 
-    # On limite à 25 résultats max (Discord ne permet pas plus)
-    return results[:25]
+    for item in items:
+        title = item.get("title", "Sans nom")
+        
+        # On vérifie si l'input actuel de l'utilisateur est dans le nom de l'item
+        if current.lower() in title.lower():
+            results.append(app_commands.Choice(name=title, value=title))
 
-# Commande avec autocomplétion
+    return results[:25]  # On limite à 25 résultats
+
 @bot.tree.command(name="item-info", description="Affiche toutes les informations d'un item de la boutique")
-@app_commands.describe(id="ID de l'item à consulter")
-@app_commands.autocomplete(id=item_autocomplete)  # <-- N'oublie pas ça !
-async def item_info(interaction: discord.Interaction, id: int):
-    item = collection16.find_one({"id": id})
+@app_commands.describe(id="Nom de l'item à consulter")
+@app_commands.autocomplete(id=item_autocomplete)  # <-- On associe l'autocomplétion ici
+async def item_info(interaction: discord.Interaction, id: str):
+    # On cherche l'item par le nom
+    item = collection16.find_one({"title": id})
 
     if not item:
         embed = discord.Embed(
             title="❌ Item introuvable",
-            description="Aucun item trouvé avec cet ID.",
+            description="Aucun item trouvé avec ce nom.",
             color=discord.Color.red()
         )
         return await interaction.response.send_message(embed=embed, ephemeral=True)

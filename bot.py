@@ -470,211 +470,211 @@ TOP_ROLES = {
 # Config des rôles
 COLLECT_ROLES_CONFIG = [
     {
-        "role_id": 1355157715550470335,
-        "amount": 250,
+        "role_id": 1355157715550470335, #Membres
+        "amount": 1000,
         "cooldown": 3600,
         "auto": False,
         "target": "bank"
     },
     {
-        "role_id": 1365683057591582811,
+        "role_id": 1365683057591582811, #Roi des Pirates
         "amount": 12500,
         "cooldown": 43200,
         "auto": False,
         "target": "bank"
     },
     {
-        "role_id": 1365683477868970204,
+        "role_id": 1365683477868970204, #Amiral en Chef
         "amount": 15000,
         "cooldown": 43200,
         "auto": False,
         "target": "bank"
     },
     {
-        "role_id": 1365682989996052520,
+        "role_id": 1365682989996052520, #Yonko
         "amount": 5000,
         "cooldown": 43200,
         "auto": False,
         "target": "bank"
     },
     {
-        "role_id": 1365683407023243304,
+        "role_id": 1365683407023243304, #Commandant
         "amount": 7500,
         "cooldown": 43200,
         "auto": False,
         "target": "bank"
     },
     {
-        "role_id": 1365682918243958826,
+        "role_id": 1365682918243958826, #Corsaires
         "amount": 3000,
         "cooldown": 43200,
         "auto": False,
         "target": "bank"
     },
     {
-        "role_id": 1365683324831531049,
+        "role_id": 1365683324831531049, #Lieutenant
         "amount": 5000,
         "cooldown": 43200,
         "auto": False,
         "target": "bank"
     },
     {
-        "role_id": 1365682795501977610,
+        "role_id": 1365682795501977610, #Pirates
         "amount": 1000,
         "cooldown": 43200,
         "auto": False,
         "target": "bank"
     },
     {
-        "role_id": 1365683175019516054,
+        "role_id": 1365683175019516054, #Matelot
         "amount": 2000,
         "cooldown": 43200,
         "auto": False,
         "target": "bank"
     },
     {
-        "role_id": 1365698043684327424,
+        "role_id": 1365698043684327424, #Haki de l'armement Inferieur
         "amount": 5000,
         "cooldown": 7200,
         "auto": False,
         "target": "bank"
     },
     {
-        "role_id": 1365389381246124084,
+        "role_id": 1365389381246124084, #Haki de l'Armement Avancé
         "amount": 5000,
         "cooldown": 7200,
         "auto": False,
         "target": "bank"
     },
     {
-        "role_id": 1363969965572755537,
+        "role_id": 1363969965572755537, #Nen Maudit
         "percent": -20,
         "cooldown": 3600,
         "auto": True,
         "target": "bank"
     },
     {
-        "role_id": 1365313255471579297,
+        "role_id": 1365313255471579297, #Soumsi a Nika
         "percent": -10,
         "cooldown": 86400,
         "auto": True,
         "target": "bank"
     },
     {
-        "role_id": 1365313257279062067,
+        "role_id": 1365313257279062067, #Gol Gol no Mi
         "percent": 10,
         "cooldown": 604800,
         "auto": True,
         "target": "bank"
     },
     {
-        "role_id": 1365313261129568297,
+        "role_id": 1365313261129568297, #Gear Second
         "percent": 5,
         "cooldown": 3600,
         "auto": True,
         "target": "bank"
     },
     {
-        "role_id": 1365312301900501063,
+        "role_id": 1365312301900501063, #Nika Collect
         "percent": 500,
         "cooldown": 3600,
         "auto": True,
         "target": "bank"
     },
     {
-        "role_id": 1365313287964725290,
+        "role_id": 1365313287964725290, #Soumis Bourrasque Devastatrice
         "percent": -50,
         "cooldown": 3600,
         "auto": True,
         "target": "bank"
     },
     {
-        "role_id": 1365312292069048443,
+        "role_id": 1365312292069048443, #Tonnere Divin
         "percent": -70,
         "cooldown": 86400,
         "auto": True,
         "target": "bank"
     },
     {
-        "role_id": 1355903910635770098,
-        "amount": 5000,
+        "role_id": 1355903910635770098, #God of Glory
+        "amount": 12500,
         "cooldown": 86400,
         "auto": False,
         "target": "bank"
     },
     {
-        "role_id": 1034546767104069663,
-        "amount": 2500,
+        "role_id": 1034546767104069663, #Booster
+        "amount": 5000,
         "cooldown": 7200,
         "auto": False,
         "target": "bank"
     },
     {
-        "role_id": 1363974710739861676,
+        "role_id": 1363974710739861676, #Collect Bank
         "percent": 1,
         "cooldown": 3600,
         "auto": True,
         "target": "bank"
     },
     {
-        "role_id": 1363948445282341135,
+        "role_id": 1363948445282341135, #Mode Ermite
         "amount": 5000,
         "cooldown": 7200,
         "auto": False,
         "target": "bank"
     },
     {
-        "role_id": 1355157729362313308,
-        "amount": 500,
-        "cooldown": 14200,
-        "auto": False,
-        "target": "bank"
-    },
-    {
-        "role_id": 1355157728024072395,
+        "role_id": 1355157729362313308, #Grade E
         "amount": 1000,
         "cooldown": 14200,
         "auto": False,
         "target": "bank"
     },
     {
-        "role_id": 1355157726032035881,
-        "amount": 1500,
-        "cooldown": 14200,
-        "auto": False,
-        "target": "bank"
-    },
-    {
-        "role_id": 1355157725046243501,
+        "role_id": 1355157728024072395, #Grade D
         "amount": 2000,
         "cooldown": 14200,
         "auto": False,
         "target": "bank"
     },
     {
-        "role_id": 1355157723960049787,
-        "amount": 2500,
+        "role_id": 1355157726032035881, #Grade C
+        "amount": 300,
         "cooldown": 14200,
         "auto": False,
         "target": "bank"
     },
     {
-        "role_id": 1355157722907279380,
-        "amount": 3000,
-        "cooldown": 14200,
-        "auto": False,
-        "target": "bank"
-    },
-    {
-        "role_id": 1355157721812435077 ,
-        "amount": 3500,
-        "cooldown": 14200,
-        "auto": False,
-        "target": "bank"
-    },
-    {
-        "role_id": 1355157720730439701  ,
+        "role_id": 1355157725046243501, #Grade B
         "amount": 4000,
+        "cooldown": 14200,
+        "auto": False,
+        "target": "bank"
+    },
+    {
+        "role_id": 1355157723960049787, #Grade A
+        "amount": 5000,
+        "cooldown": 14200,
+        "auto": False,
+        "target": "bank"
+    },
+    {
+        "role_id": 1355157722907279380, #Grade S
+        "amount": 6000,
+        "cooldown": 14200,
+        "auto": False,
+        "target": "bank"
+    },
+    {
+        "role_id": 1355157721812435077, #Grade National
+        "amount": 7000,
+        "cooldown": 14200,
+        "auto": False,
+        "target": "bank"
+    },
+    {
+        "role_id": 1355157720730439701, #Grade Etheryens
+        "amount": 8000,
         "cooldown": 14200,
         "auto": False,
         "target": "bank"
@@ -682,11 +682,6 @@ COLLECT_ROLES_CONFIG = [
 ]
 
 # --- Boucle Auto Collect ---
-from discord.ext import tasks
-import discord
-from datetime import datetime
-
-# Importations nécessaires
 import discord
 from discord.ext import tasks
 from datetime import datetime

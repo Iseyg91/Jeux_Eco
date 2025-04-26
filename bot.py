@@ -231,6 +231,8 @@ collection56 = db['cd_tonnerre_attaque'] #Stock les cd de reutillisation du Tonn
 collection57 = db['cd_tonnerre_subis'] #Stock les cd de soumission du Tonnerre Divin
 collection58 = db['cd_eveil_uo'] #Stock les cd d'eveil du Dragon
 collection59 = db['message_jour'] #Stock les message des membres chaque jour
+collection60 = db['cd_wobservation'] #Stock les cd de W Observation
+collection61 = db['cd_observation']
 
 # Fonction pour vérifier si l'utilisateur possède un item (fictif, à adapter à ta DB)
 async def check_user_has_item(user: discord.Member, item_id: int):
@@ -354,7 +356,9 @@ def load_guild_settings(guild_id):
     cd_tonnerre_attaque_data = collection56.find_one({"guild_id": guil_id}) or {}
     cd_tonnerre_subis_data = collection57.find_one({"guild_id": guild_id}) or {}
     cd_eveil_uo_data = collection58.find_one({"guild_id": guild_id}) or {}
-    message_jour_data = collection59.find_one({"guild_i": guild_id}) or {}
+    message_jour_data = collection59.find_one({"guild_id": guild_id}) or {}
+    cd_wobservation_data = collection60.find_one({"guild_id": guild_id}) or {}
+    cd_observation_data = collection61.find_one({"guild_id": guild_id}) or {}
     
     # Débogage : Afficher les données de setup
     print(f"Setup data for guild {guild_id}: {setup_data}")
@@ -418,7 +422,9 @@ def load_guild_settings(guild_id):
         "cd_tonnerre_attaque": cd_tonnerre_attaque_data,
         "cd_tonnerre_subis": cd_tonnerre_subis_data,
         "cd_eveil_uo": cd_eveil_uo_data,
-        "message_jour": message_jour_data
+        "message_jour": message_jour_data,
+        "cd_wobservation": cd_wobservation_data,
+        "cd_observation": cd_observation_data
     }
 
     return combined_data
@@ -484,6 +490,62 @@ COLLECT_ROLES_CONFIG = [
         "role_id": 1355157715550470335,
         "amount": 250,
         "cooldown": 3600,
+        "auto": False,
+        "target": "bank"
+    },
+    {
+        "role_id": 1365683057591582811,
+        "amount": 12500,
+        "cooldown": 43200,
+        "auto": False,
+        "target": "bank"
+    },
+    {
+        "role_id": 1365683477868970204,
+        "amount": 15000,
+        "cooldown": 43200,
+        "auto": False,
+        "target": "bank"
+    },
+    {
+        "role_id": 1365682989996052520,
+        "amount": 5000,
+        "cooldown": 43200,
+        "auto": False,
+        "target": "bank"
+    },
+    {
+        "role_id": 1365683407023243304,
+        "amount": 7500,
+        "cooldown": 43200,
+        "auto": False,
+        "target": "bank"
+    },
+    {
+        "role_id": 1365682918243958826,
+        "amount": 3000,
+        "cooldown": 43200,
+        "auto": False,
+        "target": "bank"
+    },
+    {
+        "role_id": 1365683324831531049,
+        "amount": 5000,
+        "cooldown": 43200,
+        "auto": False,
+        "target": "bank"
+    },
+    {
+        "role_id": 1365682795501977610,
+        "amount": 1000,
+        "cooldown": 43200,
+        "auto": False,
+        "target": "bank"
+    },
+    {
+        "role_id": 1365683175019516054,
+        "amount": 2000,
+        "cooldown": 43200,
         "auto": False,
         "target": "bank"
     },
@@ -9240,6 +9302,229 @@ async def suicide(ctx: commands.Context):
 
     await ctx.send(embed=embed)
 
+@bot.command(name="rayleigh")
+async def rayleigh(ctx):
+    if ctx.guild is None:
+        return await ctx.send("Cette commande doit être utilisée dans un serveur.")
+
+    armement_v1 = 1365698043684327424
+    observation_v1 = 1365698125754404975
+    armement_v2 = 1365699245377847448
+    observation_v2 = 1365699319163785246
+
+    required_roles = [armement_v1, observation_v1]
+
+    # Vérifie que l'auteur a un des deux rôles
+    if not any(role.id in required_roles for role in ctx.author.roles):
+        return await ctx.send("Tu n'as pas le rôle requis pour utiliser cette commande.")
+
+    guild_id = ctx.guild.id
+    user_id = ctx.author.id
+
+    # Fonction pour récupérer ou créer la donnée utilisateur
+    def get_or_create_user_data(guild_id: int, user_id: int):
+        data = collection.find_one({"guild_id": guild_id, "user_id": user_id})
+        if not data:
+            data = {"guild_id": guild_id, "user_id": user_id, "cash": 1500, "bank": 0}
+            collection.insert_one(data)
+        return data
+
+    data = get_or_create_user_data(guild_id, user_id)
+    cash = data.get("cash", 0)
+
+    if cash < 100000:
+        return await ctx.send("Tu n'as pas assez de cash pour apprendre une maîtrise avancée ! (100,000 requis)")
+
+    # Déduction des 100,000 cash
+    collection.update_one(
+        {"guild_id": guild_id, "user_id": user_id},
+        {"$inc": {"cash": -100000}}
+    )
+
+    embed = discord.Embed(color=discord.Color.gold())
+    embed.set_author(name="Maître Rayleigh", icon_url="https://static.wikia.nocookie.net/onepiece/images/3/37/Silvers_Rayleigh_Anime_Pre_Timeskip_Infobox.png")
+
+    # Donne le bon rôle selon celui de base
+    if any(role.id == armement_v1 for role in ctx.author.roles):
+        role = ctx.guild.get_role(armement_v2)
+        await ctx.author.add_roles(role)
+
+        embed.title = "Haki de l'Armement Avancé !"
+        embed.description = (
+            f"**{ctx.author.mention}**, grâce à ton entraînement rigoureux avec Rayleigh, "
+            "tu as débloqué la **version avancée du Haki de l'Armement** ! 💥\n\n"
+            "Ton corps est maintenant capable d'infuser ton Haki de manière offensive. Prépare-toi à écraser tes ennemis !"
+        )
+        embed.set_image(url="https://fictionhorizon.com/wp-content/uploads/2023/03/LuffySilvers.jpg")
+
+    elif any(role.id == observation_v1 for role in ctx.author.roles):
+        role = ctx.guild.get_role(observation_v2)
+        await ctx.author.add_roles(role)
+
+        embed.title = "Haki de l'Observation Avancé !"
+        embed.description = (
+            f"**{ctx.author.mention}**, ton entraînement acharné avec Rayleigh t'a permis de débloquer "
+            "**le Haki de l'Observation avancé** ! 👁️\n\n"
+            "Tu peux désormais prédire les mouvements de tes ennemis avec une précision inégalée."
+        )
+        embed.set_image(url="https://preview.redd.it/a9vxdbetg1pd1.jpeg?auto=webp&s=74386433a136b3c31375ff21a5209c9f2dc26a74")
+
+    else:
+        return await ctx.send("Erreur : aucun rôle de V1 détecté.")
+
+    await ctx.send(embed=embed)
+
+@bot.command()
+async def wobservation(ctx):
+    role_required = 1365389687618928885  # ID du rôle qui peut utiliser la commande
+    role_to_give = 1365720903475925102   # ID du rôle à donner
+    cooldown_duration = 14 * 24 * 60 * 60  # 2 semaines en secondes
+
+    # Vérifie si l'auteur a le bon rôle
+    if role_required not in [role.id for role in ctx.author.roles]:
+        return await ctx.send("🚫 Tu n'as pas le rôle requis pour utiliser cette commande.")
+
+    # Vérifie le cooldown
+    cooldown_data = collection60.find_one({"user_id": ctx.author.id})
+    now = datetime.utcnow()
+
+    if cooldown_data:
+        cooldown_end = cooldown_data.get("cooldown_end")
+        if cooldown_end and now < cooldown_end:
+            remaining = cooldown_end - now
+            minutes, seconds = divmod(remaining.total_seconds(), 60)
+            hours, minutes = divmod(minutes, 60)
+            days, hours = divmod(hours, 24)
+            return await ctx.send(f"⏳ Tu dois encore attendre **{int(days)}j {int(hours)}h {int(minutes)}m** avant de pouvoir réutiliser cette commande.")
+
+    # Donne le rôle
+    role = ctx.guild.get_role(role_to_give)
+    if role is None:
+        return await ctx.send("❌ Le rôle à donner est introuvable.")
+
+    await ctx.author.add_roles(role)
+    await ctx.send(f"✅ {ctx.author.mention} a reçu le rôle {role.mention} pour 1 minute !")
+
+    # Définir le cooldown dans Mongo
+    collection60.update_one(
+        {"user_id": ctx.author.id},
+        {"$set": {"cooldown_end": now + timedelta(seconds=cooldown_duration)}},
+        upsert=True
+    )
+
+    # Attend 1 minute
+    await asyncio.sleep(60)
+
+    # Retirer le rôle
+    await ctx.author.remove_roles(role)
+    try:
+        await ctx.author.send("⏳ Ton rôle d'observation vient d'expirer.")
+    except discord.Forbidden:
+        pass  # DM bloqué, on ignore
+
+# Ton rôle nécessaire renommé ici
+OBSERVATION_ID = 1365698125754404975
+
+# Le rôle à donner temporairement
+TEMP_ROLE_ID = 1365724876689768498
+
+# Cooldown en secondes (1 semaine)
+COOLDOWN_SECONDS = 7 * 24 * 60 * 60  # 604800 secondes
+
+@bot.command(name="observation")
+async def observation(ctx):
+    if not any(role.id == OBSERVATION_ID for role in ctx.author.roles):
+        return await ctx.send("❌ Tu n'as pas le rôle nécessaire pour utiliser cette commande.")
+
+    cooldown_data = collection61.find_one({"user_id": ctx.author.id})
+    now = datetime.utcnow()
+
+    if cooldown_data and cooldown_data.get("next_use") and cooldown_data["next_use"] > now:
+        remaining = cooldown_data["next_use"] - now
+        heures, secondes = divmod(remaining.total_seconds(), 3600)
+        minutes, secondes = divmod(secondes, 60)
+        return await ctx.send(f"⏳ Tu pourras réutiliser cette commande dans {int(heures)}h {int(minutes)}m {int(secondes)}s.")
+
+    role = ctx.guild.get_role(TEMP_ROLE_ID)
+    if not role:
+        return await ctx.send("❌ Rôle temporaire introuvable.")
+
+    try:
+        await ctx.author.add_roles(role)
+        await ctx.send(f"🌀 **Observation activée !** Le rôle te sera retiré dans 10 secondes...")
+        
+        await asyncio.sleep(10)
+
+        await ctx.author.remove_roles(role)
+        await ctx.send("🔚 **Observation terminée !** Le rôle a été retiré.")
+        
+        next_use_time = now + timedelta(seconds=COOLDOWN_SECONDS)
+        collection61.update_one(
+            {"user_id": ctx.author.id},
+            {"$set": {"next_use": next_use_time}},
+            upsert=True
+        )
+
+    except discord.Forbidden:
+        await ctx.send("❌ Je n'ai pas la permission de gérer les rôles.")
+    except Exception as e:
+        await ctx.send(f"❌ Une erreur est survenue: {e}")
+
+NEUTRAL_ROLE_ID = 1365728799832150096
+PIRATE_ROLE_ID = 1365682636957421741
+MARINE_ROLE_ID = 1365631932964012142
+
+class ChooseCamp(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Pirate", style=ButtonStyle.danger)
+    async def pirate_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        member = interaction.user
+        if discord.utils.get(member.roles, id=NEUTRAL_ROLE_ID) is None:
+            await interaction.response.send_message("Tu n'as pas accès à ce choix.", ephemeral=True)
+            return
+        
+        pirate_role = member.guild.get_role(PIRATE_ROLE_ID)
+        neutral_role = member.guild.get_role(NEUTRAL_ROLE_ID)
+
+        await member.add_roles(pirate_role)
+        await member.remove_roles(neutral_role)
+        await interaction.response.send_message("Tu as choisi le camp **Pirate** ! 🏴‍☠️", ephemeral=True)
+
+    @discord.ui.button(label="Marine", style=ButtonStyle.primary)
+    async def marine_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        member = interaction.user
+        if discord.utils.get(member.roles, id=NEUTRAL_ROLE_ID) is None:
+            await interaction.response.send_message("Tu n'as pas accès à ce choix.", ephemeral=True)
+            return
+        
+        marine_role = member.guild.get_role(MARINE_ROLE_ID)
+        neutral_role = member.guild.get_role(NEUTRAL_ROLE_ID)
+
+        await member.add_roles(marine_role)
+        await member.remove_roles(neutral_role)
+        await interaction.response.send_message("Tu as choisi le camp **Marine** ! ⚓", ephemeral=True)
+
+@bot.command()
+async def neutre(ctx):
+    # Vérifie si la personne a le rôle neutre
+    if discord.utils.get(ctx.author.roles, id=NEUTRAL_ROLE_ID) is None:
+        await ctx.send("Tu n'as pas accès à cette commande.")
+        return
+
+    embed = discord.Embed(
+        title="Choisis ton camp !",
+        description=(
+            "Il est temps de choisir ta voie...\n"
+            "**Pirate** 🏴‍☠️ ou **Marine** ⚓ ?\n\n"
+            "Une fois ton choix fait, tu ne pourras pas revenir en arrière facilement !"
+        ),
+        color=discord.Color.blue()
+    )
+    embed.set_image(url="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTdJ8fqMr7UyPIQ5K2lnTKaEcdVktMal6pxaQ&s")
+
+    await ctx.send(embed=embed, view=ChooseCamp())
 
 # Token pour démarrer le bot (à partir des secrets)
 # Lancer le bot avec ton token depuis l'environnement  

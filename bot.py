@@ -904,11 +904,11 @@ async def start_tutorial(thread, user):
         description="Découvre encore plus de moyens de t'amuser et gagner des Ezryn Coins !",
         color=discord.Color.gold()
     )
-    games_embed.add_field(name="🐔 Cock-Fight", value="`!!cf` - Combat de Poulet !", inline=False)
-    games_embed.add_field(name="🃏 Blackjack", value="`!!bj` - Jeux de Carte !", inline=False)
-    games_embed.add_field(name="🎰 Slot Machine", value="`!!sm` - Tente un jeu risqué !", inline=False)
-    games_embed.add_field(name="🔫 Roulette Russe", value="`!!rr` - Joue avec le destin !", inline=False)
-    games_embed.add_field(name="🎡 Roulette", value="`!!roulette` - Fais tourner la roue de la fortune !", inline=False)
+    games_embed.add_field(name="🐔 Cock-Fight", value="`!!cf <amount>` - Combat de Poulet !", inline=False)
+    games_embed.add_field(name="🃏 Blackjack", value="`!!bj <amount>` - Jeux de Carte !", inline=False)
+    games_embed.add_field(name="🎰 Slot Machine", value="`!!sm <amount>` - Tente un jeu risqué !", inline=False)
+    games_embed.add_field(name="🔫 Roulette Russe", value="`!!rr <amount>` - Joue avec le destin !", inline=False)
+    games_embed.add_field(name="🎡 Roulette", value="`!!roulette <amount>` - Fais tourner la roue de la fortune !", inline=False)
     games_embed.set_footer(text="Amuse-toi bien sur Etherya ! 🚀")
 
     await thread.send(embed=games_embed)
@@ -923,8 +923,7 @@ async def send_economy_info(user: discord.Member):
                 "💰 **Comment accéder à l'economie ?**\n➜ <#1355190022047011117>\n\n"
                 "📖 **Informations générales**\n➜ <#1355158018517500086>\n\n"
                 "💰 **Comment gagner des Coins ?**\n➜ <#1355157853299675247>\n\n"
-                "🏦 **Banque de l'Éco 1**\n➜ <#1355158001606066267>\n\n"
-                "🏦 **Banque de l'Éco 2**\n➜ <#1355191522252951573>\n\n"
+                "🏦 **Banque de l'Économie **\n➜ <#1364531840144244819>\n\n"
                 "🎟️ **Ticket Finances** *(Pose tes questions ici !)*\n➜ <#1355157942005006558>\n\n"
                 "📈 **Astuce :** Plus tu en sais, plus tu gagnes ! Alors prends quelques minutes pour lire ces infos. 🚀"
             ),
@@ -1252,9 +1251,10 @@ async def deposit(ctx: commands.Context, amount: str):
         deposit_amount = int(cash)
 
     else:
-        if not amount.isdigit():
+        # Vérification si le montant est valide (positif et numérique)
+        if not amount.isdigit() or int(amount) <= 0:
             embed = discord.Embed(
-                description=f"<:classic_x_mark:1362711858829725729> {user.mention}, montant invalide. Utilise un nombre ou `all`.",
+                description=f"<:classic_x_mark:1362711858829725729> {user.mention}, montant invalide. Utilise un nombre positif ou `all`.",
                 color=discord.Color.red()
             )
             embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
@@ -1262,14 +1262,7 @@ async def deposit(ctx: commands.Context, amount: str):
 
         deposit_amount = int(amount)
 
-        if deposit_amount <= 0:
-            embed = discord.Embed(
-                description=f"<:classic_x_mark:1362711858829725729> {user.mention}, tu dois déposer un montant supérieur à zéro.",
-                color=discord.Color.red()
-            )
-            embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
-            return await ctx.send(embed=embed)
-
+        # Vérifier si l'utilisateur a suffisamment d'argent
         if deposit_amount > cash:
             embed = discord.Embed(
                 description=(
@@ -1320,23 +1313,15 @@ async def withdraw(ctx: commands.Context, amount: str):
         withdrawn_amount = int(bank)
     else:
         # Vérifie que c'est un nombre valide
-        if not amount.isdigit():
+        if not amount.isdigit() or int(amount) <= 0:
             embed = discord.Embed(
-                description="❌ Montant invalide. Utilise un nombre ou `all`.",
+                description="❌ Montant invalide. Utilise un nombre positif ou `all`.",
                 color=discord.Color.red()
             )
             embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
             return await ctx.send(embed=embed)
 
         withdrawn_amount = int(amount)
-
-        if withdrawn_amount <= 0:
-            embed = discord.Embed(
-                description="❌ Tu dois retirer un montant supérieur à zéro.",
-                color=discord.Color.red()
-            )
-            embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
-            return await ctx.send(embed=embed)
 
         if withdrawn_amount > bank:
             embed = discord.Embed(
@@ -1773,14 +1758,14 @@ async def slut(ctx: commands.Context):
 
     if outcome == "gain" or has_special_role:
         messages = [
-            f"<:Check:1362710665663615147> Tu as séduit la bonne personne et reçu **{amount_gain:.1f} <:ecoEther:1341862366249357374>** en cadeau.",
-            f"<:Check:1362710665663615147> Une nuit torride t’a valu **{amount_gain:.1f} <:ecoEther:1341862366249357374>**.",
-            f"<:Check:1362710665663615147> Tu as été payé pour tes charmes : **{amount_gain:.1f} <:ecoEther:1341862366249357374>**.",
-            f"<:Check:1362710665663615147> Ta prestation a fait des ravages, tu gagnes **{amount_gain:.1f} <:ecoEther:1341862366249357374>**.",
-            f"<:Check:1362710665663615147> Ce client généreux t’a offert **{amount_gain:.1f} <:ecoEther:1341862366249357374>**.",
-            f"<:Check:1362710665663615147> Tu as chauffé la salle et récolté **{amount_gain:.1f} <:ecoEther:1341862366249357374>**.",
-            f"<:Check:1362710665663615147> Tes talents ont été récompensés avec **{amount_gain:.1f} <:ecoEther:1341862366249357374>**.",
-            f"<:Check:1362710665663615147> Tu as dominé la scène, et gagné **{amount_gain:.1f} <:ecoEther:1341862366249357374>**.",
+            f"<:Check:1362710665663615147> Tu as séduit la bonne personne et reçu **{int(amount_gain)} <:ecoEther:1341862366249357374>** en cadeau.",
+            f"<:Check:1362710665663615147> Une nuit torride t’a valu **{int(amount_gain)} <:ecoEther:1341862366249357374>**.",
+            f"<:Check:1362710665663615147> Tu as été payé pour tes charmes : **{int(amount_gain)} <:ecoEther:1341862366249357374>**.",
+            f"<:Check:1362710665663615147> Ta prestation a fait des ravages, tu gagnes **{int(amount_gain)} <:ecoEther:1341862366249357374>**.",
+            f"<:Check:1362710665663615147> Ce client généreux t’a offert **{int(amount_gain)} <:ecoEther:1341862366249357374>**.",
+            f"<:Check:1362710665663615147> Tu as chauffé la salle et récolté **{int(amount_gain)} <:ecoEther:1341862366249357374>**.",
+            f"<:Check:1362710665663615147> Tes talents ont été récompensés avec **{int(amount_gain)} <:ecoEther:1341862366249357374>**.",
+            f"<:Check:1362710665663615147> Tu as dominé la scène, et gagné **{int(amount_gain)} <:ecoEther:1341862366249357374>**.",
         ]
         message = random.choice(messages)
 
@@ -1795,13 +1780,13 @@ async def slut(ctx: commands.Context):
 
     else:
         messages = [
-            f"<:classic_x_mark:1362711858829725729> Ton plan a échoué, tu perds **{amount_loss:.1f} <:ecoEther:1341862366249357374>**.",
-            f"<:classic_x_mark:1362711858829725729> Ton client a disparu sans payer. Tu perds **{amount_loss:.1f} <:ecoEther:1341862366249357374>**.",
-            f"<:classic_x_mark:1362711858829725729> T’as glissé pendant ton show… Résultat : **{amount_loss:.1f} <:ecoEther:1341862366249357374>** de frais médicaux.",
-            f"<:classic_x_mark:1362711858829725729> Mauvais choix de client, il t’a volé **{amount_loss:.1f} <:ecoEther:1341862366249357374>**.",
-            f"<:classic_x_mark:1362711858829725729> Une nuit sans succès… Tu perds **{amount_loss:.1f} <:ecoEther:1341862366249357374>**.",
-            f"<:classic_x_mark:1362711858829725729> Ton charme n’a pas opéré… Pertes : **{amount_loss:.1f} <:ecoEther:1341862366249357374>**.",
-            f"<:classic_x_mark:1362711858829725729> Tu as été arnaqué par un faux manager. Tu perds **{amount_loss:.1f} <:ecoEther:1341862366249357374>**.",
+            f"<:classic_x_mark:1362711858829725729> Ton plan a échoué, tu perds **{int(amount_loss)} <:ecoEther:1341862366249357374>**.",
+            f"<:classic_x_mark:1362711858829725729> Ton client a disparu sans payer. Tu perds **{int(amount_loss)} <:ecoEther:1341862366249357374>**.",
+            f"<:classic_x_mark:1362711858829725729> T’as glissé pendant ton show… Résultat : **{int(amount_loss)} <:ecoEther:1341862366249357374>** de frais médicaux.",
+            f"<:classic_x_mark:1362711858829725729> Mauvais choix de client, il t’a volé **{int(amount_loss)} <:ecoEther:1341862366249357374>**.",
+            f"<:classic_x_mark:1362711858829725729> Une nuit sans succès… Tu perds **{int(amount_loss)} <:ecoEther:1341862366249357374>**.",
+            f"<:classic_x_mark:1362711858829725729> Ton charme n’a pas opéré… Pertes : **{int(amount_loss)} <:ecoEther:1341862366249357374>**.",
+            f"<:classic_x_mark:1362711858829725729> Tu as été arnaqué par un faux manager. Tu perds **{int(amount_loss)} <:ecoEther:1341862366249357374>**.",
         ]
         message = random.choice(messages)
 
@@ -2093,14 +2078,11 @@ async def cock_fight(ctx, amount: str):
         await ctx.send(embed=embed)
         return
 
-    # Chance de victoire et série de défaites
+    # Chance de victoire
     win_data = collection6.find_one({"guild_id": guild_id, "user_id": user_id})
     win_chance = win_data.get("win_chance", start_chance)
-    lose_streak = win_data.get("lose_streak", 0)
 
-    # Si 3 défaites d'affilée, victoire garantie
-    force_win = lose_streak >= 3
-    did_win = force_win or random.randint(1, 100) <= win_chance
+    did_win = random.randint(1, 100) <= win_chance
 
     if did_win:
         win_amount = amount
@@ -2114,7 +2096,7 @@ async def cock_fight(ctx, amount: str):
         )
         collection6.update_one(
             {"guild_id": guild_id, "user_id": user_id},
-            {"$set": {"win_chance": new_chance, "lose_streak": 0}},
+            {"$set": {"win_chance": new_chance}},
             upsert=True
         )
 
@@ -2125,10 +2107,7 @@ async def cock_fight(ctx, amount: str):
         )
         embed.set_author(name=str(user), icon_url=user.avatar.url if user.avatar else user.default_avatar.url)
 
-        if force_win:
-            embed.set_footer(text=f"Victoire garantie après 3 défaites consécutives (Pity system)")
-        else:
-            embed.set_footer(text=f"Chicken strength (chance of winning): {new_chance}%")
+        embed.set_footer(text=f"Chicken strength (chance of winning): {new_chance}%")
 
         await ctx.send(embed=embed)
 
@@ -2153,7 +2132,6 @@ async def cock_fight(ctx, amount: str):
             {"guild_id": guild_id, "user_id": user_id},
             {
                 "$set": {"win_chance": start_chance},
-                "$inc": {"lose_streak": 1}
             },
             upsert=True
         )

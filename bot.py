@@ -4108,22 +4108,15 @@ from discord import app_commands
 from discord.ext import commands
 import discord
 
-# Fonction d'autocomplétion pour afficher les 25 premiers items et mettre à jour dynamiquement
 async def item_autocomplete(interaction: discord.Interaction, current: str):
-    # Si l'utilisateur a tapé quelque chose, filtrer les résultats par le nom de l'item
-    if current:
-        items_cursor = collection16.find({"title": {"$regex": current, "$options": "i"}}).limit(25)
-    else:
-        # Sinon, afficher les 25 premiers items
-        items_cursor = collection16.find().limit(25)
+    # On filtre les items qui contiennent ce que l'utilisateur est en train d'écrire
+    results = []
+    for item in ITEMS:
+        if current.lower() in item["title"].lower():
+            results.append(app_commands.Choice(name=item["title"], value=item["title"]))
 
-    choices = []
-
-    # Ajouter les éléments de l'autocomplétion (nom de l'item) dans la liste des choix
-    async for item in items_cursor:
-        choices.append(app_commands.Choice(name=item["title"], value=item["title"]))
-
-    return choices
+    # On limite à 25 résultats max (Discord ne permet pas plus)
+    return results[:25]
 
 # Commande d'achat avec recherche par nom d'item
 @bot.tree.command(name="item-buy", description="Achète un item de la boutique via son nom.")
@@ -4141,7 +4134,7 @@ async def item_buy(interaction: discord.Interaction, item_name: str, quantity: i
             description="Aucun item avec ce nom n'a été trouvé dans la boutique.",
             color=discord.Color.red()
         )
-        return await interaction.response.send_message(embed=embed)
+        return await interaction.response.send_message(embed=embed, ephemeral=True)
 
     if quantity <= 0:
         embed = discord.Embed(
@@ -4149,15 +4142,15 @@ async def item_buy(interaction: discord.Interaction, item_name: str, quantity: i
             description="La quantité doit être supérieure à zéro.",
             color=discord.Color.red()
         )
-        return await interaction.response.send_message(embed=embed)
+        return await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    if item["quantity"] < quantity:
+    if item.get("quantity", 0) < quantity:
         embed = discord.Embed(
             title="<:classic_x_mark:1362711858829725729> Stock insuffisant",
-            description=f"Il ne reste que **{item['quantity']}x** de cet item en stock.",
+            description=f"Il ne reste que **{item.get('quantity', 0)}x** de cet item en stock.",
             color=discord.Color.red()
         )
-        return await interaction.response.send_message(embed=embed)
+        return await interaction.response.send_message(embed=embed, ephemeral=True)
 
     # Vérifier les requirements avant de permettre l'achat
     valid, message = await check_requirements(interaction.user, item.get("requirements", {}))
@@ -4167,20 +4160,20 @@ async def item_buy(interaction: discord.Interaction, item_name: str, quantity: i
             description=message,
             color=discord.Color.red()
         )
-        return await interaction.response.send_message(embed=embed)
+        return await interaction.response.send_message(embed=embed, ephemeral=True)
 
     user_data = collection.find_one({"user_id": user_id, "guild_id": guild_id}) or {"cash": 0}
-    total_price = int(item["price"] * quantity)
+    total_price = int(item["price"]) * quantity
 
-    if user_data["cash"] < total_price:
+    if user_data.get("cash", 0) < total_price:
         embed = discord.Embed(
             title="<:classic_x_mark:1362711858829725729> Fonds insuffisants",
-            description=f"Tu n'as pas assez de <:ecoEther:1341862366249357374> pour cet achat.\nPrix total : **{total_price:,}**",  # Format avec des séparateurs de milliers
+            description=f"Tu n'as pas assez de <:ecoEther:1341862366249357374> pour cet achat.\nPrix total : **{total_price:,}**",
             color=discord.Color.red()
         )
-        return await interaction.response.send_message(embed=embed)
+        return await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    # Retirer l'argent
+    # Retirer l'argent du joueur
     collection.update_one(
         {"user_id": user_id, "guild_id": guild_id},
         {"$inc": {"cash": -total_price}},
@@ -4188,9 +4181,9 @@ async def item_buy(interaction: discord.Interaction, item_name: str, quantity: i
     )
 
     # Mise à jour de l'inventaire simple (collection7)
-    existing = collection7.find_one({"user_id": user_id, "guild_id": guild_id})
-    if existing:
-        inventory = existing.get("items", {})
+    inventory_data = collection7.find_one({"user_id": user_id, "guild_id": guild_id})
+    if inventory_data:
+        inventory = inventory_data.get("items", {})
         inventory[str(item["id"])] = inventory.get(str(item["id"]), 0) + quantity
         collection7.update_one(
             {"user_id": user_id, "guild_id": guild_id},
@@ -4204,16 +4197,17 @@ async def item_buy(interaction: discord.Interaction, item_name: str, quantity: i
         })
 
     # Mise à jour de l'inventaire structuré (collection17)
-    for _ in range(quantity):
-        collection17.insert_one({
-            "guild_id": guild_id,
-            "user_id": user_id,
-            "item_id": item["id"],
-            "item_name": item["title"],
-            "emoji": item.get("emoji"),
-            "price": item["price"],
-            "acquired_at": datetime.utcnow()
-        })
+    documents = [{
+        "guild_id": guild_id,
+        "user_id": user_id,
+        "item_id": item["id"],
+        "item_name": item["title"],
+        "emoji": item.get("emoji"),
+        "price": item["price"],
+        "acquired_at": datetime.utcnow()
+    } for _ in range(quantity)]
+    if documents:
+        collection17.insert_many(documents)
 
     # Mise à jour du stock boutique
     collection16.update_one(
@@ -4221,38 +4215,41 @@ async def item_buy(interaction: discord.Interaction, item_name: str, quantity: i
         {"$inc": {"quantity": -quantity}}
     )
 
-    # Gestion de la suppression des rôles et items si nécessaire
+    # Gestion de la suppression des rôles et items après achat
     if item.get("remove_after_purchase"):
-        if item["remove_after_purchase"].get("roles", False):
+        remove_config = item["remove_after_purchase"]
+
+        if remove_config.get("roles", False) and item.get("role_id"):
             role = discord.utils.get(interaction.guild.roles, id=item["role_id"])
             if role:
                 await interaction.user.remove_roles(role)
                 print(f"Rôle {role.name} supprimé pour {interaction.user.name} après l'achat.")
 
-        if item["remove_after_purchase"].get("items", False):
-            inventory = collection7.find_one({"user_id": user_id, "guild_id": guild_id})
-            if inventory:
-                user_items = inventory.get("items", {})
-                if str(item["id"]) in user_items:
-                    user_items[str(item["id"])] -= quantity
-                    if user_items[str(item["id"])] <= 0:
-                        del user_items[str(item["id"])]
+        if remove_config.get("items", False):
+            inventory_data = collection7.find_one({"user_id": user_id, "guild_id": guild_id})
+            if inventory_data:
+                inventory = inventory_data.get("items", {})
+                if str(item["id"]) in inventory:
+                    inventory[str(item["id"])] -= quantity
+                    if inventory[str(item["id"])] <= 0:
+                        del inventory[str(item["id"])]
                     collection7.update_one(
                         {"user_id": user_id, "guild_id": guild_id},
-                        {"$set": {"items": user_items}}
+                        {"$set": {"items": inventory}}
                     )
                     print(f"{quantity} de l'item {item['title']} supprimé de l'inventaire de {interaction.user.name}.")
 
+    # Envoi du message de succès
     embed = discord.Embed(
         title="<:Check:1362710665663615147> Achat effectué",
         description=(
-            f"Tu as acheté **{quantity}x {item['title']}** {item['emoji']} "
-            f"pour **{total_price:,}** {item['emoji_price']} !"  # Format avec des séparateurs de milliers
+            f"Tu as acheté **{quantity}x {item['title']}** {item.get('emoji', '')} "
+            f"pour **{total_price:,}** {item.get('emoji_price', '')} !"
         ),
         color=discord.Color.green()
     )
-    await interaction.response.send_message(embed=embed)
-
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+    
 @bot.tree.command(name="item-inventory", description="Affiche l'inventaire d'un utilisateur")
 async def item_inventory(interaction: discord.Interaction, user: discord.User = None):
     user = user or interaction.user

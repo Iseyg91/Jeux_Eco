@@ -4293,70 +4293,78 @@ async def item_inventory(interaction: discord.Interaction, user: discord.User = 
 
     await interaction.response.send_message(embed=embed)
 
-@bot.tree.command(name="item-info", description="Affiche toutes les informations d'un item de la boutique")
+# Commande avec autocomplétion
+@bot.tree.command(name="item-info", description="Affiche toutes les informations d'un item de la boutique.")
 @app_commands.describe(id="ID de l'item à consulter")
+@app_commands.autocomplete(id=item_autocomplete)
 async def item_info(interaction: discord.Interaction, id: int):
     item = collection16.find_one({"id": id})
-    
-    if not item:
-        return await interaction.response.send_message("❌ Aucun item trouvé avec cet ID.", ephemeral=True)
 
-    formatted_price = f"{item['price']:,}".replace(",", " ")  # Espace fine insécable
+    if not item:
+        embed = discord.Embed(
+            title="❌ Item introuvable",
+            description="Aucun item trouvé avec cet ID.",
+            color=discord.Color.red()
+        )
+        return await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    formatted_price = f"{item['price']:,}".replace(",", " ")
 
     embed = discord.Embed(
+        title=f"📦 Détails de l'item : {item['title']}",
         color=discord.Color.blue()
     )
-
-    # Garder uniquement cette ligne pour afficher le nom + pp
     embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
 
     embed.add_field(name="**Nom de l'item**", value=item['title'], inline=False)
     embed.add_field(name="**Description**", value=item['description'], inline=False)
-
-    embed.add_field(name="ID", value=str(item["id"]), inline=True)
+    embed.add_field(name="ID", value=str(item['id']), inline=True)
     embed.add_field(name="Prix", value=f"{formatted_price} {item['emoji_price']}", inline=True)
-    embed.add_field(name="Quantité", value=str(item.get("quantity", "Indisponible")), inline=True)
+    embed.add_field(name="Quantité", value=str(item.get('quantity', 'Indisponible')), inline=True)
 
     tradeable = "✅ Oui" if item.get("tradeable", False) else "❌ Non"
     usable = "✅ Oui" if item.get("usable", False) else "❌ Non"
-
     embed.add_field(name="Échangeable", value=tradeable, inline=True)
     embed.add_field(name="Utilisable", value=usable, inline=True)
 
     if item.get("use_effect"):
         embed.add_field(name="Effet à l'utilisation", value=item["use_effect"], inline=False)
 
-    # Vérifier et afficher les prérequis
     if item.get("requirements"):
         requirements = item["requirements"]
         req_message = []
 
-        # Vérifier les rôles requis
         if "roles" in requirements:
             for role_id in requirements["roles"]:
                 role = discord.utils.get(interaction.guild.roles, id=role_id)
                 if role:
-                    req_message.append(f"• Rôle requis: <@&{role_id}> ({role.name})")
+                    req_message.append(f"• Rôle requis : <@&{role_id}> ({role.name})")
                 else:
-                    req_message.append(f"• Rôle requis: <@&{role_id}> (Introuvable)")
+                    req_message.append(f"• Rôle requis : <@&{role_id}> (Introuvable)")
 
-        # Vérifier les items requis
         if "items" in requirements:
             for required_item_id in requirements["items"]:
                 item_in_inventory = await check_user_has_item(interaction.user, required_item_id)
                 if item_in_inventory:
-                    req_message.append(f"• Item requis: ID {required_item_id} (Possédé)")
+                    req_message.append(f"• Item requis : ID {required_item_id} (Possédé)")
                 else:
-                    req_message.append(f"• Item requis: ID {required_item_id} (Non possédé)")
+                    req_message.append(f"• Item requis : ID {required_item_id} (Non possédé)")
 
-        if req_message:
-            embed.add_field(name="Prérequis", value="\n".join(req_message), inline=False)
-        else:
-            embed.add_field(name="Prérequis", value="Aucun prérequis", inline=False)
+        embed.add_field(
+            name="Prérequis",
+            value="\n".join(req_message) if req_message else "Aucun prérequis",
+            inline=False
+        )
+    else:
+        embed.add_field(name="Prérequis", value="Aucun prérequis", inline=False)
 
-    emoji = item["emoji"]
+    emoji = item.get("emoji")
     if emoji:
-        embed.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/{emoji.split(':')[2].split('>')[0]}.png")
+        try:
+            emoji_id = emoji.split(":")[2].split(">")[0]
+            embed.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/{emoji_id}.png")
+        except Exception as e:
+            print(f"Erreur lors de l'extraction de l'emoji : {e}")
 
     embed.set_footer(text="🛒 Etherya • Détails de l'item")
 

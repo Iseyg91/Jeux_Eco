@@ -2544,38 +2544,38 @@ async def blackjack(ctx: commands.Context, mise: str = None):
     player_hand = [draw_card()[0] for _ in range(2)]
     dealer_hand = [draw_card()[0] for _ in range(2)]
 
-embed = discord.Embed(
-    color=discord.Color.blue(),
-    description=(
-        "`hit` - take another card\n"
-        "`stand` - end the game\n\n"
+    embed = discord.Embed(
+        color=discord.Color.blue(),
+        description=(
+            "`hit` - take another card\n"
+            "`stand` - end the game\n\n"
+        )
     )
-)
 
-embed.set_author(
-    name=f"{ctx.author.name}",
-    icon_url=ctx.author.display_avatar.url
-)
+    embed.set_author(
+        name=f"{ctx.author.name}",
+        icon_url=ctx.author.display_avatar.url
+    )
 
-embed.add_field(
-    name="Your Hand",
-    value=" ".join([card_emojis[c][0] for c in player_hand]) + f"\nValue: **{calculate_hand_value(player_hand)}**",
-    inline=True
-)
+    embed.add_field(
+        name="Your Hand",
+        value=" ".join([card_emojis[c][0] for c in player_hand]) + f"\nValue: **{calculate_hand_value(player_hand)}**",
+        inline=True
+    )
 
-embed.add_field(
-    name="Dealer Hand",
-    value=f"{card_emojis[dealer_hand[0]][0]} 🂠\nValue: **?**",
-    inline=True
-)
+    embed.add_field(
+        name="Dealer Hand",
+        value=f"{card_emojis[dealer_hand[0]][0]} 🂠\nValue: **?**",
+        inline=True
+    )
 
-embed.add_field(
-    name="💰 Mise",
-    value=f"{int(mise)} <:ecoEther:1341862366249357374>",
-    inline=False
-)
+    embed.add_field(
+        name="💰 Mise",
+        value=f"{int(mise)} <:ecoEther:1341862366249357374>",
+        inline=False
+    )
 
-await ctx.send(embed=embed, view=BlackjackView(ctx, player_hand, dealer_hand, mise, user_data, max_bet))
+    await ctx.send(embed=embed, view=BlackjackView(ctx, player_hand, dealer_hand, mise, user_data, max_bet))
 
 
 @bot.command(name="bj-max-mise", aliases=["set-max-bj"])

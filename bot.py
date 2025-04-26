@@ -2446,52 +2446,45 @@ class BlackjackView(discord.ui.View):
         else:
             await self.end_game(interaction, "lose")
 
-# Correction dans end_game
-async def end_game(self, interaction: discord.Interaction, result: str):
-    player_total = calculate_hand_value(self.player_hand)
-    dealer_total = calculate_hand_value(self.dealer_hand)
+    async def end_game(self, interaction: discord.Interaction, result: str):
+        player_total = calculate_hand_value(self.player_hand)
+        dealer_total = calculate_hand_value(self.dealer_hand)
 
-    # Détermine la couleur et le texte selon le résultat
-    if result == "win":
-        color = discord.Color.green()
-        result_text = f"Result: Dealer bust <:ecoEther:1341862366249357374> +{self.bet}"
-    elif result == "lose":
-        color = discord.Color.red()
-        result_text = f"Result: Loss <:ecoEther:1341862366249357374> -{self.bet}"
-    else:  # égalité
-        color = discord.Color.gold()
-        result_text = "Result: Draw"
+        # Détermine la couleur et le texte selon le résultat
+        if result == "win":
+            color = discord.Color.green()
+            result_text = f"Result: Dealer bust <:ecoEther:1341862366249357374> +{self.bet}"
+        elif result == "lose":
+            color = discord.Color.red()
+            result_text = f"Result: Loss <:ecoEther:1341862366249357374> -{self.bet}"
+        else:  # égalité
+            color = discord.Color.gold()
+            result_text = "Result: Draw"
 
-    embed = discord.Embed(
-        color=color,
-        description=result_text
-    )
+        embed = discord.Embed(
+            color=color,
+            description=result_text
+        )
 
-    embed.set_author(
-        name=f"{interaction.user.name}",
-        icon_url=interaction.user.display_avatar.url
-    )
+        embed.set_author(
+            name=f"{interaction.user.name}",
+            icon_url=interaction.user.display_avatar.url
+        )
 
-    embed.add_field(
-        name="Your Hand",
-        value=" ".join([card_emojis[c][0] for c in self.player_hand]) + f"\nValue: **{calculate_hand_value(self.player_hand)}**",
-        inline=True
-    )
+        embed.add_field(
+            name="Your Hand",
+            value=" ".join([card_emojis[c][0] for c in self.player_hand]) + f"\nValue: **{calculate_hand_value(self.player_hand)}**",
+            inline=True
+        )
 
-    embed.add_field(
-        name="Dealer Hand",
-        value=" ".join([card_emojis[c][0] for c in self.dealer_hand]) + f"\nValue: **{calculate_hand_value(self.dealer_hand)}**",
-        inline=True
-    )
+        embed.add_field(
+            name="Dealer Hand",
+            value=" ".join([card_emojis[c][0] for c in self.dealer_hand]) + f"\nValue: **{calculate_hand_value(self.dealer_hand)}**",
+            inline=True
+        )
 
-    embed.add_field(
-        name="💰 Mise",
-        value=f"{int(self.bet)} <:ecoEther:1341862366249357374>",
-        inline=False
-    )
-
-    # Maintenant vous pouvez utiliser await correctement
-    await interaction.response.edit_message(embed=embed, view=None)
+        # Maintenant vous pouvez utiliser await correctement
+        await interaction.response.edit_message(embed=embed, view=None)
 
 # Lorsqu'un joueur joue au blackjack
 @bot.hybrid_command(name="blackjack", aliases=["bj"], description="Joue au blackjack et tente de gagner !")

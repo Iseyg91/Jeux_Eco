@@ -204,6 +204,7 @@ collection55 = db['cd_bourrasque_subis'] #Stock le cd de soumission du Uo Uo no 
 collection56 = db['cd_tonnerre_attaque'] #Stock les cd de reutillisation du Tonnerre Divin
 collection57 = db['cd_tonnerre_subis'] #Stock les cd de soumission du Tonnerre Divin
 collection58 = db['cd_eveil_uo'] #Stock les cd d'eveil du Dragon
+collection59 = db['message_jour'] #Stock les message des membres chaque jour
 
 # Fonction pour vérifier si l'utilisateur possède un item (fictif, à adapter à ta DB)
 async def check_user_has_item(user: discord.Member, item_id: int):
@@ -327,6 +328,7 @@ def load_guild_settings(guild_id):
     cd_tonnerre_attaque_data = collection56.find_one({"guild_id": guil_id}) or {}
     cd_tonnerre_subis_data = collection57.find_one({"guild_id": guild_id}) or {}
     cd_eveil_uo_data = collection58.find_one({"guild_id": guild_id}) or {}
+    message_jour_data = collection59.find_one({"guild_i": guild_id}) or {}
     
     # Débogage : Afficher les données de setup
     print(f"Setup data for guild {guild_id}: {setup_data}")
@@ -389,7 +391,8 @@ def load_guild_settings(guild_id):
         "cd_bourrasque_subis": cd_bourrasque_subis_data,
         "cd_tonnerre_attaque": cd_tonnerre_attaque_data,
         "cd_tonnerre_subis": cd_tonnerre_subis_data,
-        "cd_eveil_uo": cd_eveil_uo_data
+        "cd_eveil_uo": cd_eveil_uo_data,
+        "message_jour": message_jour_data
     }
 
     return combined_data
@@ -417,10 +420,10 @@ def get_start_date(guild_id):
 
 # === CONFIGURATION DES RÉCOMPENSES PAR JOUR ===
 daily_rewards = {
-    1: {"coins": 1500, "badge": None, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.1.png?raw=true"},
-    2: {"coins": 2500, "badge": None, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.2.png?raw=true"},
-    3: {"coins": 3500, "badge": 4, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.3.png?raw=true"},
-    4: {"coins": 4500, "badge": None, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.4.png?raw=true"},
+    1: {"coins": 1500, "badge": None, "item": None, "image_url": "https://github.com/Iseyg91/Shadow/blob/main/Season%20Beta/image.1.png?raw=true"},
+    2: {"coins": 2500, "badge": None, "item": None, "image_url": "https://github.com/Iseyg91/Shadow/blob/main/Season%20Beta/image.2.png?raw=true"},
+    3: {"coins": 3500, "badge": 4, "item": None, "image_url": "https://github.com/Iseyg91/Shadow/blob/main/Season%20Beta/image.3.png?raw=true"},
+    4: {"coins": 4500, "badge": None, "item": None, "image_url": "https://github.com/Iseyg91/Shadow/blob/main/Season%20Beta/image.4.png?raw=true"},
     5: {
         "coins": 5500,
         "badge": None,
@@ -437,10 +440,10 @@ daily_rewards = {
             {"id": 805, "chance": 0},    # Nika
             {"id": 806, "chance": 0}     # Uo
         ],
-        "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.5.png?raw=true"
+        "image_url": "https://github.com/Iseyg91/Shadow/blob/main/Season%20Beta/image.5.png?raw=true"
     },
-    6: {"coins": 6500, "badge": None, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.6.png?raw=true"},
-    7: {"coins": 7500, "badge": 3, "item": None, "image_url": "https://github.com/Iseyg91/Isey_aime_Cass/blob/main/IMAGE%20SEASON/image.7.png?raw=true"}
+    6: {"coins": 6500, "badge": None, "item": None, "image_url": "https://github.com/Iseyg91/Shadow/blob/main/Season%20Beta/image.6.png?raw=true"},
+    7: {"coins": 7500, "badge": 3, "item": None, "image_url": "https://github.com/Iseyg91/Shadow/blob/main/Season%20Beta/image.7.png?raw=true"}
 }
 
 TOP_ROLES = {
@@ -505,6 +508,20 @@ COLLECT_ROLES_CONFIG = [
         "percent": -70,
         "cooldown": 86400,
         "auto": True,
+        "target": "bank"
+    },
+    {
+        "role_id": 1355903910635770098,
+        "amount": 5000,
+        "cooldown": 86400,
+        "auto": False,
+        "target": "bank"
+    },
+    {
+        "role_id": 1034546767104069663,
+        "amount": 2500,
+        "cooldown": 7200,
+        "auto": False,
         "target": "bank"
     },
     {
@@ -584,8 +601,16 @@ from discord.ext import tasks
 import discord
 from datetime import datetime
 
-from datetime import datetime
+# Importations nécessaires
+import discord
 from discord.ext import tasks
+from datetime import datetime
+import time
+
+# --- Tâche quotidienne à minuit ---
+@tasks.loop(hours=24)
+async def task_annonce_jour():
+    await annoncer_message_du_jour()
 
 # --- Boucle suppression des rôles Bourrasque ---
 @tasks.loop(minutes=10)
@@ -608,7 +633,6 @@ async def remove_bourrasque_roles():
         # Supprime l'entrée après retrait
         collection54.delete_one({"_id": doc["_id"]})
 
-
 # --- Boucle suppression des rôles de gel économique ---
 @tasks.loop(minutes=30)
 async def remove_glace_roles():
@@ -625,8 +649,7 @@ async def remove_glace_roles():
                 await member.remove_roles(role, reason="Fin du gel économique")
         collection43.delete_one({"user_id": user_data["user_id"]})
 
-
-# --- Commande pour réinitialiser les primes et honneurs chaque semaine ---
+# --- Boucle réinitialisation des primes et honneurs ---
 @tasks.loop(hours=168)
 async def reset_bounties_and_honor():
     collection37.update_many({}, {"$set": {"bounty": 50}})
@@ -636,7 +659,6 @@ async def reset_bounties_and_honor():
 async def redistribute_roles():
     # Logique pour réattribuer les rôles en fonction de la prime ou de l'honneur
     pass
-
 
 # --- Boucle auto-collecte ---
 @tasks.loop(seconds=60)
@@ -686,7 +708,6 @@ async def auto_collect_loop():
                         after = eco_data[config["target"]]
                         await log_eco_channel(bot, guild.id, member, f"Auto Collect ({role.name})", config.get("amount", config.get("percent")), before, after, note="Collect automatique")
 
-
 # --- Boucle Top Roles ---
 @tasks.loop(seconds=5)
 async def update_top_roles():
@@ -722,7 +743,6 @@ async def update_top_roles():
                     await member.remove_roles(role)
                     print(f"Retiré {role.name} de {member.display_name}")
 
-
 # --- Initialisation au démarrage ---
 @bot.event
 async def on_ready():
@@ -747,8 +767,10 @@ async def on_ready():
     except Exception as e:
         print(f"❌ Erreur de synchronisation des commandes slash : {e}")
 
-
+# --- Démarrer les tâches en arrière-plan ---
 async def start_background_tasks():
+    if not task_annonce_jour.is_running():
+        task_annonce_jour.start()
     if not reset_bounties_and_honor.is_running():
         reset_bounties_and_honor.start()
     if not auto_collect_loop.is_running():
@@ -774,20 +796,62 @@ async def on_error(event, *args, **kwargs):
     except Exception:
         pass
 
+# Fonction pour enregistrer un message du joueur dans la base de données
+async def enregistrer_message_jour(user_id, message):
+    date_aujourdhui = datetime.utcnow().strftime('%Y-%m-%d')
+    collection.update_one(
+        {"user_id": user_id, "date": date_aujourdhui},
+        {"$set": {"message": message}},
+        upsert=True
+    )
+
+# Fonction pour envoyer un message à 00h00
+async def annoncer_message_du_jour():
+    date_aujourdhui = datetime.utcnow().strftime('%Y-%m-%d')
+    messages = collection.find({"date": date_aujourdhui})
+
+    for msg in messages:
+        user_id = msg["user_id"]
+        message = msg["message"]
+        # Annonce dans le salon spécifique
+        channel = bot.get_channel(1355158101447147551)  # ID du salon
+        user = bot.get_user(user_id)
+        if user:
+            content = f"Le <@&1355903910635770098> est ||<@{user.id}>||, félicitations à lui."
+            msg = await channel.send(content)
+            await msg.add_reaction("<:chat:1362467870348410900>")
+
+            # Retirer le rôle à 23h59
+            await retirer_role(user)
+
+# Fonction pour retirer le rôle à 23h59
+async def retirer_role(user):
+    role = discord.utils.get(user.guild.roles, id=1355903910635770098)  # ID du rôle à retirer
+    if role:
+        await user.remove_roles(role)
+        print(f"Rôle retiré de {user.name} à 23h59.")
+
+# Fonction pour obtenir les informations de partenariat
+def get_user_partner_info(user_id):
+    # Logique fictive pour récupérer le rang et le nombre de partenariats de l'utilisateur
+    # Remplace par la logique de ton application
+    rank = "Gold"  # Exemple
+    partnerships = 5  # Exemple
+    return rank, partnerships
+
+# Événement sur la réception d'un message
 @bot.event
 async def on_message(message):
-    # Ignorer les messages du bot lui-même
-    if message.author.bot:
+    # Empêche le bot de répondre à ses propres messages pour éviter une boucle infinie
+    if message.author == bot.user:
         return
 
-    # Obtenir les informations de l'utilisateur
-    user = message.author
-    guild_id = message.guild.id
-    user_id = user.id
+    # Enregistrer le message du jour pour chaque utilisateur
+    await enregistrer_message_jour(message.author.id, message.content)
 
-    # 📦 3. Gestion des partenariats
+    # Gestion des partenariats dans un salon spécifique
     if message.channel.id == partnership_channel_id:
-        rank, partnerships = get_user_partner_info(user_id)
+        rank, partnerships = get_user_partner_info(message.author.id)
 
         await message.channel.send("<@&1355157749994098860>")
 
@@ -805,17 +869,19 @@ async def on_message(message):
         )
         await message.channel.send(embed=embed)
 
-    # Générer un montant aléatoire entre 5 et 20 coins
+    # Générer un montant aléatoire entre 5 et 20 coins pour l'utilisateur
     coins_to_add = random.randint(5, 20)
 
     # Ajouter les coins au portefeuille de l'utilisateur
+    guild_id = message.guild.id
+    user_id = message.author.id
     collection.update_one(
         {"guild_id": guild_id, "user_id": user_id},
         {"$inc": {"wallet": coins_to_add}},
         upsert=True
     )
 
-    # Appeler le traitement habituel des commandes
+    # Permet à la commande de continuer à fonctionner si d'autres événements sont enregistrés
     await bot.process_commands(message)
 
 #Bienvenue : Message de Bienvenue + Ghost Ping Join
@@ -2612,7 +2678,7 @@ async def set_max_bj_mise_error(ctx, error):
         )
         await ctx.send(embed=embed)
 
-@bot.hybrid_command(name="rob", description="Voler entre 1% et 50% du portefeuille d'un autre utilisateur.")
+@bot.hybrid_command(name="rob", description="Voler entre 30% et 80% du portefeuille d'un autre utilisateur.")
 async def rob(ctx, user: discord.User):
     guild_id = ctx.guild.id
     user_id = ctx.author.id
@@ -2716,7 +2782,7 @@ async def rob(ctx, user: discord.User):
     )
 
     if success:
-        percentage = random.randint(1, 50)
+        percentage = random.randint(30, 80)
         stolen = (percentage / 100) * target_data["cash"]
 
         if has_half_rob_protection:

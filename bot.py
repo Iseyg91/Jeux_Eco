@@ -9497,5 +9497,4 @@ async def neutre(ctx):
     await ctx.send(embed=embed, view=ChooseCamp(ctx.author.id))
 # Token pour démarrer le bot (à partir des secrets)
 # Lancer le bot avec ton token depuis l'environnement  
-keep_alive()
 bot.run(token)

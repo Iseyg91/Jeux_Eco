@@ -723,6 +723,16 @@ async def auto_collect_loop():
                         after = eco_data[config["target"]]
                         await log_eco_channel(bot, guild.id, member, f"Auto Collect ({role.name})", config.get("amount", config.get("percent")), before, after, note="Collect automatique")
 
+import asyncio
+import discord
+from discord.errors import DiscordServerError
+
+TOP_ROLES = {
+    1: 1363923497885237298,  # ID du rôle Top 1
+    2: 1363923494504501510,  # ID du rôle Top 2
+    3: 1363923356688056401,  # ID du rôle Top 3
+}
+
 # --- Boucle Top Roles ---
 @tasks.loop(seconds=5)
 async def update_top_roles():
@@ -743,7 +753,10 @@ async def update_top_roles():
                 continue
 
             try:
-                member = await guild.fetch_member(user_id)
+                member = await fetch_member_with_retry(guild, user_id)
+                if not member:
+                    print(f"Impossible de récupérer le membre {user_id} dans {guild.name}.")
+                    continue
             except discord.NotFound:
                 print(f"Membre {user_id} non trouvé dans {guild.name}")
                 continue
@@ -760,6 +773,21 @@ async def update_top_roles():
                 if member.id not in [u["user_id"] for u in top_users]:
                     await member.remove_roles(role)
                     print(f"Retiré {role.name} de {member.display_name}")
+
+# Fonction de réessai pour récupérer un membre
+async def fetch_member_with_retry(guild, user_id, retries=5, delay=5):
+    for attempt in range(retries):
+        try:
+            member = await guild.fetch_member(user_id)
+            return member
+        except discord.NotFound:
+            # Si le membre n'est pas trouvé, on arrête le réessai
+            return None
+        except DiscordServerError as e:
+            print(f"Erreur lors de la récupération du membre {user_id}: {e}. Tentative de réessai...")
+            await asyncio.sleep(delay)  # Attendre avant de réessayer
+    print(f"Échec de la récupération du membre {user_id} après {retries} tentatives.")
+    return None
 
 # --- Initialisation au démarrage ---
 @bot.event

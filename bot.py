@@ -49,110 +49,6 @@ ETHERYA_SERVER_ID = 1034007767050104892
 AUTORIZED_SERVER_ID = 1034007767050104892
 WELCOME_CHANNEL_ID = 1355198748296351854
 
-# --- ID Etherya Pouvoir ---
-# -- Oeil Démoniaque --
-OEIL_ID = 1363949082653098094
-ROLE_ID = 1364123507532890182
-# -- Float --
-FLOAT_ID = 1363946902730575953
-ROLE_FLOAT_ID = 1364121382908067890
-# -- Pokeball --
-POKEBALL_ID = 1363942048075481379
-# -- Infini --
-INFINI_ID = [1363939565336920084, 1363939567627145660, 1363939486844850388]
-ANTI_ROB_ROLE = 1363964754678513664
-# -- Armure du Berserker --
-ARMURE_ID = 1363821649002238142
-ANTI_ROB_ID = 1363964754678513664
-# -- Rage du Berserker --
-RAGE_ID = 1363821333624127618
-ECLIPSE_ROLE_ID = 1364115033197510656
-# -- Ultra Instinct --
-ULTRA_ID = 1363821033060307106
-# -- Haki des Rois --
-HAKI_ROI_ID = 1363817645249527879
-HAKI_SUBIS_ID = 1364109450197078026
-# -- Arme Démoniaque Impérial --
-ARME_DEMONIAQUE_ID = 1363817586466361514
-# -- Heal (Appel de l'exorciste) --
-HEAL_ID = 1363873859912335400
-MALUS_ROLE_ID = 1363969965572755537
-# -- Benediction --
-BENEDICTION_ROLE_ID = 1364294230343684137
-
-# --- ID Etherya Nen ---
-# Rôle autorisé à utiliser le Nen
-PERMISSION_ROLE_ID = 1363928528587984998
-# ID de l'item requis
-LICENSE_ITEM_ID = 7
-# Roles par type de Nen
-nen_roles = {
-    "renforcement": 1363306813688381681,
-    "emission": 1363817609916584057,
-    "manipulation": 1363817536348749875,
-    "materialisation": 1363817636793810966,
-    "transformation": 1363817619529924740,
-    "specialisation": 1363817593252876368,
-}
-
-# Chances de drop en %
-nen_drop_rates = [
-    ("renforcement", 24.5),
-    ("emission", 24.5),
-    ("manipulation", 16.5),
-    ("materialisation", 16.5),
-    ("transformation", 17.5),
-    ("specialisation", 0.5),
-]
-# -- Materialisation --
-MATERIALISATION_IDS = [1363817636793810966, 1363817593252876368]
-# IDs d'items interdits à la matérialisation
-ITEMS_INTERDITS = [202, 197, 425, 736, 872, 964, 987]
-# -- Manipulation --
-MANIPULATION_ROLE_ID = 1363974710739861676
-AUTHORIZED_MANI_IDS = [1363817593252876368, 1363817536348749875]
-# -- Emission --
-EMISSION_IDS = [1363817593252876368, 1363817609916584057]
-TARGET_ROLE_ID = 1363969965572755537 
-# -- Renforcement --
-RENFORCEMENT_IDS = [1363306813688381681, 1363817593252876368]
-RENFORCEMENT_ROLE_ID = 1363306813688381681 
-
-# --- ID Etherya Fruits du Démon ---
-ROLE_UTILISATEUR_GLACE = 1365311608259346462
-ROLE_GEL = 1365313259280007168
-
-# --- ID Etherya Pirates & Marines ---
-# Roles
-marine_roles = {
-    "Amiral en chef": 1365683477868970204,
-    "Commandant": 1365683407023243304,
-    "Lieutenant": 1365683324831531049,
-    "Matelot": 1365683175019516054,
-}
-
-pirate_roles = {
-    "Roi des Pirates": 1365682989996052520,
-    "Yonko": 1365682989996052520,
-    "Corsaire": 1365682918243958826,
-    "Pirate": 1365682795501977610,
-}
-
-log_channels = {
-    "sanctions": 1365674258591912018,
-    "messages": 1365674387700977684,
-    "utilisateurs": 1365674425394921602,
-    "nicknames": 1365674498791051394,
-    "roles": 1365674530793586758,
-    "vocal": 1365674563458826271,
-    "serveur": 1365674597692997662,
-    "permissions": 1365674740915765278,
-    "channels": 1365674773107052644,
-    "webhooks": 1365674805143146506,
-    "bots": 1365674841344049162,
-    "boosts": 1365674914740441158
-}
-
 def get_log_channel(guild, key):
     log_channel_id = log_channels.get(key)
     if log_channel_id:
@@ -187,52 +83,7 @@ collection12 = db['info_roulette'] #Stock les Info de SM
 collection13 = db['info_sm'] #Stock les Info de SM
 collection14 = db['ether_rob'] #Stock les cd de Rob
 collection15 = db['anti_rob'] #Stock les rôle anti-rob
-collection16 = db['ether_boutique'] #Stock les Items dans la boutique
-collection17 = db['joueur_ether_inventaire'] #Stock les items de joueurs
-collection18 = db['ether_effects'] #Stock les effets
-collection19 = db['ether_badge'] #Stock les bagde
-collection20 = db['inventaire_badge'] #Stock les bagde des joueurs
 collection21 = db['daily_badge'] #Stock les cd des daily badge
-collection22 = db['start_date'] #Stock la date de commencemant des rewards
-collection23 = db['joueur_rewards'] #Stock ou les joueurs sont
-collection24 = db['cd_renforcement'] #Stock les cd
-collection25 = db['cd_emission'] #Stock les cd
-collection26 = db['cd_manipulation'] #Stock les cd
-collection27 = db['cd_materialisation'] #Stock les cd
-collection28 = db['cd_transformation'] #Stock les cd
-collection29 = db['cd_specialisation'] #Stock les cd
-collection30 = db['cd_haki_attaque'] #Stock les cd
-collection31 = db['cd_haki_subis'] #Stock les cd
-collection32 = db['ether_quetes'] #Stock les quetes
-collection33 = db['inventory_collect'] #Stock les items de quetes
-collection34 = db['collect_items'] #Stock les items collector
-collection35 = db['ether_guild'] #Stock les Guild
-collection36 = db['guild_inventaire'] #Stock les inventaire de Guild
-collection37 = db['ether_bounty'] #Stock les Primes de Pirates
-collection38 = db['ether_honor'] #Stock les Honor des Marines
-collection39 = db['cd_capture_ether'] #Stock les cd d'attaque
-collection40 = db['cd_bombe'] #Stock les cd des bombes
-collection41 = db['cd_gura'] #Stock les cd de seismes
-collection42 = db['cd_glace'] #Stock les cd d'attaque de glace
-collection43 = db['glace_subis'] #Stock le cd avant de retirer le rôle de subis de glace
-collection44 = db['cd_tenebre'] #Stock les cd de Yami
-collection45 = db['cd_protection_tenebre'] #Stock le temps de protection de Yami
-collection46 = db['cd_gear_second'] #Stock le cd des Gear Second
-collection47 = db['cd_gear_fourth'] #Stock les cd des Gear Fourth
-collection48 = db['cd_use_fourth'] #Stock les cd des utilisation du Gear Fourth
-collection49 = db['cd_royaume_nika'] #Stock le cd des utilisation du Royaume
-collection50 = db['cd_acces_royaume'] #Stock le cd d'acces au Royaume
-collection51 = db['cd_nika_collect'] #Stock le cd de reutilisation du Nika Collect
-collection52 = db['cd_eveil_attaque'] #Stock le cd de reutilisation du Nika Eveil
-collection53 = db['cd_eveil_subis'] #Stock le cd de soumission du Nika Eveil
-collection54 = db['cd_bourrasque'] #Stock le cd de reutilisation du Uo Uo no Mi
-collection55 = db['cd_bourrasque_subis'] #Stock le cd de soumission du Uo Uo no Mi
-collection56 = db['cd_tonnerre_attaque'] #Stock les cd de reutillisation du Tonnerre Divin
-collection57 = db['cd_tonnerre_subis'] #Stock les cd de soumission du Tonnerre Divin
-collection58 = db['cd_eveil_uo'] #Stock les cd d'eveil du Dragon
-collection59 = db['message_jour'] #Stock les message des membres chaque jour
-collection60 = db['cd_wobservation'] #Stock les cd de W Observation
-collection61 = db['cd_observation']
 
 # Fonction pour vérifier si l'utilisateur possède un item (fictif, à adapter à ta DB)
 async def check_user_has_item(user: discord.Member, item_id: int):
@@ -313,52 +164,7 @@ def load_guild_settings(guild_id):
     info_sm_roulette_data = collection13.find_one({"guild_id": guild_id}) or {}
     ether_rob_data = collection14.find_one({"guild_id": guild_id}) or {}
     anti_rob_data = collection15.find_one({"guild_id": guild_id}) or {}
-    ether_boutique_data = collection16.find_one({"guild_id": guild_id}) or {}
-    joueur_ether_inventaire_data = collection17.find_one({"guild_id": guild_id}) or {}
-    ether_effects_data = collection18.find_one({"guild_id": guild_id}) or {}
-    ether_badge_data = collection19.find_one({"guild_id": guild_id}) or {}
-    inventaire_badge_data = collection20.find_one({"guild_id": guild_id}) or {}
     daily_badge_data = collection21.find_one({"guild_id": guild_id}) or {}
-    start_date_data = collection22.find_one({"guild_id": guild_id}) or {}
-    joueur_rewards_data = collection23.find_one({"guild_id": guild_id}) or {}
-    cd_renforcement_data = collection24.find_one({"guild_id": guild_id}) or {}
-    cd_emission_data = collection25.find_one({"guild_id": guild_id}) or {}
-    cd_manipultation_data = collection26.find_one({"guild_id": guild_id}) or {}
-    cd_materialisation_data = collection27.find_one({"guidl_id": guild_id}) or {}
-    cd_transformation_data = collection28.find_one({"guild_id": guild_id}) or {}
-    cd_specialisation_data = collection29.find_one({"guild_id": guild_id}) or {}
-    cd_haki_attaque_data = collection30.find_one({"guild_id": guild_id}) or {}
-    cd_haki_subis_data = collection31.find_one({"guild_id": guild_id}) or {}
-    ether_quetes_data = collection32.find_one({"guild_id": guild_id}) or {}
-    inventory_collect_data = collection33.find_one({"guild_id": guild_id}) or {}
-    collect_items_data = collection34.find_one({"guild_id": guild_id}) or {}
-    ether_guild_data = collection35.find_one({"guild_id": guild_id}) or {}
-    guild_inventaire_data = collection36.find_one({"guild_id": guild_id}) or {}
-    ether_bounty_data = collection37.find_one({"guild_id": guild_id}) or {}
-    ether_honnor_data = collection38.find_one({"guild_id": guild_id}) or {}
-    cd_capture_ether_data = collection39.find_one({"guild_id": guild_id}) or {}
-    cd_bombe_data = collection40.find_one({"guild_id": guild_id}) or {}
-    cd_gura_data = collection41.find_one({"guild_id": guild_id}) or {}
-    cd_glace_data = collection42.fing_one({"guild_id": guild_id}) or {}
-    glace_subis_data = collection43.find_one({"guild_id": guild_id}) or {}
-    cd_tenebre_data = collection44.find_one({"guild_id": guild_id}) or {}
-    cd_protection_tenebre_data = collection45.find_one({"guild_id": guild_id}) or {}
-    cd_gear_second_data = collection46.find_one({"guild_id": guild_id}) or {}
-    cd_gear_fourth_data = collection47.find_one({"guild_id": guild_id}) or {}
-    cd_use_fourth_data = collection48.find_one({"guild_id": guild_id}) or {}
-    cd_royaume_nika_data = collection49.find_one({"guild_id": guild_id}) or {}
-    cd_acces_royaume_data = collection50.find_one({"guild_id": guild_id}) or {}
-    cd_nika_collect_data = collection51.find_one({"guild_id": guild_id}) or {}
-    cd_eveil_attaque_data = collection52.find_one({"guild_id": guild_id}) or {}
-    cd_eveil_subis_data = collection53.find_one({"guild_id": guild_id}) or {}
-    cd_bourrasque_data = collection54.find_one({"guild_id": guild_id}) or {}
-    cd_bourrasque_subis_data = collection55.find_one({"guild_id": guild_id}) or {}
-    cd_tonnerre_attaque_data = collection56.find_one({"guild_id": guil_id}) or {}
-    cd_tonnerre_subis_data = collection57.find_one({"guild_id": guild_id}) or {}
-    cd_eveil_uo_data = collection58.find_one({"guild_id": guild_id}) or {}
-    message_jour_data = collection59.find_one({"guild_id": guild_id}) or {}
-    cd_wobservation_data = collection60.find_one({"guild_id": guild_id}) or {}
-    cd_observation_data = collection61.find_one({"guild_id": guild_id}) or {}
     
     # Débogage : Afficher les données de setup
     print(f"Setup data for guild {guild_id}: {setup_data}")
@@ -379,52 +185,7 @@ def load_guild_settings(guild_id):
         "info_sm": info_sm_data,
         "ether_rob": ether_rob_data,
         "anti_rob": anti_rob_data,
-        "ether_boutique": ether_boutique_data,
-        "joueur_ether_inventaire": joueur_ether_inventaire_data,
-        "ether_effects": ether_effects_data,
-        "ether_badge": ether_badge_data,
-        "inventaire_badge": inventaire_badge_data,
-        "daily_badge": daily_badge_data,
-        "start_date": start_date_data,
-        "joueur_rewards": joueur_rewards_data,
-        "cd_renforcement": cd_renforcement_data,
-        "cd_emission": cd_emission_data,
-        "cd_manipultation": cd_manipultation_data,
-        "cd_materialisation": cd_materialisation_data,
-        "cd_transformation" : cd_transformation_data,
-        "cd_specialisation" : cd_specialisation_data,
-        "cd_haki_attaque": cd_haki_attaque_data,
-        "cd_haki_subis": cd_haki_subis_data,
-        "ether_quetes": ether_quetes_data,
-        "inventory_collect": inventory_collect_data,
-        "collect_items": collect_items_data,
-        "ether_guild": ether_guild_data,
-        "guild_inventaire": guild_inventaire_data,
-        "ether_bounty": ether_bounty_data,
-        "ether_honnor": ether_honnor_data,
-        "cd_capture_ether": cd_capture_ether_data,
-        "cd_bombe": cd_bombe_data,
-        "cd_gura": cd_gura_data,
-        "cd_glace": cd_glace_data,
-        "glace_subis": glace_subis_data,
-        "cd_tenebre": cd_tenebre_data,
-        "cd_protection_tenebre": cd_protection_tenebre_data,
-        "cd_gear_second": cd_gear_second_data,
-        "cd_gear_fourth": cd_gear_fourth_data,
-        "cd_use_fourth": cd_use_fourth_data,
-        "cd_royaume_nika": cd_royaume_nika_data,
-        "cd_acces_royaume": cd_acces_royaume_data,
-        "cd_nika_collect": cd_nika_collect_data,
-        "cd_eveil_attaque": cd_eveil_attaque_data,
-        "cd_eveil_subis": cd_eveil_subis_data,
-        "cd_bourrasque": cd_bourrasque_data,
-        "cd_bourrasque_subis": cd_bourrasque_subis_data,
-        "cd_tonnerre_attaque": cd_tonnerre_attaque_data,
-        "cd_tonnerre_subis": cd_tonnerre_subis_data,
-        "cd_eveil_uo": cd_eveil_uo_data,
-        "message_jour": message_jour_data,
-        "cd_wobservation": cd_wobservation_data,
-        "cd_observation": cd_observation_data
+        "daily_badge": daily_badge_data
     }
 
     return combined_data

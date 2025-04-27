@@ -436,64 +436,71 @@ COLLECT_ROLES_CONFIG = [
 async def task_annonce_jour():
     await annoncer_message_du_jour()
 
-# --- Boucle auto-collecte ---
-@tasks.loop(seconds=60)
+# --- Boucle auto-collecte (optimisée) ---
+@tasks.loop(minutes=15)
 async def auto_collect_loop():
+    print("[Auto Collect] Lancement de la collecte automatique...")
+    now = datetime.utcnow()
+
     for guild in bot.guilds:
-        for member in guild.members:
-            for config in COLLECT_ROLES_CONFIG:
-                role = discord.utils.get(guild.roles, id=config["role_id"])
-                if role in member.roles and config["auto"]:
-                    now = datetime.utcnow()
-                    cd_data = collection5.find_one({
+        for config in COLLECT_ROLES_CONFIG:
+            role = discord.utils.get(guild.roles, id=config["role_id"])
+            if not role or not config["auto"]:
+                continue
+
+            # Parcourir uniquement les membres ayant le rôle
+            for member in role.members:
+                cd_data = collection5.find_one({
+                    "guild_id": guild.id,
+                    "user_id": member.id,
+                    "role_id": role.id
+                })
+                last_collect = cd_data.get("last_collect") if cd_data else None
+
+                if not last_collect or (now - last_collect).total_seconds() >= config["cooldown"]:
+                    eco_data = collection.find_one({
                         "guild_id": guild.id,
-                        "user_id": member.id,
-                        "role_id": role.id
-                    })
-                    last_collect = cd_data.get("last_collect") if cd_data else None
+                        "user_id": member.id
+                    }) or {"guild_id": guild.id, "user_id": member.id, "cash": 1500, "bank": 0}
 
-                    if not last_collect or (now - last_collect).total_seconds() >= config["cooldown"]:
-                        eco_data = collection.find_one({
-                            "guild_id": guild.id,
-                            "user_id": member.id
-                        }) or {"guild_id": guild.id, "user_id": member.id, "cash": 1500, "bank": 0}
+                    eco_data.setdefault("cash", 0)
+                    eco_data.setdefault("bank", 0)
 
-                        if "cash" not in eco_data:
-                            eco_data["cash"] = 0
-                        if "bank" not in eco_data:
-                            eco_data["bank"] = 0
+                    before = eco_data[config["target"]]
+                    if "amount" in config:
+                        eco_data[config["target"]] += config["amount"]
+                    elif "percent" in config:
+                        eco_data[config["target"]] += eco_data[config["target"]] * (config["percent"] / 100)
 
-                        before = eco_data[config["target"]]
-                        if "amount" in config:
-                            eco_data[config["target"]] += config["amount"]
-                        elif "percent" in config:
-                            eco_data[config["target"]] += eco_data[config["target"]] * (config["percent"] / 100)
+                    collection.update_one(
+                        {"guild_id": guild.id, "user_id": member.id},
+                        {"$set": {config["target"]: eco_data[config["target"]]}},
+                        upsert=True
+                    )
 
-                        collection.update_one(
-                            {"guild_id": guild.id, "user_id": member.id},
-                            {"$set": {config["target"]: eco_data[config["target"]]}},
-                            upsert=True
-                        )
+                    collection5.update_one(
+                        {"guild_id": guild.id, "user_id": member.id, "role_id": role.id},
+                        {"$set": {"last_collect": now}},
+                        upsert=True
+                    )
 
-                        collection5.update_one(
-                            {"guild_id": guild.id, "user_id": member.id, "role_id": role.id},
-                            {"$set": {"last_collect": now}},
-                            upsert=True
-                        )
+                    after = eco_data[config["target"]]
+                    await log_eco_channel(bot, guild.id, member, f"Auto Collect ({role.name})", config.get("amount", config.get("percent")), before, after, note="Collect automatique")
 
-                        after = eco_data[config["target"]]
-                        await log_eco_channel(bot, guild.id, member, f"Auto Collect ({role.name})", config.get("amount", config.get("percent")), before, after, note="Collect automatique")
-
-# --- Boucle Top Roles ---
-@tasks.loop(seconds=5)
+# --- Boucle Top Roles (optimisée) ---
+@tasks.loop(minutes=15)
 async def update_top_roles():
+    print("[Top Roles] Mise à jour des rôles de top...")
     for guild in bot.guilds:
-        if guild.id != GUILD_ID:  # Vérifier si on est sur le serveur spécifié
+        if guild.id != GUILD_ID:  # On ne traite qu'un seul serveur
             continue
 
         all_users_data = list(collection.find({"guild_id": guild.id}))
         sorted_users = sorted(all_users_data, key=lambda u: u.get("cash", 0) + u.get("bank", 0), reverse=True)
         top_users = sorted_users[:3]
+
+        # Récupérer une seule fois tous les membres nécessaires
+        members = {member.id: member async for member in guild.fetch_members(limit=None)}
 
         for rank, user_data in enumerate(top_users, start=1):
             user_id = user_data["user_id"]
@@ -503,9 +510,8 @@ async def update_top_roles():
                 print(f"Rôle manquant : {role_id} dans {guild.name}")
                 continue
 
-            try:
-                member = await guild.fetch_member(user_id)
-            except discord.NotFound:
+            member = members.get(user_id)
+            if not member:
                 print(f"Membre {user_id} non trouvé dans {guild.name}")
                 continue
 
@@ -513,6 +519,7 @@ async def update_top_roles():
                 await member.add_roles(role)
                 print(f"Ajouté {role.name} à {member.display_name}")
 
+        # Nettoyer les rôles qui ne doivent plus être là
         for rank, role_id in TOP_ROLES.items():
             role = discord.utils.get(guild.roles, id=role_id)
             if not role:

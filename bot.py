@@ -639,7 +639,7 @@ COLLECT_ROLES_CONFIG = [
     },
     {
         "role_id": 1355157726032035881, #Grade C
-        "amount": 300,
+        "amount": 3000,
         "cooldown": 14200,
         "auto": False,
         "target": "bank"

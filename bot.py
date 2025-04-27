@@ -727,6 +727,9 @@ async def auto_collect_loop():
 @tasks.loop(seconds=5)
 async def update_top_roles():
     for guild in bot.guilds:
+        if guild.id != GUILD_ID:  # Vérifier si on est sur le serveur spécifié
+            continue
+
         all_users_data = list(collection.find({"guild_id": guild.id}))
         sorted_users = sorted(all_users_data, key=lambda u: u.get("cash", 0) + u.get("bank", 0), reverse=True)
         top_users = sorted_users[:3]

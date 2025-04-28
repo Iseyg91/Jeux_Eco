@@ -49,6 +49,16 @@ ETHERYA_SERVER_ID = 1034007767050104892
 AUTORIZED_SERVER_ID = 1034007767050104892
 WELCOME_CHANNEL_ID = 1355198748296351854
 
+# ID des rôles et combien ils touchent
+ROLE_PAY = {
+    1355157636009427096: 100_000,  # CROWN_ISEY
+    1355234995555270768: 90_000,   # BRAS_DROIT
+    1355157638521815236: 80_000,   # CO-OWNER
+    1357258052147089450: 70_000,   # ADMINISTRATEUR
+    1355157640640200864: 60_000,   # RESP_ID
+    1355157686815293441: 50_000    # STAFF_ID
+}
+
 def get_log_channel(guild, key):
     log_channel_id = log_channels.get(key)
     if log_channel_id:
@@ -3382,6 +3392,61 @@ async def slot_machine(ctx, bet):
 @bot.hybrid_command(name="slot-machine", aliases=["sm"], description="Jouer à la machine à sous.")
 async def slot(ctx, bet: int):
     await slot_machine(ctx, bet)
+
+@bot.hybrid_command(name="staff-pay", description="Verse les salaires aux staffs selon leurs rôles.")
+async def staff_pay(ctx):
+    if ctx.author.id != ISEY_ID:
+        return await ctx.send("Tu n'as pas la permission d'utiliser cette commande.", ephemeral=True)
+
+    if ctx.guild is None:
+        return await ctx.send("Cette commande doit être utilisée dans un serveur.")
+
+    guild = ctx.guild
+    paid_users = []
+
+    for member in guild.members:
+        highest_pay = 0
+
+        # Cherche le plus haut salaire selon les rôles
+        for role_id, pay in ROLE_PAY.items():
+            role = guild.get_role(role_id)
+            if role and role in member.roles:
+                if pay > highest_pay:
+                    highest_pay = pay
+
+        if highest_pay > 0:
+            # Connexion Mongo
+            user_data = collection.find_one({"guild_id": guild.id, "user_id": member.id})
+            if not user_data:
+                user_data = {"guild_id": guild.id, "user_id": member.id, "cash": 1500, "bank": 0}
+                collection.insert_one(user_data)
+
+            # Ajoute le salaire
+            collection.update_one(
+                {"guild_id": guild.id, "user_id": member.id},
+                {"$inc": {"bank": highest_pay}}
+            )
+            paid_users.append((member, highest_pay))
+
+    # Embed de confirmation
+    embed = discord.Embed(
+        title="Versement des Salaires",
+        description=f"{len(paid_users)} membres ont été payés avec succès.",
+        color=discord.Color.green()
+    )
+    embed.set_image(url="https://ma-vie-administrative.fr/wp-content/uploads/2019/04/Bulletin-de-paie-electronique-un-atout-pour-les-ressources-humaines.jpg")
+
+    # Petit résumé
+    if paid_users:
+        details = ""
+        for user, amount in paid_users:
+            details += f"**{user.display_name}** ➔ {amount:,} coins\n"
+
+        # Si trop de texte (> 1024 caractères), on ne l'affiche pas pour éviter les erreurs
+        if len(details) < 1024:
+            embed.add_field(name="Détails des paiements", value=details, inline=False)
+
+    await ctx.send(embed=embed)
 
 # Token pour démarrer le bot (à partir des secrets)
 # Lancer le bot avec ton token depuis l'environnement  

@@ -301,7 +301,7 @@ COLLECT_ROLES_CONFIG = [
     },
     {
         "role_id": 1365389381246124084, #Haki de l'Armement Avancé
-        "amount": 5000,
+        "amount": 10000,
         "cooldown": 7200,
         "auto": False,
         "target": "bank"
@@ -436,6 +436,13 @@ COLLECT_ROLES_CONFIG = [
         "role_id": 1355157720730439701, #Grade Etheryens
         "amount": 8000,
         "cooldown": 14200,
+        "auto": False,
+        "target": "bank"
+    }
+    {
+        "role_id": 1367567412886765589, #Grade Divin
+        "amount": 8000,
+        "cooldown": 3600,
         "auto": False,
         "target": "bank"
     }

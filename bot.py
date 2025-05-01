@@ -386,56 +386,56 @@ COLLECT_ROLES_CONFIG = [
     {
         "role_id": 1355157729362313308, #Grade E
         "amount": 1000,
-        "cooldown": 14200,
+        "cooldown": 7100,
         "auto": False,
         "target": "bank"
     },
     {
         "role_id": 1355157728024072395, #Grade D
         "amount": 2000,
-        "cooldown": 14200,
+        "cooldown": 7100,
         "auto": False,
         "target": "bank"
     },
     {
         "role_id": 1355157726032035881, #Grade C
         "amount": 3000,
-        "cooldown": 14200,
+        "cooldown": 7100,
         "auto": False,
         "target": "bank"
     },
     {
         "role_id": 1355157725046243501, #Grade B
         "amount": 4000,
-        "cooldown": 14200,
+        "cooldown": 7100,
         "auto": False,
         "target": "bank"
     },
     {
         "role_id": 1355157723960049787, #Grade A
         "amount": 5000,
-        "cooldown": 14200,
+        "cooldown": 7100,
         "auto": False,
         "target": "bank"
     },
     {
         "role_id": 1355157722907279380, #Grade S
         "amount": 6000,
-        "cooldown": 14200,
+        "cooldown": 7100,
         "auto": False,
         "target": "bank"
     },
     {
         "role_id": 1355157721812435077, #Grade National
         "amount": 7000,
-        "cooldown": 14200,
+        "cooldown": 7100,
         "auto": False,
         "target": "bank"
     },
     {
         "role_id": 1355157720730439701, #Grade Etheryens
         "amount": 8000,
-        "cooldown": 14200,
+        "cooldown": 7100,
         "auto": False,
         "target": "bank"
     }

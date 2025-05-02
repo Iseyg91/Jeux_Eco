@@ -555,7 +555,7 @@ async def on_ready():
     activity = discord.Activity(
         type=discord.ActivityType.streaming,
         name="Etherya",
-        url="https://www.twitch.tv/tonstream"
+        url="https://discord.com/oauth2/authorize?client_id=1356693934012891176"
     )
     await bot.change_presence(activity=activity, status=discord.Status.online)
 

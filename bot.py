@@ -295,21 +295,21 @@ COLLECT_ROLES_CONFIG = [
     {
         "role_id": 1365698043684327424, #Haki de l'armement Inferieur
         "amount": 5000,
-        "cooldown": 200,
+        "cooldown": 7200,
         "auto": False,
         "target": "bank"
     },
     {
         "role_id": 1365389381246124084, #Haki de l'Armement Avancé
         "amount": 10000,
-        "cooldown": 200,
+        "cooldown": 7200,
         "auto": False,
         "target": "bank"
     },
     {
         "role_id": 1363969965572755537, #Nen Maudit
         "percent": -20,
-        "cooldown": 200,
+        "cooldown": 7200,
         "auto": True,
         "target": "bank"
     },

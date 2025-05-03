@@ -295,14 +295,14 @@ COLLECT_ROLES_CONFIG = [
     {
         "role_id": 1365698043684327424, #Haki de l'armement Inferieur
         "amount": 5000,
-        "cooldown": 7200,
+        "cooldown": 200,
         "auto": False,
         "target": "bank"
     },
     {
         "role_id": 1365389381246124084, #Haki de l'Armement Avancé
         "amount": 10000,
-        "cooldown": 7200,
+        "cooldown": 200,
         "auto": False,
         "target": "bank"
     },

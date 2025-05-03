@@ -322,8 +322,8 @@ COLLECT_ROLES_CONFIG = [
     },
     {
         "role_id": 1365313257279062067, #Gol Gol no Mi
-        "percent": 10,
-        "cooldown": 200,
+        "percent": 3,
+        "cooldown": 86400,
         "auto": True,
         "target": "bank"
     },

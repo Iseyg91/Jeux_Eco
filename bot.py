@@ -309,7 +309,7 @@ COLLECT_ROLES_CONFIG = [
     {
         "role_id": 1363969965572755537, #Nen Maudit
         "percent": -20,
-        "cooldown": 3600,
+        "cooldown": 200,
         "auto": True,
         "target": "bank"
     },

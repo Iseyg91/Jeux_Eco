@@ -438,7 +438,7 @@ COLLECT_ROLES_CONFIG = [
         "cooldown": 7100,
         "auto": False,
         "target": "bank"
-    }
+    },
     {
         "role_id": 1367567412886765589, #Grade Divin
         "amount": 8000,
@@ -2972,7 +2972,7 @@ async def collect_income(ctx: commands.Context):
         if role not in member.roles:
             continue
 
-        # Check cooldown
+        # Vérifie le cooldown
         cd_data = collection5.find_one({
             "guild_id": guild.id,
             "user_id": member.id,
@@ -2990,7 +2990,7 @@ async def collect_income(ctx: commands.Context):
         except Exception as e:
             print(f"[DEBUG] Erreur sur cooldown pour {role.name}: {e}")
 
-        # Traitement eco
+        # Traitement éco
         eco_data = collection.find_one({
             "guild_id": guild.id,
             "user_id": member.id
@@ -3023,7 +3023,7 @@ async def collect_income(ctx: commands.Context):
     if collected:
         embed = discord.Embed(
             title=f"{member.display_name}",
-            description="<:Check:1362710665663615147> Role income successfully collected!\n\n" + "\n".join(collected),
+            description="<:Check:1362710665663615147> Revenus collectés avec succès !\n\n" + "\n".join(collected),
             color=discord.Color.green()
         )
         embed.set_thumbnail(url=member.display_avatar.url)
@@ -3034,17 +3034,14 @@ async def collect_income(ctx: commands.Context):
         shortest = min(cooldowns, key=lambda x: x[0])
         remaining_minutes = int(shortest[0] // 60) or 1
         embed = discord.Embed(
-            description=f"<:classic_x_mark:1362711858829725729> Tu as déjà collecté récemment ! Prochain collect dans **{remaining_minutes}min** (`{shortest[1].name}`)",
+            title="⏳ Collect en cooldown",
+            description=f"Tu dois attendre encore **{remaining_minutes} min** pour le rôle {shortest[1].mention}.",
             color=discord.Color.red()
         )
         await ctx.send(embed=embed)
         return
 
-    embed = discord.Embed(
-        description="❌ Tu n'as aucun rôle avec `collect` disponible.",
-        color=discord.Color.orange()
-    )
-    await ctx.send(embed=embed)
+    await ctx.send("Tu n'as aucun rôle collect actif ou tous sont en cooldown.")
 
 #------------------------------------------------------------------------- Commandes d'aide : +aide, /help
 @bot.hybrid_command(name="help", description="Affiche l'aide économique pour Etherya Economie")

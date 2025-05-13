@@ -3451,7 +3451,6 @@ async def staff_pay(ctx):
             embed.add_field(name="Détails des paiements", value=details, inline=False)
 
     await ctx.send(embed=embed)
-
 # Token pour démarrer le bot (à partir des secrets)
 # Lancer le bot avec ton token depuis l'environnement  
 keep_alive()

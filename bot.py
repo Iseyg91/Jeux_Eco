@@ -445,6 +445,13 @@ COLLECT_ROLES_CONFIG = [
         "cooldown": 3600,
         "auto": False,
         "target": "bank"
+    },
+    {
+        "role_id": 1372978490256920586, #Grade Divin
+        "amount": 5000,
+        "cooldown": 3600,
+        "auto": False,
+        "target": "bank"
     }
 ]
 

@@ -1,3 +1,5 @@
+import sys
+print("VERSION:", sys.version)
 import discord
 from discord.ext import commands, tasks
 from discord import app_commands, Embed, ButtonStyle, ui

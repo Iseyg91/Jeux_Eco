@@ -1,14 +1,11 @@
-# Utilise Python 3.11 comme base
-FROM python:3.11-slim
+FROM python:3.13
 
-# Crée un dossier pour l'app
 WORKDIR /app
 
-# Copie les fichiers
-COPY . .
+COPY requirements.txt .
 
-# Installe les dépendances
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Lance le bot
+COPY . .
+
 CMD ["python", "bot.py"]

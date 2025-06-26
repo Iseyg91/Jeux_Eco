@@ -1,3 +1,0 @@
-python-3.11.4
-
-Ajout de runtime.txt pour spécifier la version Python

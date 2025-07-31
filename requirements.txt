@@ -75,4 +75,3 @@ psutil
 motor
 pytz
 matplotlib
-

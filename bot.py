@@ -41,39 +41,6 @@ ETHERYA_SERVER_ID = 1034007767050104892
 AUTORIZED_SERVER_ID = 1034007767050104892
 WELCOME_CHANNEL_ID = 1355198748296351854
 
-# --- ID Etherya Pouvoir ---
-# -- Oeil Démoniaque --
-OEIL_ID = 1363949082653098094
-ROLE_ID = 1364123507532890182
-# -- Float --
-FLOAT_ID = 1363946902730575953
-ROLE_FLOAT_ID = 1364121382908067890
-# -- Pokeball --
-POKEBALL_ID = 1363942048075481379
-# -- Infini --
-INFINI_ID = [1363939565336920084, 1363939567627145660, 1363939486844850388]
-ANTI_ROB_ROLE = 1363964754678513664
-# -- Armure du Berserker --
-ARMURE_ID = 1363821649002238142
-ANTI_ROB_ID = 1363964754678513664
-# -- Rage du Berserker --
-RAGE_ID = 1363821333624127618
-ECLIPSE_ROLE_ID = 1364115033197510656
-# -- Ultra Instinct --
-ULTRA_ID = 1363821033060307106
-# -- Haki des Rois --
-HAKI_ROI_ID = 1363817645249527879
-HAKI_SUBIS_ID = 1364109450197078026
-# -- Arme Démoniaque Impérial --
-ARME_DEMONIAQUE_ID = 1363817586466361514
-# -- Heal (Appel de l'exorciste) --
-HEAL_ID = 1363873859912335400
-MALUS_ROLE_ID = 1363969965572755537
-# -- Divin --
-DIVIN_ROLE_ID = 1367567412886765589
-# -- Bombe --
-BOMBE_ID = 1365316070172393572
-
 # --- ID Eco ---
 
 # ID des rôles et combien ils touchent
@@ -165,12 +132,6 @@ def get_start_date(guild_id):
     if start_date_data:
         return datetime.fromisoformat(start_date_data["start_date"])
     return None
-
-TOP_ROLES = {
-    1: 1363923497885237298,  # ID du rôle Top 1
-    2: 1363923494504501510,  # ID du rôle Top 2
-    3: 1363923356688056401,  # ID du rôle Top 3
-}
 
 # Config des rôles
 COLLECT_ROLES_CONFIG = [
@@ -269,50 +230,6 @@ async def auto_collect_loop():
                     after = eco_data[config["target"]]
                     await log_eco_channel(bot, guild.id, member, f"Auto Collect ({role.name})", config.get("amount", config.get("percent")), before, after, note="Collect automatique")
 
-# --- Boucle Top Roles (optimisée) ---
-@tasks.loop(minutes=15)
-async def update_top_roles():
-    print("[Top Roles] Mise à jour des rôles de top...")
-    for guild in bot.guilds:
-        if guild.id != GUILD_ID:  # On ne traite qu'un seul serveur
-            continue
-
-        all_users_data = list(collection.find({"guild_id": guild.id}))
-        sorted_users = sorted(all_users_data, key=lambda u: u.get("cash", 0) + u.get("bank", 0), reverse=True)
-        top_users = sorted_users[:3]
-
-        # Récupérer une seule fois tous les membres nécessaires
-        members = {member.id: member async for member in guild.fetch_members(limit=None)}
-
-        for rank, user_data in enumerate(top_users, start=1):
-            user_id = user_data["user_id"]
-            role_id = TOP_ROLES[rank]
-            role = discord.utils.get(guild.roles, id=role_id)
-            if not role:
-                print(f"Rôle manquant : {role_id} dans {guild.name}")
-                continue
-
-            member = members.get(user_id)
-            if not member:
-                print(f"Membre {user_id} non trouvé dans {guild.name}")
-                continue
-
-            if role not in member.roles:
-                await member.add_roles(role)
-                print(f"Ajouté {role.name} à {member.display_name}")
-
-        # Nettoyer les rôles qui ne doivent plus être là
-        for rank, role_id in TOP_ROLES.items():
-            role = discord.utils.get(guild.roles, id=role_id)
-            if not role:
-                continue
-            for member in role.members:
-                if member.id not in [u["user_id"] for u in top_users]:
-                    await member.remove_roles(role)
-                    print(f"Retiré {role.name} de {member.display_name}")
-                  
-
------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------------------Groupe CMD:
 #-----------------------------------------------------------------------------------------------
